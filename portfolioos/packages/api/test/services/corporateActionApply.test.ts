@@ -53,6 +53,89 @@ describe('corporate action auto-apply', () => {
     });
   });
 
+  it('dividend → cash DIVIDEND_PAYOUT (perShare × qty), holding qty unchanged', async () => {
+    const scope = await createTestScope('ca-div');
+    cleanups.push(scope.cleanup);
+    const { symbol } = await seedStockMaster(scope, { symbol: 'CADIV', name: 'CA Div Co' });
+    const stockId = scope.stockMasterIds[0]!;
+    const assetKey = computeAssetKey({ stockId });
+
+    await runAsSystem(async () => {
+      await prisma.transaction.create({
+        data: {
+          portfolioId: scope.portfolioId,
+          assetClass: 'EQUITY',
+          transactionType: 'BUY',
+          stockId,
+          assetName: symbol,
+          assetKey,
+          tradeDate: new Date('2026-01-01'),
+          quantity: '10',
+          price: '1000',
+          grossAmount: '10000',
+          netAmount: '10000',
+        },
+      });
+      // ₹5/share dividend on 10 shares → ₹50 cash.
+      await prisma.corporateAction.create({
+        data: { stockId, type: 'DIVIDEND', exDate: new Date('2026-03-01'), amount: '5' },
+      });
+      await recomputeForPortfolio(scope.portfolioId);
+      expect(await applyCorporateActionsForPortfolio(scope.portfolioId)).toBe(1);
+
+      const div = await prisma.transaction.findFirst({
+        where: { portfolioId: scope.portfolioId, transactionType: 'DIVIDEND_PAYOUT' },
+      });
+      expect(div).not.toBeNull();
+      expect(Number(div!.netAmount)).toBe(50);
+
+      const h = await prisma.holdingProjection.findFirst({
+        where: { portfolioId: scope.portfolioId, stockId },
+      });
+      expect(Number(h!.quantity)).toBe(10); // dividend doesn't change qty
+    });
+  });
+
+  it('merger/rights/buyback are NOT auto-applied (need target data or user election)', async () => {
+    const scope = await createTestScope('ca-skip');
+    cleanups.push(scope.cleanup);
+    const { symbol } = await seedStockMaster(scope, { symbol: 'CASKIP', name: 'CA Skip Co' });
+    const stockId = scope.stockMasterIds[0]!;
+    const assetKey = computeAssetKey({ stockId });
+
+    await runAsSystem(async () => {
+      await prisma.transaction.create({
+        data: {
+          portfolioId: scope.portfolioId,
+          assetClass: 'EQUITY',
+          transactionType: 'BUY',
+          stockId,
+          assetName: symbol,
+          assetKey,
+          tradeDate: new Date('2026-01-01'),
+          quantity: '10',
+          price: '1000',
+          grossAmount: '10000',
+          netAmount: '10000',
+        },
+      });
+      await prisma.corporateAction.createMany({
+        data: [
+          { stockId, type: 'MERGER', exDate: new Date('2026-03-01') },
+          { stockId, type: 'RIGHTS', exDate: new Date('2026-03-01'), ratio: '0.5' },
+          { stockId, type: 'BUYBACK', exDate: new Date('2026-03-01') },
+        ],
+      });
+      await recomputeForPortfolio(scope.portfolioId);
+      expect(await applyCorporateActionsForPortfolio(scope.portfolioId)).toBe(0);
+
+      const h = await prisma.holdingProjection.findFirst({
+        where: { portfolioId: scope.portfolioId, stockId },
+      });
+      expect(Number(h!.quantity)).toBe(10); // untouched
+    });
+  });
+
   it('is idempotent — re-running applies nothing the second time', async () => {
     const scope = await createTestScope('ca-idem');
     cleanups.push(scope.cleanup);
