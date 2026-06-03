@@ -106,6 +106,17 @@ export interface TaxHarvestSummary {
   ltcgLossAvailable: string;
   realisedStcgInFy: string;
   realisedLtcgInFy: string;
+  savings: {
+    taxBefore: string;
+    taxAfter: string;
+    taxSaved: string;
+    applied: { stclVsStcg: string; stclVsLtcg: string; ltclVsLtcg: string };
+    lossUtilised: string;
+    lossUnused: string;
+    stcgRatePct: number;
+    ltcgRatePct: number;
+    ltcgExemption: string;
+  };
   candidates: Array<{
     portfolioName: string;
     assetName: string;
@@ -287,7 +298,27 @@ export const analyticsApi = {
     const { data } = await api.get<ApiResponse<MfOverlapResult>>('/api/analytics/mf-overlap');
     return unwrap(data);
   },
+  async whatIf(input: { holdingId: string; sellQty: string | number; sellPrice?: string | number | null }): Promise<WhatIfResult> {
+    const { data } = await api.post<ApiResponse<WhatIfResult>>('/api/analytics/what-if', input);
+    return unwrap(data);
+  },
 };
+
+export interface WhatIfResult {
+  holding: { id: string; assetName: string | null; assetClass: string; quantityHeld: string; avgCost: string; currentPrice: string };
+  input: { sellQty: string; sellPrice: string };
+  sale: {
+    proceeds: string; costBasis: string; realisedPnL: string;
+    term: 'SHORT' | 'LONG'; equityType: boolean; isLoss: boolean;
+    estTax: string; taxRatePct: number | null; taxIndicative: boolean;
+  };
+  deltas: {
+    proceeds: string; estTax: string; netCashAfterTax: string;
+    remainingQty: string; remainingValue: string;
+    concentrationBeforePct: number; concentrationAfterPct: number; holdingPeriodDays: number;
+  };
+  disclaimer: string;
+}
 
 export type PlanType = 'DIRECT' | 'REGULAR' | 'UNKNOWN';
 

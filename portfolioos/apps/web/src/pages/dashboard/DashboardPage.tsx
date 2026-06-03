@@ -49,6 +49,23 @@ const PERIOD_OPTIONS = [
   { label: 'All', days: 0 },
 ];
 
+function alertHref(type: string): string {
+  switch (type) {
+    case 'INSURANCE_RENEWAL':
+      return '/insurance';
+    case 'VEHICLE_EXPIRY':
+    case 'CHALLAN_PENDING':
+      return '/vehicles';
+    case 'RENT_OVERDUE':
+      return '/rental';
+    case 'LOAN_EMI_OVERDUE':
+    case 'LOAN_EMI_DUE':
+      return '/loans';
+    default:
+      return '/alerts';
+  }
+}
+
 // Editorial chart palette — refined, restrained, never neon
 const PIE_COLORS = [
   'hsl(213 53% 22%)',   // ink
@@ -526,24 +543,31 @@ export function DashboardPage() {
             {!alertsCollapsed ? (
               <>
                 {shown.map((a, i) => (
-                  <div key={i} className={`flex items-start gap-3 rounded-lg border px-4 py-2.5 text-sm ${urgencyBg(a.urgency)}`}>
-                    <UrgencyIcon urgency={a.urgency} />
-                    <div className="flex-1 min-w-0">
-                      <span className="font-medium">{a.title}</span>
-                      <span className="text-muted-foreground ml-2">{a.description}</span>
-                    </div>
-                    {a.daysUntil != null && (
-                      <span className={`text-xs font-medium flex-shrink-0 ${urgencyColor(a.urgency)}`}>
-                        {a.daysUntil <= 0 ? 'Overdue' : `${a.daysUntil}d`}
-                      </span>
-                    )}
+                  <div key={i} className={`flex items-stretch rounded-lg border text-sm ${urgencyBg(a.urgency)}`}>
+                    <Link
+                      to={alertHref(a.type)}
+                      className="flex flex-1 items-start gap-3 px-4 py-2.5 min-w-0 rounded-l-lg transition-colors hover:bg-foreground/[0.03] focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      title="Open section"
+                    >
+                      <UrgencyIcon urgency={a.urgency} />
+                      <div className="flex-1 min-w-0">
+                        <span className="font-medium">{a.title}</span>
+                        <span className="text-muted-foreground ml-2">{a.description}</span>
+                      </div>
+                      {a.daysUntil != null && (
+                        <span className={`text-xs font-medium flex-shrink-0 ${urgencyColor(a.urgency)}`}>
+                          {a.daysUntil <= 0 ? 'Overdue' : `${a.daysUntil}d`}
+                        </span>
+                      )}
+                      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 mt-0.5" strokeWidth={1.8} />
+                    </Link>
                     {i === 0 && (
                       <button
                         type="button"
                         onClick={() => setAlertsCollapsed(true)}
                         aria-label="Collapse alerts"
                         title="Collapse alerts"
-                        className="ml-1 flex-shrink-0 h-6 w-6 rounded-md grid place-items-center text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-colors"
+                        className="flex-shrink-0 px-2 grid place-items-center text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-colors rounded-r-lg"
                       >
                         <ChevronDown className="h-4 w-4 rotate-180" strokeWidth={1.8} />
                       </button>
