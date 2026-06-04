@@ -677,6 +677,29 @@ import {
   dematHoldingReport,
   m2mReport,
 } from '../services/specialReports.service.js';
+import { generateVouchersFromActivity } from '../services/accounting.service.js';
+
+/**
+ * Trial Balance / P&L / Balance Sheet / Account Ledger all read from
+ * Voucher + VoucherEntry. Vouchers are written when the user imports
+ * via the file-import pipeline OR explicitly hits the "Generate from
+ * activity" button in the Accounting UI. Manually-entered transactions
+ * bypass both paths, so accounting reports come back empty until the
+ * user remembers to project. Run the projector defensively before any
+ * accounting download — it's idempotent (skips already-projected txns
+ * via the voucherNo seen-set), so the cost is one cheap query when
+ * nothing's outstanding.
+ */
+async function ensureAccountingProjected(userId: string): Promise<void> {
+  try {
+    await generateVouchersFromActivity(userId);
+  } catch (e) {
+    // Don't block the download — surface the bug via logs and continue
+    // with whatever vouchers already exist.
+    // eslint-disable-next-line no-console
+    console.error('[accounting] auto-project failed', e);
+  }
+}
 
 export async function getGrandfatheringReport(req: Request, res: Response) {
   const userId = req.user!.id;
@@ -764,6 +787,7 @@ export async function downloadM2M(req: Request, res: Response) {
 export async function downloadTrialBalance(req: Request, res: Response) {
   const userId = req.user!.id;
   const asOf = (req.query.asOf as string | undefined)?.trim() || undefined;
+  await ensureAccountingProjected(userId);
   await emitMprofit(req, res, await buildTrialBalanceLayout(userId, asOf));
 }
 
@@ -772,6 +796,7 @@ export async function downloadAccountLedger(req: Request, res: Response) {
   const accountId = (req.query.accountId as string | undefined)?.trim() || undefined;
   const from = (req.query.from as string | undefined)?.trim() || undefined;
   const to = (req.query.to as string | undefined)?.trim() || undefined;
+  await ensureAccountingProjected(userId);
   await emitMprofit(req, res, await buildAccountLedgerLayout(userId, { accountId, from, to }));
 }
 
@@ -779,12 +804,14 @@ export async function downloadProfitLoss(req: Request, res: Response) {
   const userId = req.user!.id;
   const from = (req.query.from as string | undefined)?.trim() || undefined;
   const to = (req.query.to as string | undefined)?.trim() || undefined;
+  await ensureAccountingProjected(userId);
   await emitMprofit(req, res, await buildProfitLossLayout(userId, { from, to }));
 }
 
 export async function downloadBalanceSheet(req: Request, res: Response) {
   const userId = req.user!.id;
   const asOf = (req.query.asOf as string | undefined)?.trim() || undefined;
+  await ensureAccountingProjected(userId);
   await emitMprofit(req, res, await buildBalanceSheetLayout(userId, asOf));
 }
 

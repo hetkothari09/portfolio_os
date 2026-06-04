@@ -351,7 +351,7 @@ export async function buildM2MLayout(userId: string, asOf?: Date): Promise<Mprof
   ];
 
   return {
-    reportTitle: `M2M (ALL) report as on ${r.asOfDate}`,
+    reportTitle: `M2M (ALL) report as on ${fmtDateDDMMYYYY(r.asOfDate)}`,
     family: m.family,
     member: m.member,
     pan: m.pan,
@@ -1905,6 +1905,10 @@ export async function buildScriptwiseQtywiseLayout(
   for (const t of txs) {
     const k = keyOf(t);
     const b = getBucket(t);
+    // "In window" = inside [from, to]. With no `from`, the entire
+    // history is in-window (opening stays 0) — otherwise the report
+    // shows everything as Opening with empty Purchase/Sale columns.
+    const inWindow = !fromDate || t.tradeDate.getTime() >= fromDate.getTime();
     if (fromDate && t.tradeDate.getTime() >= fromDate.getTime() && !snapped.has(k)) {
       b.openingQty = b.runningQty;
       b.openingValue = b.runningValue;
@@ -1913,14 +1917,14 @@ export async function buildScriptwiseQtywiseLayout(
     const q = new Decimal(t.quantity.toString());
     const net = new Decimal(t.netAmount.toString());
     if (BUY_TXN_TYPES.has(t.transactionType)) {
-      if (fromDate && t.tradeDate.getTime() >= fromDate.getTime()) {
+      if (inWindow) {
         b.buyQty = b.buyQty.plus(q);
         b.buyValue = b.buyValue.plus(net);
       }
       b.runningQty = b.runningQty.plus(q);
       b.runningValue = b.runningValue.plus(net);
     } else if (SELL_TXN_TYPES.has(t.transactionType)) {
-      if (fromDate && t.tradeDate.getTime() >= fromDate.getTime()) {
+      if (inWindow) {
         b.sellQty = b.sellQty.plus(q);
         b.sellValue = b.sellValue.plus(net);
       }
@@ -1931,13 +1935,14 @@ export async function buildScriptwiseQtywiseLayout(
     }
   }
 
-  // For buckets with NO transactions inside window, opening still
-  // needs to be the running state at end of pre-window. Snap any that
-  // weren't snapped (e.g. assets with only pre-window history).
-  for (const [k, b] of buckets) {
-    if (!snapped.has(k)) {
-      b.openingQty = b.runningQty;
-      b.openingValue = b.runningValue;
+  // Buckets with no in-window transactions: opening = full running
+  // state at end of pre-window. Only relevant when fromDate is set.
+  if (fromDate) {
+    for (const [k, b] of buckets) {
+      if (!snapped.has(k)) {
+        b.openingQty = b.runningQty;
+        b.openingValue = b.runningValue;
+      }
     }
   }
 
