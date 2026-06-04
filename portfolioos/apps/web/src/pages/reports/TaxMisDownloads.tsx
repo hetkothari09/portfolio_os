@@ -306,6 +306,96 @@ const REPORTS: ReportDef[] = [
     params: ['fy'],
     filename: 'advance-tax-summary',
   },
+  {
+    key: 'opening-stock',
+    title: 'Opening Stock Report',
+    description:
+      'Per asset-class: first-acquisition date, ISIN, asset name, opening qty, weighted avg price, total invested. Mirrors the desktop Opening Stock screen.',
+    endpoint: 'opening-stock',
+    params: ['asOf'],
+    filename: 'opening-stock',
+  },
+  {
+    key: 'holding-period-return',
+    title: 'Holding Period Return',
+    description:
+      'Current holdings with first-buy date, qty, weighted cost, market value, overall G/L and holding period in days.',
+    endpoint: 'holding-period-return',
+    params: ['asOf'],
+    filename: 'holding-period-return',
+  },
+  {
+    key: 'script-ledger',
+    title: 'Script Account Ledger',
+    description:
+      'Per-script ledger: opening, every Bought / Sold, closing values, LT / ST / Speculation G/L rows. Mirrors mProfit Script Ledger.',
+    endpoint: 'script-ledger',
+    params: ['asOf'],
+    filename: 'script-ledger',
+  },
+  {
+    key: 'chart-of-accounts',
+    title: 'Chart of Accounts (Account Master)',
+    description:
+      'Flat account master: code, name, opening balance, default D/C side, group (parent account name).',
+    endpoint: 'chart-of-accounts',
+    params: [],
+    filename: 'chart-of-accounts',
+  },
+  {
+    key: 'fund-flow',
+    title: 'Fund Flow Statement',
+    description:
+      'Bank-account-grouped fund movement. Each bank section lists payments + receipts grouped by counterparty type, with totals.',
+    endpoint: 'fund-flow',
+    params: ['from', 'to'],
+    filename: 'fund-flow',
+  },
+  {
+    key: 'broker-bill-register-fmwise',
+    title: 'Broker Bill Register — Family/Member-wise',
+    description:
+      'Family → Member → Broker → Bill drill-down with per-script consultant, type, qty, holding type, brokerage, rate, net amount.',
+    endpoint: 'broker-bill-register-fmwise',
+    params: ['from', 'to'],
+    filename: 'broker-bill-register-fmwise',
+  },
+  {
+    key: 'portfolio-snapshot',
+    title: 'Portfolio Snapshot',
+    description:
+      'Flat holdings list across all asset classes with avg pur rate, investment, current price, overall gain, current value and % holdings.',
+    endpoint: 'portfolio-snapshot',
+    params: ['asOf'],
+    filename: 'portfolio-snapshot',
+  },
+  {
+    key: 'day-book',
+    title: 'Day Book',
+    description:
+      'All vouchers for a single date as two-row debit/credit pairs with Investment Type, Bill/Voucher, Account, narration.',
+    endpoint: 'day-book',
+    params: ['asOf'],
+    filename: 'day-book',
+  },
+  {
+    key: 'dividend-report',
+    title: 'Dividend Report (Date-wise)',
+    description:
+      'DIVIDEND_PAYOUT transactions grouped by ex-date with closing stock, per-share rate, narration. TOTAL per date and grand total.',
+    endpoint: 'dividend-report',
+    params: ['fy', 'from', 'to'],
+    filename: 'dividend-report',
+  },
+  {
+    key: 'bank-reconciliation',
+    title: 'Bank Reconciliation',
+    description:
+      'Per bank account: matched (linked to source transaction) vs unmatched (manual / orphan) voucher entries with debit/credit and status.',
+    endpoint: 'bank-reconciliation',
+    params: ['from', 'to'],
+    filename: 'bank-reconciliation',
+  },
 ];
 
 function currentFy(): string {

@@ -3900,3 +3900,1085 @@ export async function buildAdvanceTaxSummaryLayout(
     filenameStem: `advance-tax-summary${opts.fy ? `-${opts.fy}` : ''}`,
   };
 }
+
+// ─── 32. Opening Stock Report ─────────────────────────────────────
+//
+// Asset class banner, then per-row: first-BUY date, ISIN, asset name,
+// open qty, weighted avg price, total invested. Grand Total per class.
+
+export async function buildOpeningStockLayout(
+  userId: string,
+  asOf?: Date,
+): Promise<MprofitLayout> {
+  const m = await userMember(userId);
+  const cutoff = asOf ?? new Date();
+
+  const holdings = await prisma.holdingProjection.findMany({
+    where: { portfolio: { userId } },
+    orderBy: [{ assetClass: 'asc' }, { assetName: 'asc' }],
+  });
+
+  const txs = await prisma.transaction.findMany({
+    where: { portfolio: { userId }, tradeDate: { lte: cutoff } },
+    select: { assetKey: true, assetName: true, tradeDate: true, transactionType: true },
+    orderBy: { tradeDate: 'asc' },
+  });
+  const firstBuy = new Map<string, Date>();
+  for (const t of txs) {
+    if (!BUY_TXN_TYPES.has(t.transactionType)) continue;
+    const k = t.assetKey ?? `name:${t.assetName ?? ''}`;
+    if (!firstBuy.has(k)) firstBuy.set(k, t.tradeDate);
+  }
+
+  const byClass = new Map<string, typeof holdings>();
+  for (const h of holdings) {
+    if (new Decimal(h.quantity.toString()).isZero()) continue;
+    const arr = byClass.get(h.assetClass) ?? [];
+    arr.push(h);
+    byClass.set(h.assetClass, arr);
+  }
+
+  const sections: ReportSection[] = [];
+  let grandQty = new Decimal(0);
+  let grandAmt = new Decimal(0);
+  for (const [assetClass, list] of byClass) {
+    const tot = list.reduce(
+      (acc, h) => ({
+        qty: acc.qty.plus(new Decimal(h.quantity.toString())),
+        amt: acc.amt.plus(new Decimal(h.totalCost.toString())),
+      }),
+      { qty: new Decimal(0), amt: new Decimal(0) },
+    );
+    grandQty = grandQty.plus(tot.qty);
+    grandAmt = grandAmt.plus(tot.amt);
+    sections.push({
+      banner: `Holding Type: ${assetClass.replace(/_/g, ' ')}`,
+      groups: [{
+        rows: list.map((h) => ({
+          cells: {
+            acqDate: firstBuy.get(h.assetKey)?.toISOString().slice(0, 10) ?? '',
+            isin: h.isin ?? '',
+            assetName: h.assetName ?? '—',
+            qty: h.quantity.toString(),
+            price: h.avgCostPrice.toString(),
+            amount: h.totalCost.toString(),
+          },
+        })),
+        subtotal: {
+          label: 'Grand Total',
+          values: {
+            qty: tot.qty.toString(),
+            price: tot.qty.greaterThan(0) ? tot.amt.dividedBy(tot.qty).toString() : '',
+            amount: tot.amt.toString(),
+          },
+        },
+      }],
+    });
+  }
+
+  const columns: ColumnDef[] = [
+    { key: 'acqDate', label: 'Date of Acquisition', width: 10, align: 'center', formatter: DATE },
+    { key: 'isin', label: 'ISIN', width: 10, align: 'left' },
+    { key: 'assetName', label: 'Asset name', width: 30, align: 'left' },
+    { key: 'qty', label: 'Qty', width: 8, align: 'right', formatter: (v) => indianMoney(v, 2) },
+    { key: 'price', label: 'Price', width: 8, align: 'right', formatter: MONEY },
+    { key: 'amount', label: 'Investment Amount', width: 12, align: 'right', formatter: MONEY },
+  ];
+
+  return {
+    reportTitle: `Opening Stock Report As On ${fmtDateDDMMYYYY(cutoff)}`,
+    family: m.family,
+    member: m.member,
+    pan: m.pan,
+    headerRow1: columns.map((c) => ({ label: c.label, spanCols: 1 })),
+    headerRow2: columns.map((c) => ({ label: c.label, align: c.align })),
+    columns,
+    sections,
+    filenameStem: `opening-stock-${cutoff.toISOString().slice(0, 10)}`,
+  };
+}
+
+// ─── 33. Holding Period Return ────────────────────────────────────
+//
+// Current holdings with first-BUY date, qty, weighted avg cost, total
+// invested, market price + value, overall G/L, holding period (days
+// from first BUY → asOf).
+
+export async function buildHoldingPeriodReturnLayout(
+  userId: string,
+  asOf?: Date,
+): Promise<MprofitLayout> {
+  const m = await userMember(userId);
+  const cutoff = asOf ?? new Date();
+
+  const holdings = await prisma.holdingProjection.findMany({
+    where: { portfolio: { userId } },
+    orderBy: { assetName: 'asc' },
+  });
+
+  const txs = await prisma.transaction.findMany({
+    where: { portfolio: { userId }, tradeDate: { lte: cutoff } },
+    select: { assetKey: true, assetName: true, tradeDate: true, transactionType: true },
+    orderBy: { tradeDate: 'asc' },
+  });
+  const firstBuy = new Map<string, Date>();
+  for (const t of txs) {
+    if (!BUY_TXN_TYPES.has(t.transactionType)) continue;
+    const k = t.assetKey ?? `name:${t.assetName ?? ''}`;
+    if (!firstBuy.has(k)) firstBuy.set(k, t.tradeDate);
+  }
+
+  const rows: BodyRowLite[] = [];
+  let tQty = new Decimal(0);
+  let tAmt = new Decimal(0);
+  let tMv = new Decimal(0);
+  let tGl = new Decimal(0);
+  for (const h of holdings) {
+    if (new Decimal(h.quantity.toString()).isZero()) continue;
+    const qty = new Decimal(h.quantity.toString());
+    const cost = new Decimal(h.totalCost.toString());
+    const mv = h.currentValue != null ? new Decimal(h.currentValue.toString()) : new Decimal(0);
+    const gl = mv.minus(cost);
+    const buyDate = firstBuy.get(h.assetKey);
+    const days = buyDate ? Math.floor((cutoff.getTime() - buyDate.getTime()) / 86400000) : 0;
+    tQty = tQty.plus(qty);
+    tAmt = tAmt.plus(cost);
+    tMv = tMv.plus(mv);
+    tGl = tGl.plus(gl);
+    rows.push({
+      cells: {
+        secName: h.assetName ?? '—',
+        purDate: buyDate?.toISOString().slice(0, 10) ?? '',
+        qty: qty.toString(),
+        purRate: h.avgCostPrice.toString(),
+        amount: cost.toString(),
+        mktRate: h.currentPrice?.toString() ?? '',
+        mktValue: mv.toString(),
+        gl: gl.toString(),
+        days: String(days),
+      },
+    });
+  }
+
+  const columns: ColumnDef[] = [
+    { key: 'secName', label: 'Securities Name', width: 28, align: 'left' },
+    { key: 'purDate', label: 'Purch. Date', width: 8, align: 'center', formatter: DATE },
+    { key: 'qty', label: 'Qty', width: 6, align: 'right', formatter: (v) => indianMoney(v, 2) },
+    { key: 'purRate', label: 'Purch. Rate', width: 8, align: 'right', formatter: MONEY },
+    { key: 'amount', label: 'Amount', width: 9, align: 'right', formatter: MONEY },
+    { key: 'mktRate', label: 'Market Rate', width: 8, align: 'right', formatter: MONEY },
+    { key: 'mktValue', label: 'Market Value', width: 10, align: 'right', formatter: MONEY },
+    { key: 'gl', label: 'Overall Gain/Loss', width: 10, align: 'right', formatter: MONEY, signed: true },
+    { key: 'days', label: 'Holding period (In days)', width: 7, align: 'right' },
+  ];
+
+  return {
+    reportTitle: `Holding Period Return As On ${fmtDateDDMMYYYY(cutoff)}`,
+    family: m.family,
+    member: m.member,
+    pan: m.pan,
+    headerRow1: columns.map((c) => ({ label: c.label, spanCols: 1 })),
+    headerRow2: columns.map((c) => ({ label: c.label, align: c.align })),
+    columns,
+    sections: [{ groups: [{ rows }] }],
+    grandTotal: {
+      label: 'Grand Total',
+      values: {
+        qty: tQty.toString(),
+        amount: tAmt.toString(),
+        mktValue: tMv.toString(),
+        gl: tGl.toString(),
+      },
+    },
+    filenameStem: `holding-period-return-${cutoff.toISOString().slice(0, 10)}`,
+  };
+}
+
+// ─── 34. Script Ledger ────────────────────────────────────────────
+//
+// Per-script ledger: opening row (cost of starting position), buy rows,
+// closing values row, LT/ST/Speculation G/L rows from CapitalGain.
+
+export async function buildScriptLedgerLayout(
+  userId: string,
+  asOf?: Date,
+): Promise<MprofitLayout> {
+  const m = await userMember(userId);
+  const cutoff = asOf ?? new Date();
+
+  const txs = await prisma.transaction.findMany({
+    where: { portfolio: { userId }, tradeDate: { lte: cutoff } },
+    orderBy: { tradeDate: 'asc' },
+  });
+
+  const userPortfolios = await prisma.portfolio.findMany({
+    where: { userId },
+    select: { id: true },
+  });
+  const cgRows = await prisma.capitalGain.findMany({
+    where: {
+      portfolioId: { in: userPortfolios.map((p) => p.id) },
+      sellDate: { lte: cutoff },
+    },
+  });
+
+  const byScript = new Map<string, { name: string; txs: typeof txs; cgs: typeof cgRows }>();
+  for (const t of txs) {
+    const name = t.assetName ?? '—';
+    const k = `${name}::${t.assetKey ?? name}`;
+    const bucket = byScript.get(k) ?? { name, txs: [], cgs: [] };
+    bucket.txs.push(t);
+    byScript.set(k, bucket);
+  }
+  for (const c of cgRows) {
+    const name = c.assetName ?? '—';
+    for (const [k, v] of byScript.entries()) {
+      if (v.name === name) { v.cgs.push(c); break; }
+    }
+  }
+
+  const sections: ReportSection[] = [];
+  for (const { name, txs: stxs, cgs } of byScript.values()) {
+    let openQty = new Decimal(0);
+    let openCost = new Decimal(0);
+    const rows: BodyRowLite[] = [];
+    for (const t of stxs) {
+      const qty = new Decimal(t.quantity.toString());
+      const amt = new Decimal(t.netAmount.toString());
+      if (BUY_TXN_TYPES.has(t.transactionType)) {
+        openQty = openQty.plus(qty);
+        openCost = openCost.plus(amt);
+        rows.push({
+          cells: {
+            scriptName: '',
+            date: t.tradeDate.toISOString().slice(0, 10),
+            settlement: t.settlementDate?.toISOString().slice(0, 10) ?? '',
+            description: 'Bought',
+            debit: amt.toString(),
+            credit: '',
+            avgRate: t.price.toString(),
+            qty: qty.toString(),
+          },
+        });
+      } else if (SELL_TXN_TYPES.has(t.transactionType)) {
+        openQty = openQty.minus(qty);
+        rows.push({
+          cells: {
+            scriptName: '',
+            date: t.tradeDate.toISOString().slice(0, 10),
+            settlement: t.settlementDate?.toISOString().slice(0, 10) ?? '',
+            description: 'Sold',
+            debit: '',
+            credit: amt.toString(),
+            avgRate: t.price.toString(),
+            qty: qty.negated().toString(),
+          },
+        });
+      }
+    }
+    const closingValue = openCost;
+    const avgRate = openQty.greaterThan(0) ? closingValue.dividedBy(openQty) : new Decimal(0);
+    rows.push({
+      cells: {
+        scriptName: '',
+        date: '',
+        settlement: '',
+        description: 'Closing Values',
+        debit: '',
+        credit: closingValue.toString(),
+        avgRate: avgRate.toString(),
+        qty: openQty.toString(),
+      },
+    });
+    let lt = new Decimal(0);
+    let st = new Decimal(0);
+    let spec = new Decimal(0);
+    for (const c of cgs) {
+      const g = new Decimal(c.gainLoss.toString());
+      if (c.capitalGainType === 'LONG_TERM') lt = lt.plus(g);
+      else if (c.capitalGainType === 'SHORT_TERM') st = st.plus(g);
+      else if (c.capitalGainType === 'INTRADAY') spec = spec.plus(g);
+    }
+    rows.push({
+      cells: { description: 'LONG TERM  GAIN / LOSS', debit: lt.lessThan(0) ? lt.toString() : '', credit: lt.greaterThanOrEqualTo(0) ? lt.toString() : '', qty: '0' },
+    });
+    rows.push({
+      cells: { description: 'SHORT TERM  GAIN / LOSS', debit: st.lessThan(0) ? st.toString() : '', credit: st.greaterThanOrEqualTo(0) ? st.toString() : '', qty: '0' },
+    });
+    rows.push({
+      cells: { description: 'SPECULATION GAIN / LOSS', debit: spec.lessThan(0) ? spec.toString() : '', credit: spec.greaterThanOrEqualTo(0) ? spec.toString() : '', qty: '0' },
+    });
+
+    const totDebit = rows.reduce((s, r) => s.plus(new Decimal(String(r.cells['debit'] ?? '0') || '0')), new Decimal(0));
+    const totCredit = rows.reduce((s, r) => s.plus(new Decimal(String(r.cells['credit'] ?? '0') || '0')), new Decimal(0));
+
+    sections.push({
+      banner: name,
+      groups: [{
+        rows,
+        subtotal: {
+          label: `Total for ${name}`,
+          values: {
+            debit: totDebit.toString(),
+            credit: totCredit.toString(),
+            qty: openQty.toString(),
+          },
+        },
+      }],
+    });
+  }
+
+  const columns: ColumnDef[] = [
+    { key: 'scriptName', label: 'Script Name', width: 16, align: 'left' },
+    { key: 'date', label: 'Date', width: 8, align: 'center', formatter: DATE },
+    { key: 'settlement', label: 'Settlement', width: 8, align: 'center' },
+    { key: 'description', label: 'Description', width: 18, align: 'left' },
+    { key: 'debit', label: 'Debit (Rs.)', width: 11, align: 'right', formatter: MONEY, signed: true },
+    { key: 'credit', label: 'Credit (Rs.)', width: 11, align: 'right', formatter: MONEY, signed: true },
+    { key: 'avgRate', label: 'Avg. Rate', width: 8, align: 'right', formatter: MONEY },
+    { key: 'qty', label: 'Qty', width: 6, align: 'right', formatter: (v) => indianMoney(v, 2), signed: true },
+  ];
+
+  return {
+    reportTitle: `Script Account Ledger As On ${fmtDateDDMMYYYY(cutoff)}`,
+    family: m.family,
+    member: m.member,
+    pan: m.pan,
+    headerRow1: columns.map((c) => ({ label: c.label, spanCols: 1 })),
+    headerRow2: columns.map((c) => ({ label: c.label, align: c.align })),
+    columns,
+    sections,
+    filenameStem: `script-ledger-${cutoff.toISOString().slice(0, 10)}`,
+  };
+}
+
+// ─── 35. Chart of Accounts ────────────────────────────────────────
+//
+// Flat list. AC_Code, AC_Name, Opening Balance, Debit/Credit indicator
+// (default side per type), Group_Name (parent name or type label).
+
+export async function buildChartOfAccountsLayout(
+  userId: string,
+): Promise<MprofitLayout> {
+  const m = await userMember(userId);
+
+  const accounts = await prisma.account.findMany({
+    where: { userId },
+    orderBy: { code: 'asc' },
+  });
+  const byId = new Map(accounts.map((a) => [a.id, a]));
+
+  const rows: BodyRowLite[] = accounts.map((a) => {
+    const drCr = a.type === 'ASSET' || a.type === 'EXPENSE' ? 'D' : 'C';
+    const groupName = a.parentId ? (byId.get(a.parentId)?.name ?? a.type) : a.type;
+    return {
+      cells: {
+        code: a.code,
+        name: a.name,
+        opening: a.openingBalance.toString(),
+        drCr,
+        groupName,
+      },
+    };
+  });
+
+  const columns: ColumnDef[] = [
+    { key: 'code', label: 'AC_Code', width: 8, align: 'left' },
+    { key: 'name', label: 'AC_Name', width: 26, align: 'left' },
+    { key: 'opening', label: 'Opening_Balance', width: 12, align: 'right', formatter: MONEY },
+    { key: 'drCr', label: 'Debit/Credit', width: 7, align: 'center' },
+    { key: 'groupName', label: 'Group_Name', width: 18, align: 'left' },
+  ];
+
+  return {
+    reportTitle: `Chart of Accounts (Account Master)`,
+    family: m.family,
+    member: m.member,
+    pan: m.pan,
+    headerRow1: columns.map((c) => ({ label: c.label, spanCols: 1 })),
+    headerRow2: columns.map((c) => ({ label: c.label, align: c.align })),
+    columns,
+    sections: [{ groups: [{ rows }] }],
+    filenameStem: `chart-of-accounts-${todayDDMMYYYY()}`,
+  };
+}
+
+// ─── 36. Fund Flow Statement ──────────────────────────────────────
+//
+// Bank-account-grouped voucher entries. For each bank account in the
+// COA: list every voucher entry where the bank acc is on debit (=
+// receipt) or credit (= payment); group counterparties by their parent
+// account name. Closing Balance C/F row at the foot.
+
+export async function buildFundFlowLayout(
+  userId: string,
+  opts: { from?: string; to?: string },
+): Promise<MprofitLayout> {
+  const m = await userMember(userId);
+  const fromDate = opts.from ? new Date(opts.from) : null;
+  const toDate = opts.to ? new Date(opts.to) : new Date();
+
+  const accounts = await prisma.account.findMany({ where: { userId } });
+  const byId = new Map(accounts.map((a) => [a.id, a]));
+  const banks = accounts.filter((a) =>
+    a.type === 'ASSET' &&
+    (a.name.toUpperCase().includes('BANK') || (a.parentId ? byId.get(a.parentId)?.name === 'Bank Accounts' : false)),
+  );
+
+  const sections: ReportSection[] = [];
+  let totalPayment = new Decimal(0);
+  let totalReceipt = new Decimal(0);
+  for (const bank of banks) {
+    const entries = await prisma.voucherEntry.findMany({
+      where: {
+        OR: [{ debitAccountId: bank.id }, { creditAccountId: bank.id }],
+        voucher: {
+          userId,
+          ...(fromDate || toDate ? {
+            date: { ...(fromDate ? { gte: fromDate } : {}), ...(toDate ? { lte: toDate } : {}) },
+          } : {}),
+        },
+      },
+      include: { voucher: true },
+      orderBy: { voucher: { date: 'asc' } },
+    });
+    if (entries.length === 0) continue;
+
+    const byGroup = new Map<string, { code: string; name: string; payment: Decimal; receipt: Decimal }[]>();
+    for (const e of entries) {
+      const isBankDebit = e.debitAccountId === bank.id;
+      const otherAccId = isBankDebit ? e.creditAccountId : e.debitAccountId;
+      const other = byId.get(otherAccId);
+      if (!other) continue;
+      const amt = new Decimal(e.amount.toString());
+      const group = other.parentId ? (byId.get(other.parentId)?.name ?? other.type) : other.type;
+      const arr = byGroup.get(group) ?? [];
+      let entry = arr.find((x) => x.code === other.code);
+      if (!entry) {
+        entry = { code: other.code, name: other.name, payment: new Decimal(0), receipt: new Decimal(0) };
+        arr.push(entry);
+      }
+      if (isBankDebit) entry.receipt = entry.receipt.plus(amt);
+      else entry.payment = entry.payment.plus(amt);
+      byGroup.set(group, arr);
+    }
+
+    const groups: SubGroup[] = [];
+    let bankPay = new Decimal(0);
+    let bankRec = new Decimal(0);
+    for (const [groupName, list] of byGroup) {
+      const subPay = list.reduce((s, x) => s.plus(x.payment), new Decimal(0));
+      const subRec = list.reduce((s, x) => s.plus(x.receipt), new Decimal(0));
+      bankPay = bankPay.plus(subPay);
+      bankRec = bankRec.plus(subRec);
+      groups.push({
+        header: `Group Name : ${groupName}`,
+        rows: list.map((x) => ({
+          cells: {
+            code: x.code,
+            acName: x.name,
+            payment: x.payment.greaterThan(0) ? x.payment.toString() : '',
+            receipt: x.receipt.greaterThan(0) ? x.receipt.toString() : '',
+          },
+        })),
+        subtotal: {
+          label: 'Sub Total',
+          values: {
+            payment: subPay.toString(),
+            receipt: subRec.toString(),
+          },
+        },
+      });
+    }
+    totalPayment = totalPayment.plus(bankPay);
+    totalReceipt = totalReceipt.plus(bankRec);
+    sections.push({ banner: `Bank Name : ${bank.name.toUpperCase()}`, groups });
+  }
+
+  const columns: ColumnDef[] = [
+    { key: 'code', label: 'Code', width: 8, align: 'left' },
+    { key: 'acName', label: 'A/C Name', width: 36, align: 'left' },
+    { key: 'payment', label: 'Payment', width: 12, align: 'right', formatter: MONEY },
+    { key: 'receipt', label: 'Receipt', width: 12, align: 'right', formatter: MONEY },
+  ];
+
+  return {
+    reportTitle: `Fund Flow Report From ${opts.from ? fmtDateDDMMYYYY(opts.from) : '—'} To ${opts.to ? fmtDateDDMMYYYY(opts.to) : todayDDMMYYYY()}`,
+    family: m.family,
+    member: m.member,
+    pan: m.pan,
+    headerRow1: columns.map((c) => ({ label: c.label, spanCols: 1 })),
+    headerRow2: columns.map((c) => ({ label: c.label, align: c.align })),
+    columns,
+    sections,
+    grandTotal: {
+      label: 'Total of Payment & Receipt',
+      values: {
+        payment: totalPayment.toString(),
+        receipt: totalReceipt.toString(),
+      },
+    },
+    filenameStem: `fund-flow${opts.from ? `-${opts.from}` : ''}`,
+  };
+}
+
+// ─── 37. Broker Bill Register — Family/Member-wise ────────────────
+//
+// Family → Member → Broker → Bill (orderNo or settlement date) →
+// per-script row. Single-user v2 so family == member.
+
+export async function buildBrokerBillRegisterLayout(
+  userId: string,
+  opts: { from?: string; to?: string },
+): Promise<MprofitLayout> {
+  const m = await userMember(userId);
+  const where: Record<string, unknown> = { portfolio: { userId } };
+  if (opts.from || opts.to) {
+    where['tradeDate'] = {
+      ...(opts.from && { gte: new Date(opts.from) }),
+      ...(opts.to && { lte: new Date(opts.to) }),
+    };
+  }
+  const txs = await prisma.transaction.findMany({
+    where,
+    orderBy: [{ broker: 'asc' }, { tradeDate: 'asc' }],
+  });
+
+  const byBroker = new Map<string, typeof txs>();
+  for (const t of txs) {
+    const k = t.broker ?? 'SELF-BROKER A/C';
+    const arr = byBroker.get(k) ?? [];
+    arr.push(t);
+    byBroker.set(k, arr);
+  }
+
+  const sections: ReportSection[] = [];
+  let familyQty = new Decimal(0);
+  let familyBrok = new Decimal(0);
+  let familyNet = new Decimal(0);
+
+  // Single Family banner wraps every broker section.
+  const memberBanner: ReportSection = {
+    banner: `${(m.family ?? 'FAMILY').toUpperCase()} → ${(m.member ?? 'MEMBER').toUpperCase()}`,
+    groups: [],
+  };
+  sections.push(memberBanner);
+
+  for (const [broker, list] of byBroker) {
+    const byBill = new Map<string, typeof list>();
+    for (const t of list) {
+      const billKey = t.orderNo ?? (t.settlementDate ? `Sett ${t.settlementDate.toISOString().slice(0, 10)}` : t.tradeDate.toISOString().slice(0, 10));
+      const arr = byBill.get(billKey) ?? [];
+      arr.push(t);
+      byBill.set(billKey, arr);
+    }
+    const groups: SubGroup[] = [];
+    let brokerQty = new Decimal(0);
+    let brokerBrok = new Decimal(0);
+    let brokerNet = new Decimal(0);
+    for (const [billNo, blist] of byBill) {
+      const settNo = blist[0]?.tradeNo ?? blist[0]?.orderNo ?? billNo;
+      const dateStr = blist[0]?.tradeDate.toISOString().slice(0, 10) ?? '';
+      groups.push({
+        header: `Bill No : ${billNo}   ·   Sett. No : ${settNo}   ·   ${fmtDateDDMMYYYY(dateStr)}`,
+        rows: blist.map((t) => {
+          const qty = new Decimal(t.quantity.toString());
+          const isSell = SELL_TXN_TYPES.has(t.transactionType);
+          return {
+            cells: {
+              consultant: 'SELF CONSULTANT',
+              script: t.assetName ?? '—',
+              type: isSell ? 'Sold' : 'Bought',
+              qty: isSell ? qty.negated().toString() : qty.toString(),
+              holdingType: `${t.assetClass.replace(/_/g, ' ')} A/C`,
+              brokerage: t.brokerage.toString(),
+              rate: t.price.toString(),
+              net: t.netAmount.toString(),
+            },
+          };
+        }),
+      });
+      for (const t of blist) {
+        const q = new Decimal(t.quantity.toString());
+        const isSell = SELL_TXN_TYPES.has(t.transactionType);
+        brokerQty = brokerQty.plus(isSell ? q.negated() : q);
+        brokerBrok = brokerBrok.plus(t.brokerage.toString());
+        brokerNet = brokerNet.plus(t.netAmount.toString());
+      }
+    }
+    groups.push({
+      rows: [],
+      subtotal: {
+        label: `Broker : ${broker} TOTAL :`,
+        values: {
+          qty: brokerQty.toString(),
+          brokerage: brokerBrok.toString(),
+          net: brokerNet.toString(),
+        },
+      },
+    });
+    sections.push({ banner: broker, groups });
+    familyQty = familyQty.plus(brokerQty);
+    familyBrok = familyBrok.plus(brokerBrok);
+    familyNet = familyNet.plus(brokerNet);
+  }
+
+  const columns: ColumnDef[] = [
+    { key: 'consultant', label: 'Consultant Name', width: 14, align: 'left' },
+    { key: 'script', label: 'Script Name', width: 22, align: 'left' },
+    { key: 'type', label: 'Type', width: 6, align: 'left' },
+    { key: 'qty', label: 'Qty', width: 7, align: 'right', formatter: (v) => indianMoney(v, 2), signed: true },
+    { key: 'holdingType', label: 'Holding Type', width: 16, align: 'left' },
+    { key: 'brokerage', label: 'Brokerage', width: 8, align: 'right', formatter: MONEY },
+    { key: 'rate', label: 'Rate', width: 8, align: 'right', formatter: MONEY },
+    { key: 'net', label: 'Net Amount', width: 11, align: 'right', formatter: MONEY, signed: true },
+  ];
+
+  return {
+    reportTitle: `FamilyWise MemberWise Bill Register As On ${todayDDMMYYYY()}`,
+    family: m.family,
+    member: m.member,
+    pan: m.pan,
+    headerRow1: columns.map((c) => ({ label: c.label, spanCols: 1 })),
+    headerRow2: columns.map((c) => ({ label: c.label, align: c.align })),
+    columns,
+    sections,
+    grandTotal: {
+      label: `Family : ${(m.family ?? 'FAMILY').toUpperCase()} TOTAL :`,
+      values: {
+        qty: familyQty.toString(),
+        brokerage: familyBrok.toString(),
+        net: familyNet.toString(),
+      },
+    },
+    filenameStem: `broker-bill-register-fmwise${opts.from ? `-${opts.from}` : ''}`,
+  };
+}
+
+// ─── 38. Portfolio Snapshot ───────────────────────────────────────
+//
+// Flat holdings list: Asset Name, Quantity, Avg Pur Rate, Investment,
+// Curr Price, Overall Gain, Curr Value, % Holdings. Sorted by name.
+// % Holdings = currValue / totalCurrValue.
+
+export async function buildPortfolioSnapshotLayout(
+  userId: string,
+  asOf?: Date,
+): Promise<MprofitLayout> {
+  const m = await userMember(userId);
+  const cutoff = asOf ?? new Date();
+
+  const holdings = await prisma.holdingProjection.findMany({
+    where: { portfolio: { userId } },
+    orderBy: { assetName: 'asc' },
+  });
+
+  const totalValue = holdings.reduce((s, h) =>
+    s.plus(h.currentValue != null ? new Decimal(h.currentValue.toString()) : new Decimal(0)),
+    new Decimal(0),
+  );
+
+  let tQty = new Decimal(0);
+  let tInv = new Decimal(0);
+  let tGain = new Decimal(0);
+  let tVal = new Decimal(0);
+
+  const rows: BodyRowLite[] = [];
+  for (const h of holdings) {
+    if (new Decimal(h.quantity.toString()).isZero()) continue;
+    const qty = new Decimal(h.quantity.toString());
+    const inv = new Decimal(h.totalCost.toString());
+    const cv = h.currentValue != null ? new Decimal(h.currentValue.toString()) : new Decimal(0);
+    const gain = cv.minus(inv);
+    const pct = totalValue.greaterThan(0) ? cv.dividedBy(totalValue).times(100) : new Decimal(0);
+    tQty = tQty.plus(qty);
+    tInv = tInv.plus(inv);
+    tGain = tGain.plus(gain);
+    tVal = tVal.plus(cv);
+    rows.push({
+      cells: {
+        assetName: h.assetName ?? '—',
+        qty: qty.toString(),
+        avgRate: h.avgCostPrice.toString(),
+        investment: inv.toString(),
+        currPrice: h.currentPrice?.toString() ?? '',
+        gain: gain.toString(),
+        currValue: cv.toString(),
+        pct: pct.toFixed(2) + '%',
+      },
+    });
+  }
+
+  const columns: ColumnDef[] = [
+    { key: 'assetName', label: 'Asset Name', width: 30, align: 'left' },
+    { key: 'qty', label: 'Quantity', width: 8, align: 'right', formatter: (v) => indianMoney(v, 3) },
+    { key: 'avgRate', label: 'Avg. Pur Rate', width: 9, align: 'right', formatter: MONEY },
+    { key: 'investment', label: 'Investment', width: 11, align: 'right', formatter: MONEY },
+    { key: 'currPrice', label: 'Curr. Price', width: 8, align: 'right', formatter: MONEY },
+    { key: 'gain', label: 'Overall Gain', width: 10, align: 'right', formatter: MONEY, signed: true },
+    { key: 'currValue', label: 'Curr.Value', width: 11, align: 'right', formatter: MONEY },
+    { key: 'pct', label: '% Holdings', width: 7, align: 'right' },
+  ];
+
+  return {
+    reportTitle: `Portfolio Snapshot As On ${fmtDateDDMMYYYY(cutoff)}`,
+    family: m.family,
+    member: m.member,
+    pan: m.pan,
+    headerRow1: columns.map((c) => ({ label: c.label, spanCols: 1 })),
+    headerRow2: columns.map((c) => ({ label: c.label, align: c.align })),
+    columns,
+    sections: [{ groups: [{ rows }] }],
+    grandTotal: {
+      label: 'Total :',
+      values: {
+        qty: tQty.toString(),
+        investment: tInv.toString(),
+        gain: tGain.toString(),
+        currValue: tVal.toString(),
+        pct: '100.00%',
+      },
+    },
+    filenameStem: `portfolio-snapshot-${cutoff.toISOString().slice(0, 10)}`,
+  };
+}
+
+// ─── 39. Day Book ─────────────────────────────────────────────────
+//
+// All vouchers for one date. Each voucher entry → 2 rows (debit then
+// credit) to mirror the desktop layout. Investment Type = voucher type
+// or "Equity"/"Cash"/"Bank" inferred from account type.
+
+export async function buildDayBookLayout(
+  userId: string,
+  opts: { date?: string },
+): Promise<MprofitLayout> {
+  const m = await userMember(userId);
+  const day = opts.date ? new Date(opts.date) : new Date();
+  day.setUTCHours(0, 0, 0, 0);
+  const next = new Date(day);
+  next.setUTCDate(next.getUTCDate() + 1);
+
+  const entries = await prisma.voucherEntry.findMany({
+    where: {
+      voucher: { userId, date: { gte: day, lt: next } },
+    },
+    include: {
+      voucher: true,
+      debitAccount: true,
+      creditAccount: true,
+    },
+    orderBy: [{ voucher: { date: 'asc' } }],
+  });
+
+  const rows: BodyRowLite[] = [];
+  let totDebit = new Decimal(0);
+  let totCredit = new Decimal(0);
+  for (const e of entries) {
+    const amt = new Decimal(e.amount.toString());
+    const dateStr = e.voucher.date.toISOString().slice(0, 10);
+    const invType = inferInvestmentType(e.voucher.type, e.debitAccount.type, e.creditAccount.type);
+    const billNo = e.voucher.voucherNo;
+    const narr = e.narration ?? e.voucher.narration ?? '';
+    rows.push({
+      cells: {
+        invType,
+        billNo,
+        date: dateStr,
+        account: e.debitAccount.name,
+        details: narr,
+        debit: amt.toString(),
+        credit: '',
+      },
+    });
+    rows.push({
+      cells: {
+        invType,
+        billNo,
+        date: dateStr,
+        account: e.creditAccount.name,
+        details: '',
+        debit: '',
+        credit: amt.toString(),
+      },
+    });
+    totDebit = totDebit.plus(amt);
+    totCredit = totCredit.plus(amt);
+  }
+
+  const columns: ColumnDef[] = [
+    { key: 'invType', label: 'Investment Type', width: 9, align: 'left' },
+    { key: 'billNo', label: 'Bill / Voucher', width: 10, align: 'left' },
+    { key: 'date', label: 'Date', width: 8, align: 'center', formatter: DATE },
+    { key: 'account', label: 'Account', width: 22, align: 'left' },
+    { key: 'details', label: 'Transaction Details', width: 22, align: 'left' },
+    { key: 'debit', label: 'Debit', width: 11, align: 'right', formatter: MONEY },
+    { key: 'credit', label: 'Credit', width: 11, align: 'right', formatter: MONEY },
+  ];
+
+  return {
+    reportTitle: `Day Book Report Dated : ${fmtDateDDMMYYYY(day)}`,
+    family: m.family,
+    member: m.member,
+    pan: m.pan,
+    headerRow1: columns.map((c) => ({ label: c.label, spanCols: 1 })),
+    headerRow2: columns.map((c) => ({ label: c.label, align: c.align })),
+    columns,
+    sections: [{ groups: [{ rows }] }],
+    grandTotal: {
+      label: 'Grand Total -',
+      values: {
+        debit: totDebit.toString(),
+        credit: totCredit.toString(),
+      },
+    },
+    filenameStem: `day-book-${day.toISOString().slice(0, 10)}`,
+  };
+}
+
+function inferInvestmentType(
+  vType: string,
+  drType: string,
+  crType: string,
+): string {
+  if (vType === 'PAYMENT' || vType === 'RECEIPT') return 'BANK';
+  if (vType === 'CONTRA') return 'CASH';
+  if (vType === 'PURCHASE' || vType === 'SALES') return 'Equity';
+  if (drType === 'INCOME' || crType === 'INCOME') return 'Journal Entry';
+  return vType.charAt(0) + vType.slice(1).toLowerCase();
+}
+
+// ─── 40. Dividend Report ──────────────────────────────────────────
+//
+// DIVIDEND_PAYOUT transactions, sorted by date with per-script TOTAL
+// rows. Closing Stock = qty held on the trade date (approx via
+// HoldingProjection). Rate = amount / closing stock (per-share div).
+
+export async function buildDividendReportLayout(
+  userId: string,
+  opts: { fy?: string; from?: string; to?: string },
+): Promise<MprofitLayout> {
+  const m = await userMember(userId);
+
+  const where: Record<string, unknown> = {
+    portfolio: { userId },
+    transactionType: 'DIVIDEND_PAYOUT',
+  };
+  if (opts.from || opts.to) {
+    where['tradeDate'] = {
+      ...(opts.from && { gte: new Date(opts.from) }),
+      ...(opts.to && { lte: new Date(opts.to) }),
+    };
+  }
+  const txs = await prisma.transaction.findMany({
+    where,
+    orderBy: [{ tradeDate: 'asc' }, { assetName: 'asc' }],
+  });
+
+  const holdings = await prisma.holdingProjection.findMany({
+    where: { portfolio: { userId } },
+  });
+  const closingQtyByKey = new Map<string, Decimal>();
+  for (const h of holdings) {
+    closingQtyByKey.set(h.assetKey, new Decimal(h.quantity.toString()));
+  }
+
+  const byDate = new Map<string, typeof txs>();
+  for (const t of txs) {
+    const k = t.tradeDate.toISOString().slice(0, 10);
+    const arr = byDate.get(k) ?? [];
+    arr.push(t);
+    byDate.set(k, arr);
+  }
+
+  const sections: ReportSection[] = [];
+  let grandStock = new Decimal(0);
+  let grandAmt = new Decimal(0);
+  for (const [date, list] of byDate) {
+    const rows: BodyRowLite[] = [];
+    let stockSum = new Decimal(0);
+    let amtSum = new Decimal(0);
+    for (const t of list) {
+      const closing = closingQtyByKey.get(t.assetKey ?? `name:${t.assetName ?? ''}`) ?? new Decimal(0);
+      const amt = new Decimal(t.netAmount.toString());
+      const rate = closing.greaterThan(0) ? amt.dividedBy(closing) : new Decimal(0);
+      stockSum = stockSum.plus(closing);
+      amtSum = amtSum.plus(amt);
+      rows.push({
+        cells: {
+          company: t.assetName ?? '—',
+          member: m.member,
+          exDate: date,
+          recoDate: t.settlementDate?.toISOString().slice(0, 10) ?? '',
+          rate: rate.toString(),
+          closing: closing.toString(),
+          amount: amt.toString(),
+          narration: t.narration ?? `Dividend Rs. ${rate.toFixed(4)}`,
+        },
+      });
+    }
+    sections.push({
+      groups: [{
+        rows,
+        subtotal: {
+          label: 'TOTAL',
+          values: {
+            closing: stockSum.toString(),
+            amount: amtSum.toString(),
+          },
+        },
+      }],
+    });
+    grandStock = grandStock.plus(stockSum);
+    grandAmt = grandAmt.plus(amtSum);
+  }
+
+  const columns: ColumnDef[] = [
+    { key: 'company', label: 'Name of Company', width: 22, align: 'left' },
+    { key: 'member', label: 'Member Name', width: 12, align: 'left' },
+    { key: 'exDate', label: 'EX Date', width: 9, align: 'center', formatter: DATE },
+    { key: 'recoDate', label: 'Reco Date', width: 9, align: 'center', formatter: DATE },
+    { key: 'rate', label: 'Rate', width: 7, align: 'right', formatter: MONEY },
+    { key: 'closing', label: 'Closing Stock', width: 9, align: 'right', formatter: (v) => indianMoney(v, 2) },
+    { key: 'amount', label: 'Amount', width: 10, align: 'right', formatter: MONEY },
+    { key: 'narration', label: 'Narration', width: 24, align: 'left' },
+  ];
+
+  return {
+    reportTitle: `Dividend Details of Stock - Date Wise${opts.fy ? ` (FY ${opts.fy})` : ''}`,
+    family: m.family,
+    member: m.member,
+    pan: m.pan,
+    headerRow1: columns.map((c) => ({ label: c.label, spanCols: 1 })),
+    headerRow2: columns.map((c) => ({ label: c.label, align: c.align })),
+    columns,
+    sections,
+    grandTotal: {
+      label: 'Grand Total',
+      values: {
+        closing: grandStock.toString(),
+        amount: grandAmt.toString(),
+      },
+    },
+    filenameStem: `dividend-report${opts.fy ? `-${opts.fy}` : ''}`,
+  };
+}
+
+// ─── 41. Bank Reconciliation ──────────────────────────────────────
+//
+// Per bank account: matched entries (voucherEntry.transactionId set =
+// has source transaction) vs unmatched (manual / orphaned). Cols:
+// Date, Voucher No, Narration, Debit, Credit, Status.
+
+export async function buildBankReconciliationLayout(
+  userId: string,
+  opts: { from?: string; to?: string },
+): Promise<MprofitLayout> {
+  const m = await userMember(userId);
+  const fromDate = opts.from ? new Date(opts.from) : null;
+  const toDate = opts.to ? new Date(opts.to) : new Date();
+
+  const accounts = await prisma.account.findMany({ where: { userId } });
+  const byId = new Map(accounts.map((a) => [a.id, a]));
+  const banks = accounts.filter((a) =>
+    a.type === 'ASSET' &&
+    (a.name.toUpperCase().includes('BANK') || (a.parentId ? byId.get(a.parentId)?.name === 'Bank Accounts' : false)),
+  );
+
+  const sections: ReportSection[] = [];
+  let totMatchedDr = new Decimal(0);
+  let totMatchedCr = new Decimal(0);
+  let totUnmatchedDr = new Decimal(0);
+  let totUnmatchedCr = new Decimal(0);
+  for (const bank of banks) {
+    const entries = await prisma.voucherEntry.findMany({
+      where: {
+        OR: [{ debitAccountId: bank.id }, { creditAccountId: bank.id }],
+        voucher: {
+          userId,
+          ...(fromDate || toDate ? {
+            date: { ...(fromDate ? { gte: fromDate } : {}), ...(toDate ? { lte: toDate } : {}) },
+          } : {}),
+        },
+      },
+      include: { voucher: true },
+      orderBy: { voucher: { date: 'asc' } },
+    });
+    if (entries.length === 0) continue;
+    const matched: BodyRowLite[] = [];
+    const unmatched: BodyRowLite[] = [];
+    let mDr = new Decimal(0);
+    let mCr = new Decimal(0);
+    let uDr = new Decimal(0);
+    let uCr = new Decimal(0);
+    for (const e of entries) {
+      const amt = new Decimal(e.amount.toString());
+      const isDebit = e.debitAccountId === bank.id;
+      const row: BodyRowLite = {
+        cells: {
+          date: e.voucher.date.toISOString().slice(0, 10),
+          voucherNo: e.voucher.voucherNo,
+          narration: e.narration ?? e.voucher.narration ?? '',
+          debit: isDebit ? amt.toString() : '',
+          credit: isDebit ? '' : amt.toString(),
+          status: e.transactionId ? 'Matched' : 'Unmatched',
+        },
+      };
+      if (e.transactionId) {
+        matched.push(row);
+        if (isDebit) mDr = mDr.plus(amt); else mCr = mCr.plus(amt);
+      } else {
+        unmatched.push(row);
+        if (isDebit) uDr = uDr.plus(amt); else uCr = uCr.plus(amt);
+      }
+    }
+    const groups: SubGroup[] = [];
+    if (matched.length > 0) {
+      groups.push({
+        header: 'Matched (linked to source transaction)',
+        rows: matched,
+        subtotal: { label: 'Matched Total', values: { debit: mDr.toString(), credit: mCr.toString() } },
+      });
+    }
+    if (unmatched.length > 0) {
+      groups.push({
+        header: 'Unmatched (manual / orphan)',
+        rows: unmatched,
+        subtotal: { label: 'Unmatched Total', values: { debit: uDr.toString(), credit: uCr.toString() } },
+      });
+    }
+    sections.push({ banner: bank.name, groups });
+    totMatchedDr = totMatchedDr.plus(mDr);
+    totMatchedCr = totMatchedCr.plus(mCr);
+    totUnmatchedDr = totUnmatchedDr.plus(uDr);
+    totUnmatchedCr = totUnmatchedCr.plus(uCr);
+  }
+
+  const columns: ColumnDef[] = [
+    { key: 'date', label: 'Date', width: 9, align: 'center', formatter: DATE },
+    { key: 'voucherNo', label: 'Voucher No', width: 10, align: 'left' },
+    { key: 'narration', label: 'Narration', width: 36, align: 'left' },
+    { key: 'debit', label: 'Debit', width: 11, align: 'right', formatter: MONEY },
+    { key: 'credit', label: 'Credit', width: 11, align: 'right', formatter: MONEY },
+    { key: 'status', label: 'Status', width: 9, align: 'center' },
+  ];
+
+  return {
+    reportTitle: `Bank Reconciliation${opts.from ? ` From ${fmtDateDDMMYYYY(opts.from)}` : ''}${opts.to ? ` To ${fmtDateDDMMYYYY(opts.to)}` : ''}`,
+    family: m.family,
+    member: m.member,
+    pan: m.pan,
+    headerRow1: columns.map((c) => ({ label: c.label, spanCols: 1 })),
+    headerRow2: columns.map((c) => ({ label: c.label, align: c.align })),
+    columns,
+    sections,
+    grandTotal: {
+      label: 'Grand Total',
+      values: {
+        debit: totMatchedDr.plus(totUnmatchedDr).toString(),
+        credit: totMatchedCr.plus(totUnmatchedCr).toString(),
+      },
+    },
+    filenameStem: `bank-reconciliation${opts.from ? `-${opts.from}` : ''}`,
+  };
+}
