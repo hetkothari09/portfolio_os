@@ -762,6 +762,16 @@ import {
   buildStt10DbLayout,
   buildCapitalGainsFifoLayout,
   buildAdvanceTaxSummaryLayout,
+  buildOpeningStockLayout,
+  buildHoldingPeriodReturnLayout,
+  buildScriptLedgerLayout,
+  buildChartOfAccountsLayout,
+  buildFundFlowLayout,
+  buildBrokerBillRegisterLayout,
+  buildPortfolioSnapshotLayout,
+  buildDayBookLayout,
+  buildDividendReportLayout,
+  buildBankReconciliationLayout,
 } from '../services/reportBuilder/special/index.js';
 import {
   streamMprofitPdf,
@@ -995,4 +1005,80 @@ export async function downloadAdvanceTaxSummary(req: Request, res: Response) {
   const userId = req.user!.id;
   const fy = (req.query.fy as string | undefined)?.trim() || undefined;
   await emitMprofit(req, res, await buildAdvanceTaxSummaryLayout(userId, { fy }));
+}
+
+export async function downloadOpeningStock(req: Request, res: Response) {
+  const userId = req.user!.id;
+  const asOfStr = (req.query.asOf as string | undefined)?.trim();
+  const asOf = asOfStr ? new Date(asOfStr) : undefined;
+  if (asOf && Number.isNaN(asOf.getTime())) throw new BadRequestError('Invalid `asOf` date');
+  await emitMprofit(req, res, await buildOpeningStockLayout(userId, asOf));
+}
+
+export async function downloadHoldingPeriodReturn(req: Request, res: Response) {
+  const userId = req.user!.id;
+  const asOfStr = (req.query.asOf as string | undefined)?.trim();
+  const asOf = asOfStr ? new Date(asOfStr) : undefined;
+  if (asOf && Number.isNaN(asOf.getTime())) throw new BadRequestError('Invalid `asOf` date');
+  await emitMprofit(req, res, await buildHoldingPeriodReturnLayout(userId, asOf));
+}
+
+export async function downloadScriptLedger(req: Request, res: Response) {
+  const userId = req.user!.id;
+  const asOfStr = (req.query.asOf as string | undefined)?.trim();
+  const asOf = asOfStr ? new Date(asOfStr) : undefined;
+  if (asOf && Number.isNaN(asOf.getTime())) throw new BadRequestError('Invalid `asOf` date');
+  await emitMprofit(req, res, await buildScriptLedgerLayout(userId, asOf));
+}
+
+export async function downloadChartOfAccounts(req: Request, res: Response) {
+  const userId = req.user!.id;
+  await ensureAccountingProjected(userId);
+  await emitMprofit(req, res, await buildChartOfAccountsLayout(userId));
+}
+
+export async function downloadFundFlow(req: Request, res: Response) {
+  const userId = req.user!.id;
+  const from = (req.query.from as string | undefined)?.trim() || undefined;
+  const to = (req.query.to as string | undefined)?.trim() || undefined;
+  await ensureAccountingProjected(userId);
+  await emitMprofit(req, res, await buildFundFlowLayout(userId, { from, to }));
+}
+
+export async function downloadBrokerBillRegister(req: Request, res: Response) {
+  const userId = req.user!.id;
+  const from = (req.query.from as string | undefined)?.trim() || undefined;
+  const to = (req.query.to as string | undefined)?.trim() || undefined;
+  await emitMprofit(req, res, await buildBrokerBillRegisterLayout(userId, { from, to }));
+}
+
+export async function downloadPortfolioSnapshot(req: Request, res: Response) {
+  const userId = req.user!.id;
+  const asOfStr = (req.query.asOf as string | undefined)?.trim();
+  const asOf = asOfStr ? new Date(asOfStr) : undefined;
+  if (asOf && Number.isNaN(asOf.getTime())) throw new BadRequestError('Invalid `asOf` date');
+  await emitMprofit(req, res, await buildPortfolioSnapshotLayout(userId, asOf));
+}
+
+export async function downloadDayBook(req: Request, res: Response) {
+  const userId = req.user!.id;
+  const date = (req.query.asOf as string | undefined)?.trim() || (req.query.date as string | undefined)?.trim() || undefined;
+  await ensureAccountingProjected(userId);
+  await emitMprofit(req, res, await buildDayBookLayout(userId, { date }));
+}
+
+export async function downloadDividendReport(req: Request, res: Response) {
+  const userId = req.user!.id;
+  const fy = (req.query.fy as string | undefined)?.trim() || undefined;
+  const from = (req.query.from as string | undefined)?.trim() || undefined;
+  const to = (req.query.to as string | undefined)?.trim() || undefined;
+  await emitMprofit(req, res, await buildDividendReportLayout(userId, { fy, from, to }));
+}
+
+export async function downloadBankReconciliation(req: Request, res: Response) {
+  const userId = req.user!.id;
+  const from = (req.query.from as string | undefined)?.trim() || undefined;
+  const to = (req.query.to as string | undefined)?.trim() || undefined;
+  await ensureAccountingProjected(userId);
+  await emitMprofit(req, res, await buildBankReconciliationLayout(userId, { from, to }));
 }

@@ -54,6 +54,16 @@ import {
   downloadStt10Db,
   downloadCapitalGainsFifo,
   downloadAdvanceTaxSummary,
+  downloadOpeningStock,
+  downloadHoldingPeriodReturn,
+  downloadScriptLedger,
+  downloadChartOfAccounts,
+  downloadFundFlow,
+  downloadBrokerBillRegister,
+  downloadPortfolioSnapshot,
+  downloadDayBook,
+  downloadDividendReport,
+  downloadBankReconciliation,
 } from '../controllers/reports.controller.js';
 
 export const reportsRouter = Router();
@@ -117,3 +127,13 @@ reportsRouter.get('/download/tax-pnl', asyncHandler(downloadTaxPnL));
 reportsRouter.get('/download/stt-10db', asyncHandler(downloadStt10Db));
 reportsRouter.get('/download/capital-gains-fifo', asyncHandler(downloadCapitalGainsFifo));
 reportsRouter.get('/download/advance-tax-summary', asyncHandler(downloadAdvanceTaxSummary));
+reportsRouter.get('/download/opening-stock', asyncHandler(downloadOpeningStock));
+reportsRouter.get('/download/holding-period-return', asyncHandler(downloadHoldingPeriodReturn));
+reportsRouter.get('/download/script-ledger', asyncHandler(downloadScriptLedger));
+reportsRouter.get('/download/chart-of-accounts', asyncHandler(downloadChartOfAccounts));
+reportsRouter.get('/download/fund-flow', asyncHandler(downloadFundFlow));
+reportsRouter.get('/download/broker-bill-register-fmwise', asyncHandler(downloadBrokerBillRegister));
+reportsRouter.get('/download/portfolio-snapshot', asyncHandler(downloadPortfolioSnapshot));
+reportsRouter.get('/download/day-book', asyncHandler(downloadDayBook));
+reportsRouter.get('/download/dividend-report', asyncHandler(downloadDividendReport));
+reportsRouter.get('/download/bank-reconciliation', asyncHandler(downloadBankReconciliation));
