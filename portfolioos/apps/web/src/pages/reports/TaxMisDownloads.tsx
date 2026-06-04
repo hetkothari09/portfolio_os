@@ -171,6 +171,51 @@ const REPORTS: ReportDef[] = [
     params: ['from', 'to'],
     filename: 'cash-flow',
   },
+  {
+    key: 'combined-realised-unrealised',
+    title: 'Combined Realised / Unrealised G/L (Equity)',
+    description:
+      'Per-lot equity report: Buy + Sell + Closing + Intraday + Realized (ST/LT) + Unrealised + holding days + grandfathering rate / cost / computed G/L for pre-31-Jan-2018 lots.',
+    endpoint: 'combined-realised-unrealised',
+    params: ['asOf'],
+    filename: 'combined-realised-unrealised',
+  },
+  {
+    key: 'family-wise-holdings',
+    title: 'Family-wise Holdings',
+    description:
+      'Portfolio (member) → asset class → script with average qty / rate / value. Subtotal per asset class and per member, grand total at the foot.',
+    endpoint: 'family-wise-holdings',
+    params: ['asOf'],
+    filename: 'family-wise-holdings',
+  },
+  {
+    key: 'scriptwise-qtywise',
+    title: 'Scriptwise — Qtywise',
+    description:
+      'For a period: Opening + Purchase + Sale + Net Position per script. Average-method exit; net qty / amount reflects closing stock value.',
+    endpoint: 'scriptwise-qtywise',
+    params: ['from', 'to'],
+    filename: 'scriptwise-qtywise',
+  },
+  {
+    key: 'contract-note-charges',
+    title: 'Contract Note Charges (Brokerage Statement)',
+    description:
+      'Broker-wise brokerage + STT + CGST + SGST + SEBI fees + stamp duty + transaction charges. Total expenses with and without brokerage.',
+    endpoint: 'contract-note-charges',
+    params: ['asOf'],
+    filename: 'contract-note-charges',
+  },
+  {
+    key: 'mf-m2m',
+    title: 'M2M Report — Mutual Funds',
+    description:
+      'Per scheme: closing date, avg qty / rate, pur value, MF Bhav NAV, valuation, unrealised G/L, no of days, Actual / Monthly / Annual ROI, CAGR.',
+    endpoint: 'mf-m2m',
+    params: ['asOf'],
+    filename: 'mf-m2m',
+  },
 ];
 
 function currentFy(): string {

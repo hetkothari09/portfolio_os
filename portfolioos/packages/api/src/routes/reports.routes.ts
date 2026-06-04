@@ -39,6 +39,11 @@ import {
   downloadPerformance,
   downloadTaxSummary,
   downloadCashFlow,
+  downloadCombinedRealisedUnrealised,
+  downloadFamilyWiseHoldings,
+  downloadScriptwiseQtywise,
+  downloadContractNoteCharges,
+  downloadMfM2M,
 } from '../controllers/reports.controller.js';
 
 export const reportsRouter = Router();
@@ -87,3 +92,8 @@ reportsRouter.get('/download/holdings-summary', asyncHandler(downloadHoldingsSum
 reportsRouter.get('/download/performance', asyncHandler(downloadPerformance));
 reportsRouter.get('/download/tax-summary', asyncHandler(downloadTaxSummary));
 reportsRouter.get('/download/cash-flow', asyncHandler(downloadCashFlow));
+reportsRouter.get('/download/combined-realised-unrealised', asyncHandler(downloadCombinedRealisedUnrealised));
+reportsRouter.get('/download/family-wise-holdings', asyncHandler(downloadFamilyWiseHoldings));
+reportsRouter.get('/download/scriptwise-qtywise', asyncHandler(downloadScriptwiseQtywise));
+reportsRouter.get('/download/contract-note-charges', asyncHandler(downloadContractNoteCharges));
+reportsRouter.get('/download/mf-m2m', asyncHandler(downloadMfM2M));

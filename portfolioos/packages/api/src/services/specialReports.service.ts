@@ -236,7 +236,7 @@ export interface DematHoldingReport {
   grandTotal: string;
 }
 
-const BUY_TXN_TYPES = new Set<string>([
+export const BUY_TXN_TYPES = new Set<string>([
   'BUY',
   'SIP',
   'SWITCH_IN',
@@ -248,7 +248,7 @@ const BUY_TXN_TYPES = new Set<string>([
   'OPENING_BALANCE',
   'DEPOSIT',
 ]);
-const SELL_TXN_TYPES = new Set<string>([
+export const SELL_TXN_TYPES = new Set<string>([
   'SELL',
   'SWITCH_OUT',
   'REDEMPTION',
@@ -445,7 +445,7 @@ interface M2MSummary {
 
 // FIFO residual lots — same algorithm as capital-gains service but we
 // keep the open part instead of the matched part.
-function residualLots(txs: {
+export function residualLots(txs: {
   tradeDate: Date;
   quantity: Decimal;
   price: Decimal;

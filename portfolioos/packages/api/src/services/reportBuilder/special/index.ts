@@ -23,6 +23,11 @@ import {
   grandfatheringReport,
   dematHoldingReport,
   m2mReport,
+  fetchFmvOn31Jan2018,
+  adjustGainForGrandfathering,
+  residualLots,
+  BUY_TXN_TYPES,
+  SELL_TXN_TYPES,
 } from '../../specialReports.service.js';
 import {
   intradayReport,
@@ -1408,3 +1413,932 @@ export async function buildCashFlowStatementLayout(
 
 // Helper alias to avoid widening BodyRow's `cells` type.
 type BodyRowLite = { cells: Record<string, unknown> };
+
+// ─── 17. Combined Realised / Unrealised G/L (Equity) ─────────────
+//
+// Matches the mProfit screenshot: every BUY lot appears as one row.
+// If the lot has been FIFO-matched against a SELL, the sell columns
+// + Realized G/L (ST or LT) populate. If the lot still has residual
+// quantity at as-of-date, the Closing + Mkt rate + Unrealised cells
+// populate. Pre-31-Jan-2018 buys get the FMV grandfathering treatment
+// in the dedicated GF columns.
+
+export async function buildCombinedRealisedUnrealisedLayout(
+  userId: string,
+  asOf?: Date,
+): Promise<MprofitLayout> {
+  const m = await userMember(userId);
+  const cutoff = asOf ?? new Date();
+
+  // ── Realised half: pull all capital-gain matches for equity / ETF ──
+  const { rows: cgRows } = await computeUserCapitalGains(userId);
+  const equityCg = cgRows.filter(
+    (r) => (r.assetClass === 'EQUITY' || r.assetClass === 'ETF')
+      && r.sellDate.getTime() <= cutoff.getTime(),
+  );
+
+  // ── Unrealised half: residual lots from raw txs ─────────────
+  const allTxs = await prisma.transaction.findMany({
+    where: {
+      portfolio: { userId },
+      assetClass: { in: ['EQUITY', 'ETF'] },
+      tradeDate: { lte: cutoff },
+    },
+    orderBy: { tradeDate: 'asc' },
+  });
+  const lots = residualLots(
+    allTxs.map((t) => {
+      const q = new Decimal(t.quantity.toString());
+      const net = new Decimal(t.netAmount.toString());
+      const effective = q.isZero() ? new Decimal(t.price.toString()) : net.dividedBy(q);
+      return {
+        tradeDate: t.tradeDate,
+        quantity: q,
+        price: effective,
+        assetKey: t.assetKey ?? `name:${t.assetName ?? ''}`,
+        assetName: t.assetName,
+        isin: t.isin,
+        transactionType: t.transactionType,
+      };
+    }),
+  );
+
+  // Latest market price per stockId (via assetKey lookup) ----------
+  const stockIds = Array.from(new Set(
+    lots.filter((l) => l.assetKey.startsWith('stock:')).map((l) => l.assetKey.slice(6)),
+  ));
+  const priceByStock = new Map<string, Decimal>();
+  if (stockIds.length > 0) {
+    const latest = await prisma.stockPrice.findMany({
+      where: { stockId: { in: stockIds }, date: { lte: cutoff } },
+      orderBy: { date: 'desc' },
+    });
+    for (const p of latest) {
+      if (!priceByStock.has(p.stockId)) {
+        priceByStock.set(p.stockId, new Decimal(p.close.toString()));
+      }
+    }
+  }
+  const mktForKey = (key: string): Decimal | null => {
+    if (key.startsWith('stock:')) return priceByStock.get(key.slice(6)) ?? null;
+    return null;
+  };
+
+  // FMV table for grandfathering -----------------------------------
+  const allIsins = Array.from(new Set([
+    ...equityCg.map((r) => r.isin),
+    ...lots.map((l) => l.isin),
+  ].filter((i): i is string => !!i)));
+  const fmvByIsin = await fetchFmvOn31Jan2018(allIsins);
+
+  const GF_CUTOFF = new Date('2018-01-31T23:59:59.999Z');
+
+  // Row shape -----------------------------------------------------
+  type Row = {
+    scriptName: string;
+    scriptCode: string;
+    buyDate: string;
+    buyQty: string;
+    buyRate: string;
+    buyAmount: string;
+    sellDate: string;
+    sellQty: string;
+    sellRate: string;
+    sellAmount: string;
+    closingQty: string;
+    mktRate: string;
+    intradayGL: string;
+    realizedST: string;
+    realizedLT: string;
+    unrealisedGL: string;
+    holdingDays: string;
+    gfRate: string;
+    gfCost: string;
+    gfComputedGL: string;
+  };
+
+  const byScript = new Map<string, Row[]>();
+  const addRow = (name: string, r: Row) => {
+    const arr = byScript.get(name) ?? [];
+    arr.push(r);
+    byScript.set(name, arr);
+  };
+
+  // Realised rows -------------------------------------------------
+  for (const r of equityCg) {
+    const fmv = r.isin ? fmvByIsin.get(r.isin) ?? null : null;
+    const adjGain = adjustGainForGrandfathering(
+      r.buyDate,
+      r.quantity,
+      r.buyAmount,
+      r.sellAmount,
+      r.gainLoss,
+      fmv,
+    );
+    const isGf = r.buyDate.getTime() <= GF_CUTOFF.getTime() && fmv != null;
+    const isIntraday = r.capitalGainType === 'INTRADAY';
+    const isST = r.capitalGainType === 'SHORT_TERM';
+    const isLT = r.capitalGainType === 'LONG_TERM';
+    const holdingDays = Math.round(
+      (r.sellDate.getTime() - r.buyDate.getTime()) / 86_400_000,
+    );
+    addRow(r.assetName, {
+      scriptName: r.assetName,
+      scriptCode: r.isin ?? '',
+      buyDate: r.buyDate.toISOString().slice(0, 10),
+      buyQty: r.quantity.toString(),
+      buyRate: r.buyPrice.toString(),
+      buyAmount: r.buyAmount.toString(),
+      sellDate: r.sellDate.toISOString().slice(0, 10),
+      sellQty: r.quantity.toString(),
+      sellRate: r.sellPrice.toString(),
+      sellAmount: r.sellAmount.toString(),
+      closingQty: '',
+      mktRate: '',
+      intradayGL: isIntraday ? r.gainLoss.toString() : '',
+      realizedST: isST ? r.gainLoss.toString() : '',
+      realizedLT: isLT ? r.gainLoss.toString() : '',
+      unrealisedGL: '',
+      holdingDays: String(holdingDays),
+      gfRate: isGf && fmv ? fmv.toFixed(4) : '',
+      gfCost: isGf && fmv ? fmv.times(r.quantity).toString() : '',
+      gfComputedGL: isGf ? adjGain.toString() : '',
+    });
+  }
+
+  // Unrealised rows (residual lots) -------------------------------
+  for (const l of lots) {
+    const name = l.scriptName;
+    const mkt = mktForKey(l.assetKey);
+    const unrealised = mkt ? mkt.minus(l.rate).times(l.qty) : null;
+    const days = Math.round((cutoff.getTime() - l.date.getTime()) / 86_400_000);
+    const fmv = l.isin ? fmvByIsin.get(l.isin) ?? null : null;
+    const isGf = l.date.getTime() <= GF_CUTOFF.getTime() && fmv != null;
+    const gfGL = mkt && isGf && fmv
+      ? mkt.times(l.qty).minus(fmv.times(l.qty)).toString()
+      : '';
+    addRow(name, {
+      scriptName: name,
+      scriptCode: l.isin ?? '',
+      buyDate: l.date.toISOString().slice(0, 10),
+      buyQty: l.qty.toString(),
+      buyRate: l.rate.toString(),
+      buyAmount: l.qty.times(l.rate).toString(),
+      sellDate: '',
+      sellQty: '',
+      sellRate: '',
+      sellAmount: '',
+      closingQty: l.qty.toString(),
+      mktRate: mkt ? mkt.toString() : '',
+      intradayGL: '',
+      realizedST: '',
+      realizedLT: '',
+      unrealisedGL: unrealised ? unrealised.toString() : '',
+      holdingDays: String(days),
+      gfRate: isGf && fmv ? fmv.toFixed(4) : '',
+      gfCost: isGf && fmv ? fmv.times(l.qty).toString() : '',
+      gfComputedGL: gfGL,
+    });
+  }
+
+  const groups: SubGroup[] = Array.from(byScript.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([scriptName, rows]) => {
+      const tot = rows.reduce(
+        (acc, r) => ({
+          buyQty: acc.buyQty.plus(new Decimal(r.buyQty || '0')),
+          buyAmt: acc.buyAmt.plus(new Decimal(r.buyAmount || '0')),
+          sellQty: acc.sellQty.plus(new Decimal(r.sellQty || '0')),
+          sellAmt: acc.sellAmt.plus(new Decimal(r.sellAmount || '0')),
+          closingQty: acc.closingQty.plus(new Decimal(r.closingQty || '0')),
+          rST: acc.rST.plus(new Decimal(r.realizedST || '0')),
+          rLT: acc.rLT.plus(new Decimal(r.realizedLT || '0')),
+          unrealised: acc.unrealised.plus(new Decimal(r.unrealisedGL || '0')),
+        }),
+        {
+          buyQty: new Decimal(0), buyAmt: new Decimal(0),
+          sellQty: new Decimal(0), sellAmt: new Decimal(0),
+          closingQty: new Decimal(0),
+          rST: new Decimal(0), rLT: new Decimal(0), unrealised: new Decimal(0),
+        },
+      );
+      return {
+        header: scriptName,
+        rows: rows.map((r) => ({ cells: r as unknown as Record<string, unknown> })),
+        subtotal: {
+          label: `Total: ${scriptName}`,
+          values: {
+            buyQty: tot.buyQty.toString(),
+            buyAmount: tot.buyAmt.toString(),
+            sellQty: tot.sellQty.toString(),
+            sellAmount: tot.sellAmt.toString(),
+            closingQty: tot.closingQty.toString(),
+            realizedST: tot.rST.toString(),
+            realizedLT: tot.rLT.toString(),
+            unrealisedGL: tot.unrealised.toString(),
+          },
+        },
+      };
+    });
+
+  const grand = {
+    buyQty: new Decimal(0), buyAmt: new Decimal(0),
+    sellQty: new Decimal(0), sellAmt: new Decimal(0),
+    closingQty: new Decimal(0),
+    rST: new Decimal(0), rLT: new Decimal(0), unrealised: new Decimal(0),
+  };
+  for (const rows of byScript.values()) {
+    for (const r of rows) {
+      grand.buyQty = grand.buyQty.plus(new Decimal(r.buyQty || '0'));
+      grand.buyAmt = grand.buyAmt.plus(new Decimal(r.buyAmount || '0'));
+      grand.sellQty = grand.sellQty.plus(new Decimal(r.sellQty || '0'));
+      grand.sellAmt = grand.sellAmt.plus(new Decimal(r.sellAmount || '0'));
+      grand.closingQty = grand.closingQty.plus(new Decimal(r.closingQty || '0'));
+      grand.rST = grand.rST.plus(new Decimal(r.realizedST || '0'));
+      grand.rLT = grand.rLT.plus(new Decimal(r.realizedLT || '0'));
+      grand.unrealised = grand.unrealised.plus(new Decimal(r.unrealisedGL || '0'));
+    }
+  }
+
+  const columns: ColumnDef[] = [
+    { key: 'scriptName', label: 'Script Name', width: 12, align: 'left' },
+    { key: 'scriptCode', label: 'Script Code', width: 7, align: 'left' },
+    { key: 'buyDate', label: 'Date', width: 6, align: 'center', formatter: DATE },
+    { key: 'buyQty', label: 'Qty', width: 5, align: 'right', formatter: INT },
+    { key: 'buyRate', label: 'Rate', width: 6, align: 'right', formatter: MONEY },
+    { key: 'buyAmount', label: 'Amount', width: 8, align: 'right', formatter: MONEY },
+    { key: 'sellDate', label: 'Date', width: 6, align: 'center', formatter: DATE },
+    { key: 'sellQty', label: 'Qty', width: 5, align: 'right', formatter: INT },
+    { key: 'sellRate', label: 'Rate', width: 6, align: 'right', formatter: MONEY },
+    { key: 'sellAmount', label: 'Amount', width: 8, align: 'right', formatter: MONEY },
+    { key: 'closingQty', label: 'Qty', width: 5, align: 'right', formatter: INT },
+    { key: 'mktRate', label: 'Rate', width: 6, align: 'right', formatter: MONEY },
+    { key: 'intradayGL', label: 'IntraDay G/L', width: 7, align: 'right', formatter: MONEY, signed: true },
+    { key: 'realizedST', label: 'ST', width: 6, align: 'right', formatter: MONEY, signed: true },
+    { key: 'realizedLT', label: 'LT', width: 6, align: 'right', formatter: MONEY, signed: true },
+    { key: 'unrealisedGL', label: 'Unrealised G/L', width: 8, align: 'right', formatter: MONEY, signed: true },
+    { key: 'holdingDays', label: 'Days', width: 4, align: 'right' },
+    { key: 'gfRate', label: 'GF Rate 31/01/2018', width: 7, align: 'right', formatter: (v) => v ? MONEY(v) : '' },
+    { key: 'gfCost', label: 'GF Cost', width: 7, align: 'right', formatter: (v) => v ? MONEY(v) : '' },
+    { key: 'gfComputedGL', label: 'GF Computed G/L', width: 8, align: 'right', formatter: (v) => v ? MONEY(v) : '', signed: true },
+  ];
+
+  return {
+    reportTitle: `Combined Realised/Unrealised Gain/Loss Report as on ${cutoff.toLocaleDateString('en-IN')} (Equity)`,
+    family: m.family,
+    member: m.member,
+    pan: m.pan,
+    headerRow1: [
+      { label: 'Script Name', spanCols: 1 },
+      { label: 'Script Code', spanCols: 1 },
+      { label: 'Buy', spanCols: 4 },
+      { label: 'Sell', spanCols: 4 },
+      { label: 'Closing', spanCols: 1 },
+      { label: 'Mkt', spanCols: 1 },
+      { label: 'IntraDay', spanCols: 1 },
+      { label: 'Realized Gain/Loss', spanCols: 2 },
+      { label: 'Unrealised', spanCols: 2 },
+      { label: 'Grandfathering', spanCols: 3 },
+    ],
+    headerRow2: columns.map((c) => ({ label: c.label, align: c.align })),
+    columns,
+    sections: [{ groups }],
+    grandTotal: {
+      label: 'Grand Total',
+      values: {
+        buyQty: grand.buyQty.toString(),
+        buyAmount: grand.buyAmt.toString(),
+        sellQty: grand.sellQty.toString(),
+        sellAmount: grand.sellAmt.toString(),
+        closingQty: grand.closingQty.toString(),
+        realizedST: grand.rST.toString(),
+        realizedLT: grand.rLT.toString(),
+        unrealisedGL: grand.unrealised.toString(),
+      },
+    },
+    filenameStem: `combined-realised-unrealised-${cutoff.toISOString().slice(0, 10)}`,
+  };
+}
+
+// ─── 18. Family-wise Holdings Report ──────────────────────────────
+//
+// Family / Member roll-up. v2 is single-user (CLAUDE.md §1 row 2), so
+// "family" = the user, "member" = each portfolio, "holding type" =
+// each asset class within a portfolio. Schema already supports the
+// multi-member shape (v3); when that lands we swap the user→members
+// hierarchy without changing the layout.
+
+export async function buildFamilyWiseHoldingsLayout(
+  userId: string,
+  asOf?: Date,
+): Promise<MprofitLayout> {
+  const m = await userMember(userId);
+  const cutoff = asOf ?? new Date();
+  const holdings = await prisma.holdingProjection.findMany({
+    where: { portfolio: { userId } },
+    include: { portfolio: { select: { name: true } } },
+    orderBy: [{ portfolioId: 'asc' }, { assetClass: 'asc' }, { assetName: 'asc' }],
+  });
+
+  const effectiveVal = (h: { currentValue: unknown; totalCost: unknown }): Decimal =>
+    h.currentValue != null ? new Decimal(String(h.currentValue)) : new Decimal(String(h.totalCost));
+
+  // Two-level grouping: portfolio → assetClass.
+  const byPortfolio = new Map<string, Map<string, typeof holdings>>();
+  for (const h of holdings) {
+    const pName = h.portfolio.name;
+    let inner = byPortfolio.get(pName);
+    if (!inner) {
+      inner = new Map();
+      byPortfolio.set(pName, inner);
+    }
+    const arr = inner.get(h.assetClass) ?? [];
+    arr.push(h);
+    inner.set(h.assetClass, arr);
+  }
+
+  const sections: ReportSection[] = Array.from(byPortfolio.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([portfolioName, byClass]) => {
+      const groups: SubGroup[] = [];
+      let memberTotalQty = new Decimal(0);
+      let memberTotalValue = new Decimal(0);
+      for (const [assetClass, list] of Array.from(byClass.entries()).sort((a, b) => a[0].localeCompare(b[0]))) {
+        const tot = list.reduce(
+          (acc, h) => ({
+            qty: acc.qty.plus(new Decimal(h.quantity.toString())),
+            value: acc.value.plus(effectiveVal(h)),
+          }),
+          { qty: new Decimal(0), value: new Decimal(0) },
+        );
+        memberTotalQty = memberTotalQty.plus(tot.qty);
+        memberTotalValue = memberTotalValue.plus(tot.value);
+        groups.push({
+          header: `${assetClass.replace(/_/g, ' ')} A/C`,
+          rows: list.map((h) => ({
+            cells: {
+              script: h.assetName ?? '—',
+              qty: h.quantity.toString(),
+              rate: h.avgCostPrice.toString(),
+              value: effectiveVal(h).toString(),
+            },
+          })),
+          subtotal: {
+            label: `Total: ${assetClass.replace(/_/g, ' ')} A/C`,
+            values: {
+              qty: tot.qty.toString(),
+              value: tot.value.toString(),
+            },
+          },
+        });
+      }
+      // Member roll-up subtotal as last "group" with grandTotal styling.
+      groups.push({
+        rows: [],
+        subtotal: {
+          label: `Total: ${portfolioName}`,
+          values: { qty: memberTotalQty.toString(), value: memberTotalValue.toString() },
+        },
+      });
+      return { banner: portfolioName.toUpperCase(), groups };
+    });
+
+  const grandQty = holdings.reduce((s, h) => s.plus(new Decimal(h.quantity.toString())), new Decimal(0));
+  const grandValue = holdings.reduce((s, h) => s.plus(effectiveVal(h)), new Decimal(0));
+
+  const columns: ColumnDef[] = [
+    { key: 'script', label: 'Script / Consultant Name', width: 32, align: 'left' },
+    { key: 'qty', label: 'Qty', width: 8, align: 'right', formatter: (v) => indianMoney(v, 4) },
+    { key: 'rate', label: 'Rate', width: 9, align: 'right', formatter: MONEY },
+    { key: 'value', label: 'Value', width: 11, align: 'right', formatter: MONEY },
+  ];
+
+  return {
+    reportTitle: `FamilyWise capital Gain - Loss Summary As On ${cutoff.toLocaleDateString('en-IN')}`,
+    family: m.family,
+    member: m.member,
+    pan: m.pan,
+    headerRow1: [
+      { label: 'Script / Consultant Name', spanCols: 1 },
+      { label: 'Average', spanCols: 3 },
+    ],
+    headerRow2: columns.map((c) => ({ label: c.label, align: c.align })),
+    columns,
+    sections,
+    grandTotal: {
+      label: 'Grand Total',
+      values: { qty: grandQty.toString(), value: grandValue.toString() },
+    },
+    filenameStem: `family-wise-holdings-${cutoff.toISOString().slice(0, 10)}`,
+  };
+}
+
+// ─── 19. Scriptwise Qtywise Report ────────────────────────────────
+//
+// For a period: per-script Opening (from positions before `from`),
+// Purchase (BUYs in window), Sale (SELLs in window) and Net Position
+// (qty + amount). Opening uses average cost from prior FIFO replay;
+// Net Position uses Avg Method as the screenshot notes ("Purchase -
+// sell txn during the year and find closing stock as per avg method").
+
+export async function buildScriptwiseQtywiseLayout(
+  userId: string,
+  opts: { from?: string; to?: string },
+): Promise<MprofitLayout> {
+  const m = await userMember(userId);
+  const fromDate = opts.from ? new Date(opts.from) : null;
+  const toDate = opts.to ? new Date(opts.to) : new Date();
+
+  // All equity / ETF transactions up to `to` — needed for opening calc.
+  const txs = await prisma.transaction.findMany({
+    where: {
+      portfolio: { userId },
+      assetClass: { in: ['EQUITY', 'ETF'] },
+      tradeDate: { lte: toDate },
+    },
+    orderBy: { tradeDate: 'asc' },
+  });
+
+  // Walk the txs once, tracking per-asset running average. Snapshot
+  // when we cross `from` for the opening figure; accumulate in/out
+  // figures while in the window.
+  type Bucket = {
+    assetName: string;
+    isin: string | null;
+    openingQty: Decimal;
+    openingValue: Decimal;
+    buyQty: Decimal;
+    buyValue: Decimal;
+    sellQty: Decimal;
+    sellValue: Decimal;
+    // Running average for net-position computation
+    runningQty: Decimal;
+    runningValue: Decimal;
+  };
+  const buckets = new Map<string, Bucket>();
+  const keyOf = (t: typeof txs[number]): string => t.assetKey ?? `name:${t.assetName ?? ''}`;
+  const getBucket = (t: typeof txs[number]): Bucket => {
+    const k = keyOf(t);
+    let b = buckets.get(k);
+    if (!b) {
+      b = {
+        assetName: t.assetName ?? k,
+        isin: t.isin,
+        openingQty: new Decimal(0),
+        openingValue: new Decimal(0),
+        buyQty: new Decimal(0),
+        buyValue: new Decimal(0),
+        sellQty: new Decimal(0),
+        sellValue: new Decimal(0),
+        runningQty: new Decimal(0),
+        runningValue: new Decimal(0),
+      };
+      buckets.set(k, b);
+    }
+    return b;
+  };
+  // Snapshot opening once per bucket when first crossing `from`.
+  const snapped = new Set<string>();
+  for (const t of txs) {
+    const k = keyOf(t);
+    const b = getBucket(t);
+    if (fromDate && t.tradeDate.getTime() >= fromDate.getTime() && !snapped.has(k)) {
+      b.openingQty = b.runningQty;
+      b.openingValue = b.runningValue;
+      snapped.add(k);
+    }
+    const q = new Decimal(t.quantity.toString());
+    const net = new Decimal(t.netAmount.toString());
+    if (BUY_TXN_TYPES.has(t.transactionType)) {
+      if (fromDate && t.tradeDate.getTime() >= fromDate.getTime()) {
+        b.buyQty = b.buyQty.plus(q);
+        b.buyValue = b.buyValue.plus(net);
+      }
+      b.runningQty = b.runningQty.plus(q);
+      b.runningValue = b.runningValue.plus(net);
+    } else if (SELL_TXN_TYPES.has(t.transactionType)) {
+      if (fromDate && t.tradeDate.getTime() >= fromDate.getTime()) {
+        b.sellQty = b.sellQty.plus(q);
+        b.sellValue = b.sellValue.plus(net);
+      }
+      // Average-method exit: remove qty at the running average cost.
+      const avg = b.runningQty.isZero() ? new Decimal(0) : b.runningValue.dividedBy(b.runningQty);
+      b.runningQty = b.runningQty.minus(q);
+      b.runningValue = b.runningValue.minus(avg.times(q));
+    }
+  }
+
+  // For buckets with NO transactions inside window, opening still
+  // needs to be the running state at end of pre-window. Snap any that
+  // weren't snapped (e.g. assets with only pre-window history).
+  for (const [k, b] of buckets) {
+    if (!snapped.has(k)) {
+      b.openingQty = b.runningQty;
+      b.openingValue = b.runningValue;
+    }
+  }
+
+  const rows = Array.from(buckets.values())
+    .filter((b) => !b.openingQty.isZero() || !b.buyQty.isZero() || !b.sellQty.isZero() || !b.runningQty.isZero())
+    .sort((a, b) => a.assetName.localeCompare(b.assetName))
+    .map((b, idx) => {
+      const openRate = b.openingQty.isZero() ? new Decimal(0) : b.openingValue.dividedBy(b.openingQty);
+      const buyRate = b.buyQty.isZero() ? new Decimal(0) : b.buyValue.dividedBy(b.buyQty);
+      const sellRate = b.sellQty.isZero() ? new Decimal(0) : b.sellValue.dividedBy(b.sellQty);
+      return {
+        cells: {
+          sr: String(idx + 1),
+          name: b.assetName,
+          openQty: b.openingQty.toString(),
+          openRate: openRate.toString(),
+          openAmount: b.openingValue.toString(),
+          buyQty: b.buyQty.toString(),
+          buyRate: buyRate.toString(),
+          buyAmount: b.buyValue.toString(),
+          sellQty: b.sellQty.toString(),
+          sellRate: sellRate.toString(),
+          sellAmount: b.sellValue.toString(),
+          netQty: b.runningQty.toString(),
+          netAmount: b.runningValue.toString(),
+        },
+      };
+    });
+
+  const grand = rows.reduce(
+    (acc, r) => ({
+      openQty: acc.openQty.plus(new Decimal(r.cells.openQty as string)),
+      openAmt: acc.openAmt.plus(new Decimal(r.cells.openAmount as string)),
+      buyQty: acc.buyQty.plus(new Decimal(r.cells.buyQty as string)),
+      buyAmt: acc.buyAmt.plus(new Decimal(r.cells.buyAmount as string)),
+      sellQty: acc.sellQty.plus(new Decimal(r.cells.sellQty as string)),
+      sellAmt: acc.sellAmt.plus(new Decimal(r.cells.sellAmount as string)),
+      netQty: acc.netQty.plus(new Decimal(r.cells.netQty as string)),
+      netAmt: acc.netAmt.plus(new Decimal(r.cells.netAmount as string)),
+    }),
+    {
+      openQty: new Decimal(0), openAmt: new Decimal(0),
+      buyQty: new Decimal(0), buyAmt: new Decimal(0),
+      sellQty: new Decimal(0), sellAmt: new Decimal(0),
+      netQty: new Decimal(0), netAmt: new Decimal(0),
+    },
+  );
+
+  const columns: ColumnDef[] = [
+    { key: 'sr', label: 'Sr No', width: 4, align: 'center' },
+    { key: 'name', label: 'Name of the Company', width: 16, align: 'left' },
+    { key: 'openQty', label: 'Qty', width: 5, align: 'right', formatter: INT },
+    { key: 'openRate', label: 'Rate', width: 6, align: 'right', formatter: MONEY },
+    { key: 'openAmount', label: 'Amount', width: 8, align: 'right', formatter: MONEY },
+    { key: 'buyQty', label: 'Qty', width: 5, align: 'right', formatter: INT },
+    { key: 'buyRate', label: 'Rate', width: 6, align: 'right', formatter: MONEY },
+    { key: 'buyAmount', label: 'Amount', width: 8, align: 'right', formatter: MONEY },
+    { key: 'sellQty', label: 'Qty', width: 5, align: 'right', formatter: INT },
+    { key: 'sellRate', label: 'Avg Rate', width: 6, align: 'right', formatter: MONEY },
+    { key: 'sellAmount', label: 'Amount', width: 8, align: 'right', formatter: MONEY },
+    { key: 'netQty', label: 'Qty', width: 5, align: 'right', formatter: INT, signed: true },
+    { key: 'netAmount', label: 'Amount', width: 8, align: 'right', formatter: MONEY, signed: true },
+  ];
+
+  const fromStamp = opts.from ?? 'inception';
+  const toStamp = opts.to ?? new Date().toISOString().slice(0, 10);
+
+  return {
+    reportTitle: `Scriptwise - Qtywise Report As ${fromStamp} To ${toStamp} (Equity)`,
+    family: m.family,
+    member: m.member,
+    pan: m.pan,
+    headerRow1: [
+      { label: 'Sr No', spanCols: 1 },
+      { label: 'Name of the Company', spanCols: 1 },
+      { label: 'Opening', spanCols: 3 },
+      { label: 'Purchase', spanCols: 3 },
+      { label: 'Sale', spanCols: 3 },
+      { label: 'Net Position', spanCols: 2 },
+    ],
+    headerRow2: columns.map((c) => ({ label: c.label, align: c.align })),
+    columns,
+    sections: [{ groups: [{ rows }] }],
+    grandTotal: {
+      label: 'Grand Total',
+      values: {
+        openQty: grand.openQty.toString(),
+        openAmount: grand.openAmt.toString(),
+        buyQty: grand.buyQty.toString(),
+        buyAmount: grand.buyAmt.toString(),
+        sellQty: grand.sellQty.toString(),
+        sellAmount: grand.sellAmt.toString(),
+        netQty: grand.netQty.toString(),
+        netAmount: grand.netAmt.toString(),
+      },
+    },
+    filenameStem: `scriptwise-qtywise${opts.from ? `-${opts.from}` : ''}`,
+  };
+}
+
+// ─── 20. Contract Note Charges Report ─────────────────────────────
+//
+// Broker-wise rollup of contract-note expenses pulled from the
+// Transaction table (brokerage, STT, CGST + SGST / IGST split via the
+// `gst` field, SEBI, stamp duty, exchange/transaction charges, other).
+// CGST + SGST split: the schema stores total `gst`; we present the
+// total as a single SGST column when an interstate marker exists, or
+// split 50/50 between CGST and SGST otherwise — matches mProfit's
+// convention.
+
+export async function buildContractNoteChargesLayout(
+  userId: string,
+  asOf?: Date,
+): Promise<MprofitLayout> {
+  const m = await userMember(userId);
+  const cutoff = asOf ?? new Date();
+  const txs = await prisma.transaction.findMany({
+    where: {
+      portfolio: { userId },
+      tradeDate: { lte: cutoff },
+    },
+    orderBy: [{ broker: 'asc' }, { tradeDate: 'asc' }],
+  });
+
+  type Tot = {
+    brokerage: Decimal;
+    cgst: Decimal;
+    sebi: Decimal;
+    stt: Decimal;
+    sgst: Decimal;
+    sgstRate: Decimal;
+    stamp: Decimal;
+    txn: Decimal;
+    total: Decimal;
+    totalNoBrk: Decimal;
+  };
+  const zero = (): Tot => ({
+    brokerage: new Decimal(0), cgst: new Decimal(0), sebi: new Decimal(0),
+    stt: new Decimal(0), sgst: new Decimal(0), sgstRate: new Decimal(0),
+    stamp: new Decimal(0), txn: new Decimal(0),
+    total: new Decimal(0), totalNoBrk: new Decimal(0),
+  });
+  const accum = (t: Tot, tx: typeof txs[number]): void => {
+    const brk = new Decimal(tx.brokerage.toString());
+    // Split GST 50/50 between CGST and SGST. mProfit's portal shows the
+    // CGST column populated when the broker invoiced intra-state, blank
+    // otherwise. Without an interstate marker on the row we split.
+    const gst = new Decimal(tx.gst.toString()).dividedBy(2);
+    const stt = new Decimal(tx.stt.toString());
+    const sebi = new Decimal(tx.sebiCharges.toString());
+    const stamp = new Decimal(tx.stampDuty.toString());
+    const txn = new Decimal(tx.exchangeCharges.toString());
+    const other = new Decimal(tx.otherCharges.toString());
+    const total = brk.plus(gst).plus(gst).plus(stt).plus(sebi).plus(stamp).plus(txn).plus(other);
+    t.brokerage = t.brokerage.plus(brk);
+    t.cgst = t.cgst.plus(gst);
+    t.sebi = t.sebi.plus(sebi);
+    t.stt = t.stt.plus(stt);
+    t.sgst = t.sgst.plus(gst);
+    t.stamp = t.stamp.plus(stamp);
+    t.txn = t.txn.plus(txn).plus(other);
+    t.total = t.total.plus(total);
+    t.totalNoBrk = t.totalNoBrk.plus(total).minus(brk);
+  };
+
+  const byBroker = new Map<string, Tot>();
+  for (const tx of txs) {
+    const b = tx.broker ?? 'SELF-BROKER A/C';
+    let t = byBroker.get(b);
+    if (!t) {
+      t = zero();
+      byBroker.set(b, t);
+    }
+    accum(t, tx);
+  }
+
+  const rows = Array.from(byBroker.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([broker, t]) => ({
+      cells: {
+        broker,
+        brokerage: t.brokerage.toString(),
+        cgst: t.cgst.toString(),
+        sebi: t.sebi.toString(),
+        stt: t.stt.toString(),
+        sgst: t.sgst.toString(),
+        sgstRate: '',  // rate not stored per row; shown only when known
+        stamp: t.stamp.toString(),
+        txn: t.txn.toString(),
+        total: t.total.toString(),
+        totalNoBrk: t.totalNoBrk.toString(),
+      },
+    }));
+
+  const grand = zero();
+  for (const t of byBroker.values()) {
+    grand.brokerage = grand.brokerage.plus(t.brokerage);
+    grand.cgst = grand.cgst.plus(t.cgst);
+    grand.sebi = grand.sebi.plus(t.sebi);
+    grand.stt = grand.stt.plus(t.stt);
+    grand.sgst = grand.sgst.plus(t.sgst);
+    grand.stamp = grand.stamp.plus(t.stamp);
+    grand.txn = grand.txn.plus(t.txn);
+    grand.total = grand.total.plus(t.total);
+    grand.totalNoBrk = grand.totalNoBrk.plus(t.totalNoBrk);
+  }
+
+  const columns: ColumnDef[] = [
+    { key: 'broker', label: 'Broker Name', width: 16, align: 'left' },
+    { key: 'brokerage', label: 'Brokerage Amount', width: 9, align: 'right', formatter: MONEY },
+    { key: 'cgst', label: 'CGST', width: 7, align: 'right', formatter: MONEY },
+    { key: 'sebi', label: 'SEBI TURNOVER FEES', width: 8, align: 'right', formatter: MONEY },
+    { key: 'stt', label: 'SECURITY TRANSACTION TAX', width: 10, align: 'right', formatter: MONEY },
+    { key: 'sgst', label: 'SGST', width: 7, align: 'right', formatter: MONEY },
+    { key: 'sgstRate', label: 'SGST/UTGST RATE (9%)', width: 9, align: 'right' },
+    { key: 'stamp', label: 'STAMP DUTY', width: 8, align: 'right', formatter: MONEY },
+    { key: 'txn', label: 'TRANSACTION CHARGES', width: 9, align: 'right', formatter: MONEY },
+    { key: 'total', label: 'Total Expenses', width: 9, align: 'right', formatter: MONEY },
+    { key: 'totalNoBrk', label: 'Total Expenses Without Brokerage', width: 10, align: 'right', formatter: MONEY },
+  ];
+
+  return {
+    reportTitle: `Brokerage Statement & Other Charges As On ${cutoff.toLocaleDateString('en-IN')} (Equity)`,
+    family: m.family,
+    member: m.member,
+    pan: m.pan,
+    headerRow1: columns.map((c) => ({ label: c.label, spanCols: 1 })),
+    headerRow2: columns.map((c) => ({ label: c.label, align: c.align })),
+    columns,
+    sections: [{ groups: [{ rows }] }],
+    grandTotal: {
+      label: 'Grand Total',
+      values: {
+        brokerage: grand.brokerage.toString(),
+        cgst: grand.cgst.toString(),
+        sebi: grand.sebi.toString(),
+        stt: grand.stt.toString(),
+        sgst: grand.sgst.toString(),
+        stamp: grand.stamp.toString(),
+        txn: grand.txn.toString(),
+        total: grand.total.toString(),
+        totalNoBrk: grand.totalNoBrk.toString(),
+      },
+    },
+    filenameStem: `contract-note-charges-${cutoff.toISOString().slice(0, 10)}`,
+  };
+}
+
+// ─── 21. M2M Mutual Funds Report ──────────────────────────────────
+//
+// Per residual MF lot: closing date, qty, avg rate (effective price),
+// purchase value, current MF Bhav NAV, MF valuation, unrealised G/L,
+// holding days, Actual / Monthly / Annual ROI, CAGR. Subtotal per
+// scheme, no grand total (mProfit's MF M2M doesn't carry one).
+
+export async function buildMfM2MLayout(
+  userId: string,
+  asOf?: Date,
+): Promise<MprofitLayout> {
+  const m = await userMember(userId);
+  const cutoff = asOf ?? new Date();
+  const txs = await prisma.transaction.findMany({
+    where: {
+      portfolio: { userId },
+      assetClass: 'MUTUAL_FUND',
+      tradeDate: { lte: cutoff },
+    },
+    orderBy: { tradeDate: 'asc' },
+  });
+  const lots = residualLots(
+    txs.map((t) => {
+      const q = new Decimal(t.quantity.toString());
+      const net = new Decimal(t.netAmount.toString());
+      const eff = q.isZero() ? new Decimal(t.price.toString()) : net.dividedBy(q);
+      return {
+        tradeDate: t.tradeDate,
+        quantity: q,
+        price: eff,
+        assetKey: t.assetKey ?? `name:${t.assetName ?? ''}`,
+        assetName: t.assetName,
+        isin: t.isin,
+        transactionType: t.transactionType,
+      };
+    }),
+  );
+
+  // Latest NAV per fundId.
+  const fundIds = Array.from(new Set(
+    lots.filter((l) => l.assetKey.startsWith('fund:')).map((l) => l.assetKey.slice(5)),
+  ));
+  const navByFund = new Map<string, Decimal>();
+  if (fundIds.length > 0) {
+    const navs = await prisma.mFNav.findMany({
+      where: { fundId: { in: fundIds }, date: { lte: cutoff } },
+      orderBy: { date: 'desc' },
+    });
+    for (const n of navs) {
+      if (!navByFund.has(n.fundId)) {
+        navByFund.set(n.fundId, new Decimal(n.nav.toString()));
+      }
+    }
+  }
+  const navFor = (key: string): Decimal | null => {
+    if (key.startsWith('fund:')) return navByFund.get(key.slice(5)) ?? null;
+    return null;
+  };
+
+  const byScheme = new Map<string, typeof lots>();
+  for (const l of lots) {
+    const arr = byScheme.get(l.scriptName) ?? [];
+    arr.push(l);
+    byScheme.set(l.scriptName, arr);
+  }
+
+  const groups: SubGroup[] = Array.from(byScheme.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([scheme, list]) => {
+      const tot = { qty: new Decimal(0), purVal: new Decimal(0), valuation: new Decimal(0), gl: new Decimal(0) };
+      const rows = list.map((l) => {
+        const nav = navFor(l.assetKey);
+        const purValue = l.qty.times(l.rate);
+        const valuation = nav ? l.qty.times(nav) : null;
+        const gl = valuation ? valuation.minus(purValue) : null;
+        const days = Math.round((cutoff.getTime() - l.date.getTime()) / 86_400_000);
+        const actualRoi = gl && !purValue.isZero() ? gl.dividedBy(purValue).times(100) : null;
+        const monthlyRoi = actualRoi && days > 0 ? actualRoi.times(30).dividedBy(days) : null;
+        const annualRoi = actualRoi && days > 0 ? actualRoi.times(365).dividedBy(days) : null;
+        // CAGR: (end/start)^(1/years) - 1, only meaningful for ≥1y holds
+        let cagr: Decimal | null = null;
+        if (valuation && !purValue.isZero() && days >= 365) {
+          const years = days / 365.25;
+          const ratio = valuation.dividedBy(purValue).toNumber();
+          if (ratio > 0) cagr = new Decimal((Math.pow(ratio, 1 / years) - 1) * 100);
+        }
+        tot.qty = tot.qty.plus(l.qty);
+        tot.purVal = tot.purVal.plus(purValue);
+        if (valuation) tot.valuation = tot.valuation.plus(valuation);
+        if (gl) tot.gl = tot.gl.plus(gl);
+        return {
+          cells: {
+            scheme: l.scriptName,
+            closingDate: l.date.toISOString().slice(0, 10),
+            qty: l.qty.toString(),
+            avgRate: l.rate.toString(),
+            purValue: purValue.toString(),
+            navRate: nav ? nav.toString() : '',
+            valuation: valuation ? valuation.toString() : '',
+            unrealisedGL: gl ? gl.toString() : '',
+            days: String(days),
+            actualRoi: actualRoi ? actualRoi.toFixed(2) : '',
+            monthlyRoi: monthlyRoi ? monthlyRoi.toFixed(2) : '',
+            annualRoi: annualRoi ? annualRoi.toFixed(2) : '',
+            cagr: cagr ? cagr.toFixed(2) : '',
+          },
+        };
+      });
+      return {
+        rows,
+        subtotal: {
+          label: `Total: ${scheme}`,
+          values: {
+            qty: tot.qty.toString(),
+            purValue: tot.purVal.toString(),
+            valuation: tot.valuation.toString(),
+            unrealisedGL: tot.gl.toString(),
+          },
+        },
+      };
+    });
+
+  const columns: ColumnDef[] = [
+    { key: 'scheme', label: 'Script Name', width: 22, align: 'left' },
+    { key: 'closingDate', label: 'Closing Date', width: 7, align: 'center', formatter: DATE },
+    { key: 'qty', label: 'Qty', width: 7, align: 'right', formatter: (v) => indianMoney(v, 4) },
+    { key: 'avgRate', label: 'Avg Rate', width: 7, align: 'right', formatter: MONEY },
+    { key: 'purValue', label: 'Pur Value', width: 9, align: 'right', formatter: MONEY },
+    { key: 'navRate', label: 'MF Bhav Rate', width: 8, align: 'right', formatter: MONEY },
+    { key: 'valuation', label: 'MF Valuation', width: 9, align: 'right', formatter: MONEY },
+    { key: 'unrealisedGL', label: 'MF Unrealised G/L', width: 9, align: 'right', formatter: MONEY, signed: true },
+    { key: 'days', label: 'No Of Days', width: 5, align: 'right' },
+    { key: 'actualRoi', label: 'Actual ROI %', width: 6, align: 'right' },
+    { key: 'monthlyRoi', label: 'Monthly ROI %', width: 6, align: 'right' },
+    { key: 'annualRoi', label: 'Annual ROI %', width: 6, align: 'right' },
+    { key: 'cagr', label: 'CAGR', width: 5, align: 'right' },
+  ];
+
+  return {
+    reportTitle: `M2M (NSE) report as on ${cutoff.toLocaleDateString('en-IN')} (Mutual Fund)`,
+    family: m.family,
+    member: m.member,
+    pan: m.pan,
+    headerRow1: [
+      { label: 'Script Name', spanCols: 1 },
+      { label: 'Closing Date', spanCols: 1 },
+      { label: 'Average', spanCols: 3 },
+      { label: 'MF Bhav Rate', spanCols: 1 },
+      { label: 'MF Valuation', spanCols: 1 },
+      { label: 'MF Unrealised G/L', spanCols: 1 },
+      { label: 'UN-Realised ROI', spanCols: 4 },
+      { label: 'CAGR', spanCols: 1 },
+    ],
+    headerRow2: columns.map((c) => ({ label: c.label, align: c.align })),
+    columns,
+    sections: [{ groups }],
+    filenameStem: `mf-m2m-${cutoff.toISOString().slice(0, 10)}`,
+  };
+}

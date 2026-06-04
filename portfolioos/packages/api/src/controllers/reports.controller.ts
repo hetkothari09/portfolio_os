@@ -724,6 +724,11 @@ import {
   buildPerformanceLayout,
   buildTaxSummaryLayout,
   buildCashFlowStatementLayout,
+  buildCombinedRealisedUnrealisedLayout,
+  buildFamilyWiseHoldingsLayout,
+  buildScriptwiseQtywiseLayout,
+  buildContractNoteChargesLayout,
+  buildMfM2MLayout,
 } from '../services/reportBuilder/special/index.js';
 import {
   streamMprofitPdf,
@@ -843,4 +848,43 @@ export async function downloadCashFlow(req: Request, res: Response) {
   const from = (req.query.from as string | undefined)?.trim() || undefined;
   const to = (req.query.to as string | undefined)?.trim() || undefined;
   await emitMprofit(req, res, await buildCashFlowStatementLayout(userId, { from, to }));
+}
+
+export async function downloadCombinedRealisedUnrealised(req: Request, res: Response) {
+  const userId = req.user!.id;
+  const asOfStr = (req.query.asOf as string | undefined)?.trim();
+  const asOf = asOfStr ? new Date(asOfStr) : undefined;
+  if (asOf && Number.isNaN(asOf.getTime())) throw new BadRequestError('Invalid `asOf` date');
+  await emitMprofit(req, res, await buildCombinedRealisedUnrealisedLayout(userId, asOf));
+}
+
+export async function downloadFamilyWiseHoldings(req: Request, res: Response) {
+  const userId = req.user!.id;
+  const asOfStr = (req.query.asOf as string | undefined)?.trim();
+  const asOf = asOfStr ? new Date(asOfStr) : undefined;
+  if (asOf && Number.isNaN(asOf.getTime())) throw new BadRequestError('Invalid `asOf` date');
+  await emitMprofit(req, res, await buildFamilyWiseHoldingsLayout(userId, asOf));
+}
+
+export async function downloadScriptwiseQtywise(req: Request, res: Response) {
+  const userId = req.user!.id;
+  const from = (req.query.from as string | undefined)?.trim() || undefined;
+  const to = (req.query.to as string | undefined)?.trim() || undefined;
+  await emitMprofit(req, res, await buildScriptwiseQtywiseLayout(userId, { from, to }));
+}
+
+export async function downloadContractNoteCharges(req: Request, res: Response) {
+  const userId = req.user!.id;
+  const asOfStr = (req.query.asOf as string | undefined)?.trim();
+  const asOf = asOfStr ? new Date(asOfStr) : undefined;
+  if (asOf && Number.isNaN(asOf.getTime())) throw new BadRequestError('Invalid `asOf` date');
+  await emitMprofit(req, res, await buildContractNoteChargesLayout(userId, asOf));
+}
+
+export async function downloadMfM2M(req: Request, res: Response) {
+  const userId = req.user!.id;
+  const asOfStr = (req.query.asOf as string | undefined)?.trim();
+  const asOf = asOfStr ? new Date(asOfStr) : undefined;
+  if (asOf && Number.isNaN(asOf.getTime())) throw new BadRequestError('Invalid `asOf` date');
+  await emitMprofit(req, res, await buildMfM2MLayout(userId, asOf));
 }
