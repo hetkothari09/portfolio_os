@@ -35,6 +35,15 @@ import {
   downloadDailyTransactions,
   downloadShortLongSpec,
   downloadIncomeReport,
+  downloadHoldingsSummary,
+  downloadPerformance,
+  downloadTaxSummary,
+  downloadCashFlow,
+  downloadCombinedRealisedUnrealised,
+  downloadFamilyWiseHoldings,
+  downloadScriptwiseQtywise,
+  downloadContractNoteCharges,
+  downloadMfM2M,
 } from '../controllers/reports.controller.js';
 
 export const reportsRouter = Router();
@@ -79,3 +88,12 @@ reportsRouter.get('/download/mf-capital-gain', asyncHandler(downloadMFCapitalGai
 reportsRouter.get('/download/daily-transactions', asyncHandler(downloadDailyTransactions));
 reportsRouter.get('/download/short-long-spec', asyncHandler(downloadShortLongSpec));
 reportsRouter.get('/download/income-report', asyncHandler(downloadIncomeReport));
+reportsRouter.get('/download/holdings-summary', asyncHandler(downloadHoldingsSummary));
+reportsRouter.get('/download/performance', asyncHandler(downloadPerformance));
+reportsRouter.get('/download/tax-summary', asyncHandler(downloadTaxSummary));
+reportsRouter.get('/download/cash-flow', asyncHandler(downloadCashFlow));
+reportsRouter.get('/download/combined-realised-unrealised', asyncHandler(downloadCombinedRealisedUnrealised));
+reportsRouter.get('/download/family-wise-holdings', asyncHandler(downloadFamilyWiseHoldings));
+reportsRouter.get('/download/scriptwise-qtywise', asyncHandler(downloadScriptwiseQtywise));
+reportsRouter.get('/download/contract-note-charges', asyncHandler(downloadContractNoteCharges));
+reportsRouter.get('/download/mf-m2m', asyncHandler(downloadMfM2M));
