@@ -10,6 +10,7 @@ import { loadNseCorporateActions } from '../priceFeeds/corporateActions.service.
 import { runCorporateActionApplyAll } from './corporateActionApplyJob.js';
 import { syncAllCommodities } from '../priceFeeds/commodity.service.js';
 import { syncCryptoPrices } from '../priceFeeds/crypto.service.js';
+import { refreshBenchmarks } from '../services/analytics.benchmark.js';
 import { syncFxRates } from '../priceFeeds/fx.service.js';
 import { syncFuelPrices } from '../priceFeeds/fuel.service.js';
 import { loadNseFoMaster } from '../priceFeeds/nseFoMaster.service.js';
@@ -28,6 +29,7 @@ const running = {
   corpActions: false,
   commodities: false,
   crypto: false,
+  benchmark: false,
   fx: false,
   foMaster: false,
   foBhavcopy: false,
@@ -121,6 +123,10 @@ async function runFxJob(): Promise<void> {
   await runGuarded('fx', 'FX sync', syncFxRates);
 }
 
+async function runBenchmarkJob(): Promise<void> {
+  await runGuarded('benchmark', 'Benchmark (NIFTY/Sensex) refresh', () => refreshBenchmarks());
+}
+
 async function runFoMasterJob(): Promise<void> {
   await runGuarded('foMaster', 'NSE F&O master sync', loadNseFoMaster);
 }
@@ -174,6 +180,13 @@ export function startPriceJobs(): void {
   // FX rates every hour
   cron.schedule('0 * * * *', runFxJob, { timezone: TZ });
 
+  // Benchmark indices (NIFTY/Sensex) daily at 16:40 IST Mon–Fri, just after
+  // the stock EOD refresh. Keeps the cache warm so the analytics benchmark
+  // chart + risk-beta never wait on (or get rate-limited by) Yahoo at request
+  // time. Also warmed once at boot below for fresh deploys.
+  cron.schedule('40 16 * * 1-5', runBenchmarkJob, { timezone: TZ });
+  void runBenchmarkJob();
+
   // F&O master (lot sizes) — Sunday 03:30 IST weekly
   cron.schedule('30 3 * * 0', runFoMasterJob, { timezone: TZ });
 
@@ -203,6 +216,7 @@ export {
   runCommoditiesJob,
   runCryptoJob,
   runFxJob,
+  runBenchmarkJob,
   runFoMasterJob,
   runFoBhavcopyJob,
   runFoLiveJob,
