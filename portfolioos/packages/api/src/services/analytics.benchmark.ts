@@ -229,6 +229,28 @@ export async function getBenchmarkSeries(periodDays: number): Promise<BenchmarkS
 }
 
 /**
+ * Warm the NIFTY/Sensex price cache off the request path (daily cron).
+ *
+ * The interactive benchmark + risk-beta endpoints fetch these indices lazily;
+ * under Yahoo rate-limiting a cold cache makes them stall or come back empty
+ * ("benchmark unavailable"). Refreshing here on a schedule means the coverage
+ * gate is satisfied at request time and no user request waits on Yahoo.
+ * Defaults to a 5-year window so every period selector is covered.
+ */
+export async function refreshBenchmarks(periodDays = 1825): Promise<{ nifty: string; sensex: string }> {
+  const niftyId = await ensureSyntheticStock(NIFTY, APPSETTING_NIFTY_KEY);
+  const sensexId = await ensureSyntheticStock(SENSEX, APPSETTING_SENSEX_KEY);
+  const from = periodDays > 0
+    ? new Date(Date.now() - periodDays * 86_400_000)
+    : new Date('2018-01-01T00:00:00Z');
+  await Promise.all([
+    refreshSeries(niftyId, NIFTY, from),
+    refreshSeries(sensexId, SENSEX, from),
+  ]);
+  return { nifty: niftyId, sensex: sensexId };
+}
+
+/**
  * Per-period monthly close series for risk computation. Returns end-of-
  * month values (or last available trading day in each month).
  */

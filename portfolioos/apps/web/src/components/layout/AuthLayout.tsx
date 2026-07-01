@@ -22,7 +22,7 @@ export function AuthLayout({ title, subtitle, children, footer }: AuthLayoutProp
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="relative grid min-h-screen grid-cols-1 lg:grid-cols-[1.05fr_1fr]">
+      <div className="relative mx-auto grid min-h-screen w-full max-w-[1440px] grid-cols-1 lg:grid-cols-[1.05fr_1fr]">
         {/* ─── Left — editorial brand panel ─── */}
         <aside className="relative hidden lg:block overflow-hidden">
           {/* layered hero canvas */}
