@@ -24,7 +24,9 @@ export function FamilyScopeSwitcher() {
   const familiesQuery = useQuery({
     queryKey: ['families', 'mine'],
     queryFn: () => familiesApi.list(),
-    staleTime: 60_000,
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+    refetchInterval: 30_000,
   });
 
   // Close on outside click / Escape.

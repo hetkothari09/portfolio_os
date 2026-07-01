@@ -28,6 +28,7 @@ import { dashboardApi } from '@/api/dashboard.api';
 import { reportsApi } from '@/api/reports.api';
 import { mailboxesApi } from '@/api/mailboxes.api';
 import { ConnectGmailCard } from '@/components/dashboard/ConnectGmailCard';
+import { FamilyScopeBanner } from '@/components/family/FamilyScopeBanner';
 import { GmailScanProgressCard } from '@/components/dashboard/GmailScanProgressCard';
 import { DashboardFxStrip } from '@/pages/forex/DashboardFxStrip';
 import { apiErrorMessage } from '@/api/client';
@@ -414,6 +415,7 @@ export function DashboardPage() {
   return (
     <div className="space-y-4 sm:space-y-7">
       <GmailDashboardCards />
+      <FamilyScopeBanner />
       <PageHeader
         eyebrow="Dashboard"
         title="Your financial portrait"

@@ -495,23 +495,57 @@ export async function getDashboardNetWorthForScope(
 ): Promise<DashboardNetWorth> {
   const scope = await getEffectiveScope(callerId, { familyId: opts.familyId });
 
-  // Personal view or non-OWNER family view: single-user query. Non-OWNER
-  // family members see only their own personal dashboard; the family
-  // pot surfaces separately through the portfolios list + analytics
-  // family scope.
-  if (scope.familyId === null || scope.role !== 'OWNER') {
+  // Personal view (no family selected): plain single-user dashboard.
+  if (scope.familyId === null) {
     return getDashboardNetWorth(callerId, opts.portfolioId);
   }
 
-  // OWNER family view: fan out per readable user (including self).
-  const perMember = await Promise.all(
-    scope.readableUserIds.map((uid) =>
-      uid === callerId
-        ? getDashboardNetWorth(uid, opts.portfolioId)
-        : runAsUser(uid, () => getDashboardNetWorth(uid, opts.portfolioId)),
-    ),
-  );
-  return mergeNetWorthResults(perMember);
+  // Family view. Callers within the family see:
+  //   - OWNER              → fan-out across every readable member; each
+  //                          pass picks up that user's personal
+  //                          portfolios plus any family portfolios they
+  //                          created (since family portfolios still
+  //                          carry `userId = creator`).
+  //   - CONTRIBUTOR/VIEWER → own personal dashboard, PLUS family-shared
+  //                          portfolios owned by OTHER members so the
+  //                          family pot actually shows up in their
+  //                          net-worth totals. Rule A holds — peers'
+  //                          personal portfolios stay hidden.
+  const dashboards: DashboardNetWorth[] = [];
+  if (scope.role === 'OWNER') {
+    const perMember = await Promise.all(
+      scope.readableUserIds.map((uid) =>
+        uid === callerId
+          ? getDashboardNetWorth(uid, opts.portfolioId)
+          : runAsUser(uid, () => getDashboardNetWorth(uid, opts.portfolioId)),
+      ),
+    );
+    dashboards.push(...perMember);
+  } else {
+    dashboards.push(await getDashboardNetWorth(callerId, opts.portfolioId));
+    const familyPortfolios = await prisma.portfolio.findMany({
+      where: {
+        familyId: scope.familyId,
+        userId: { not: callerId },
+      },
+      select: { id: true, userId: true },
+    });
+    const byCreator = new Map<string, string[]>();
+    for (const p of familyPortfolios) {
+      const bucket = byCreator.get(p.userId) ?? [];
+      bucket.push(p.id);
+      byCreator.set(p.userId, bucket);
+    }
+    for (const [creatorId, portfolioIds] of byCreator) {
+      const perPortfolio = await Promise.all(
+        portfolioIds.map((pid) =>
+          runAsUser(creatorId, () => getDashboardNetWorth(creatorId, pid)),
+        ),
+      );
+      dashboards.push(...perPortfolio);
+    }
+  }
+  return mergeNetWorthResults(dashboards);
 }
 
 function mergeNetWorthResults(results: DashboardNetWorth[]): DashboardNetWorth {

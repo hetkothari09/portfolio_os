@@ -1,7 +1,20 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Loader2, Users, UserPlus, Trash2, Copy } from 'lucide-react';
+import {
+  Loader2,
+  Users,
+  UserPlus,
+  Trash2,
+  Copy,
+  Settings2,
+  X,
+  ChevronDown,
+  ChevronRight,
+  Crown,
+  User,
+  Eye,
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,27 +22,65 @@ import { Label } from '@/components/ui/label';
 import {
   familiesApi,
   NON_AC_CATEGORIES,
+  type FamilyMemberRow,
   type FamilyRole,
   type MyFamily,
+  type NonAcCategory,
 } from '@/api/families.api';
 import { apiErrorMessage } from '@/api/client';
 
 /**
- * Family / HOF settings section. Compact CRUD:
- *   - Create a new family (caller becomes OWNER).
- *   - Pick a family to manage.
- *   - List members, invite new member, edit role + visibility, revoke.
- *   - Cancel pending invitations.
+ * Family settings section — CRUD + invite + tree-based member list +
+ * inline edit dialog. Roles/categories editable at any time by any
+ * OWNER. Refetch config keeps member state fresh so a role change on
+ * one session reflects within ~30s on the affected user's other tabs.
  *
- * OWNER-gated buttons are hidden when the caller's role in the selected
- * family isn't OWNER. Server-side guards backstop the UI in
- * family.service.ts.
+ * Tree layout uses `FamilyMember.invitedById` as the edge — root nodes
+ * are family founders (invitedById NULL, typically createdBy). Members
+ * whose inviter no longer exists in the list get hoisted to root so
+ * they're still visible.
  */
+const REFETCH_MS = 30_000;
+
+// AssetClass enum values that a member may be granted visibility on.
+// Static list to avoid a Prisma-generated import into the web package.
+const ASSET_CLASSES = [
+  'EQUITY',
+  'MUTUAL_FUND',
+  'ETF',
+  'FUTURES',
+  'OPTIONS',
+  'BOND',
+  'GOVT_BOND',
+  'CORPORATE_BOND',
+  'FIXED_DEPOSIT',
+  'RECURRING_DEPOSIT',
+  'NPS',
+  'PPF',
+  'EPF',
+  'GOLD_BOND',
+  'GOLD_ETF',
+  'PHYSICAL_GOLD',
+  'PHYSICAL_SILVER',
+  'ULIP',
+  'INSURANCE',
+  'REAL_ESTATE',
+  'CRYPTOCURRENCY',
+  'CASH',
+  'NSC',
+  'FOREIGN_EQUITY',
+  'FOREX_PAIR',
+  'OTHER',
+] as const;
+
 export function FamilySection() {
   const queryClient = useQueryClient();
   const familiesQuery = useQuery({
     queryKey: ['families', 'mine'],
     queryFn: () => familiesApi.list(),
+    staleTime: REFETCH_MS,
+    refetchOnWindowFocus: true,
+    refetchInterval: REFETCH_MS,
   });
   const families = familiesQuery.data ?? [];
 
@@ -110,7 +161,7 @@ export function FamilySection() {
           </div>
         )}
 
-        {/* Detail: members + invites */}
+        {/* Detail: tree + members + invites */}
         {selected && <FamilyDetail family={selected} />}
       </CardContent>
     </Card>
@@ -142,9 +193,16 @@ function FamilyRow({
           {family.role.toLowerCase()} · {family.status.toLowerCase()}
         </div>
       </div>
+      {selected ? (
+        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+      ) : (
+        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+      )}
     </button>
   );
 }
+
+// ─── Detail ─────────────────────────────────────────────────────────
 
 function FamilyDetail({ family }: { family: MyFamily }) {
   const queryClient = useQueryClient();
@@ -153,16 +211,23 @@ function FamilyDetail({ family }: { family: MyFamily }) {
   const membersQuery = useQuery({
     queryKey: ['families', family.id, 'members'],
     queryFn: () => familiesApi.members(family.id),
+    staleTime: REFETCH_MS,
+    refetchOnWindowFocus: true,
+    refetchInterval: REFETCH_MS,
   });
   const pendingQuery = useQuery({
     queryKey: ['families', family.id, 'invitations'],
     queryFn: () => familiesApi.pendingInvitations(family.id),
     enabled: isOwner,
+    staleTime: REFETCH_MS,
+    refetchOnWindowFocus: true,
   });
+
+  const [editingMember, setEditingMember] = useState<FamilyMemberRow | null>(null);
 
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<FamilyRole>('CONTRIBUTOR');
-  const [inviteCategories, setInviteCategories] = useState<string[]>([
+  const [inviteCategories, setInviteCategories] = useState<NonAcCategory[]>([
     ...NON_AC_CATEGORIES,
   ]);
   const [lastInviteToken, setLastInviteToken] = useState<string | null>(null);
@@ -172,7 +237,7 @@ function FamilyDetail({ family }: { family: MyFamily }) {
       familiesApi.invite(family.id, {
         invitedEmail: inviteEmail.trim().toLowerCase(),
         role: inviteRole,
-        visibleCategories: inviteCategories as never,
+        visibleCategories: inviteCategories,
       }),
     onSuccess: (res) => {
       toast.success('Invitation created');
@@ -203,26 +268,16 @@ function FamilyDetail({ family }: { family: MyFamily }) {
     onError: (err) => toast.error(apiErrorMessage(err, 'Cancel failed')),
   });
 
-  const roleMutation = useMutation({
-    mutationFn: (input: { memberUserId: string; role: FamilyRole }) =>
-      familiesApi.updateMemberPermissions(family.id, input.memberUserId, {
-        role: input.role,
-      }),
-    onSuccess: () => {
-      toast.success('Role updated');
-      queryClient.invalidateQueries({ queryKey: ['families', family.id, 'members'] });
-    },
-    onError: (err) => toast.error(apiErrorMessage(err, 'Update failed')),
-  });
-
   const copyInviteLink = (token: string) => {
     const url = `${window.location.origin}/families/invitations/${token}/accept`;
     void navigator.clipboard.writeText(url);
     toast.success('Invite link copied');
   };
 
+  const members = membersQuery.data ?? [];
+
   return (
-    <div className="mt-4 pt-4 border-t border-border space-y-4">
+    <div className="mt-4 pt-4 border-t border-border space-y-5">
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold">{family.name}</p>
         <span className="text-[10px] uppercase tracking-kerned text-muted-foreground">
@@ -230,67 +285,22 @@ function FamilyDetail({ family }: { family: MyFamily }) {
         </span>
       </div>
 
-      {/* Members */}
+      {/* Family tree */}
       <div>
-        <p className="text-[10px] uppercase tracking-kerned text-muted-foreground mb-1.5">
-          Members
+        <p className="text-[10px] uppercase tracking-kerned text-muted-foreground mb-2">
+          Family tree
         </p>
         {membersQuery.isLoading ? (
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
         ) : (
-          <div className="space-y-1.5">
-            {(membersQuery.data ?? []).map((m) => (
-              <div
-                key={m.id}
-                className="flex items-center gap-2 px-2.5 py-1.5 rounded border border-border/70 text-sm"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate">{m.name}</div>
-                  <div className="text-[11px] text-muted-foreground truncate">
-                    {m.email}
-                  </div>
-                </div>
-                {isOwner && m.status === 'ACTIVE' ? (
-                  <select
-                    className="h-7 rounded border border-border bg-background text-[11px] px-1.5"
-                    value={m.role}
-                    onChange={(e) =>
-                      roleMutation.mutate({
-                        memberUserId: m.userId,
-                        role: e.target.value as FamilyRole,
-                      })
-                    }
-                    disabled={roleMutation.isPending}
-                  >
-                    <option value="OWNER">OWNER</option>
-                    <option value="CONTRIBUTOR">CONTRIBUTOR</option>
-                    <option value="VIEWER">VIEWER</option>
-                  </select>
-                ) : (
-                  <span className="text-[10px] uppercase tracking-kerned text-muted-foreground">
-                    {m.role.toLowerCase()}
-                  </span>
-                )}
-                <span className="text-[10px] uppercase tracking-kerned text-muted-foreground">
-                  {m.status.toLowerCase()}
-                </span>
-                {isOwner && m.status === 'ACTIVE' && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (confirm(`Revoke ${m.name}'s access?`)) {
-                        revokeMutation.mutate(m.userId);
-                      }
-                    }}
-                    className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-negative"
-                    title="Revoke access"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" strokeWidth={1.7} />
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
+          <FamilyTree
+            members={members}
+            isOwner={isOwner}
+            onEdit={(m) => setEditingMember(m)}
+            onRevoke={(m) => {
+              if (confirm(`Revoke ${m.name}'s access?`)) revokeMutation.mutate(m.userId);
+            }}
+          />
         )}
       </div>
 
@@ -300,13 +310,13 @@ function FamilyDetail({ family }: { family: MyFamily }) {
           <p className="text-[10px] uppercase tracking-kerned text-muted-foreground">
             Invite a member
           </p>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Input
               type="email"
               placeholder="member@example.com"
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
-              className="flex-1"
+              className="flex-1 min-w-[200px]"
               disabled={inviteMutation.isPending}
             />
             <select
@@ -334,8 +344,7 @@ function FamilyDetail({ family }: { family: MyFamily }) {
           </div>
           <details className="text-xs">
             <summary className="cursor-pointer text-muted-foreground">
-              Visibility (categories) · {inviteCategories.length}/
-              {NON_AC_CATEGORIES.length}
+              Category visibility · {inviteCategories.length}/{NON_AC_CATEGORIES.length}
             </summary>
             <div className="mt-2 grid grid-cols-2 gap-1.5">
               {NON_AC_CATEGORIES.map((c) => (
@@ -409,6 +418,350 @@ function FamilyDetail({ family }: { family: MyFamily }) {
           </div>
         </div>
       )}
+
+      {/* Edit member dialog */}
+      {editingMember && (
+        <EditMemberDialog
+          familyId={family.id}
+          member={editingMember}
+          onClose={() => setEditingMember(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Family tree render ─────────────────────────────────────────────
+
+interface TreeNode {
+  member: FamilyMemberRow;
+  children: TreeNode[];
+}
+
+function buildTree(members: FamilyMemberRow[]): TreeNode[] {
+  const byUserId = new Map<string, TreeNode>();
+  for (const m of members) byUserId.set(m.userId, { member: m, children: [] });
+  const roots: TreeNode[] = [];
+  for (const node of byUserId.values()) {
+    const parentId = node.member.invitedById;
+    if (parentId && byUserId.has(parentId)) {
+      byUserId.get(parentId)!.children.push(node);
+    } else {
+      // Family founders (no inviter) and orphans both surface at root.
+      roots.push(node);
+    }
+  }
+  const sortNodes = (nodes: TreeNode[]) => {
+    nodes.sort((a, b) => {
+      if (a.member.role !== b.member.role) {
+        if (a.member.role === 'OWNER') return -1;
+        if (b.member.role === 'OWNER') return 1;
+      }
+      return a.member.joinedAt.localeCompare(b.member.joinedAt);
+    });
+    for (const n of nodes) sortNodes(n.children);
+  };
+  sortNodes(roots);
+  return roots;
+}
+
+function FamilyTree({
+  members,
+  isOwner,
+  onEdit,
+  onRevoke,
+}: {
+  members: FamilyMemberRow[];
+  isOwner: boolean;
+  onEdit: (m: FamilyMemberRow) => void;
+  onRevoke: (m: FamilyMemberRow) => void;
+}) {
+  const tree = useMemo(() => buildTree(members), [members]);
+  if (tree.length === 0) {
+    return (
+      <p className="text-xs text-muted-foreground italic">
+        No members yet — invite someone below to start the tree.
+      </p>
+    );
+  }
+  return (
+    <div className="space-y-1">
+      {tree.map((node) => (
+        <TreeNodeRow
+          key={node.member.id}
+          node={node}
+          depth={0}
+          isOwner={isOwner}
+          onEdit={onEdit}
+          onRevoke={onRevoke}
+        />
+      ))}
+    </div>
+  );
+}
+
+function TreeNodeRow({
+  node,
+  depth,
+  isOwner,
+  onEdit,
+  onRevoke,
+}: {
+  node: TreeNode;
+  depth: number;
+  isOwner: boolean;
+  onEdit: (m: FamilyMemberRow) => void;
+  onRevoke: (m: FamilyMemberRow) => void;
+}) {
+  const m = node.member;
+  const isRevoked = m.status === 'REVOKED';
+  const RoleIcon =
+    m.role === 'OWNER' ? Crown : m.role === 'CONTRIBUTOR' ? User : Eye;
+
+  return (
+    <>
+      <div
+        className={`flex items-center gap-2 py-1.5 pr-2 rounded ${
+          isRevoked ? 'opacity-50' : ''
+        }`}
+        style={{ paddingLeft: `${depth * 20 + 8}px` }}
+      >
+        {depth > 0 && (
+          <span
+            className="text-muted-foreground/40 text-lg leading-none -ml-4 select-none"
+            aria-hidden
+          >
+            └
+          </span>
+        )}
+        <RoleIcon
+          className={`h-4 w-4 ${
+            m.role === 'OWNER'
+              ? 'text-accent'
+              : m.role === 'VIEWER'
+              ? 'text-muted-foreground'
+              : 'text-foreground/70'
+          }`}
+          strokeWidth={1.7}
+        />
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-medium truncate">
+            {m.name}
+            {isRevoked && (
+              <span className="ml-2 text-[10px] uppercase tracking-kerned text-muted-foreground">
+                revoked
+              </span>
+            )}
+          </div>
+          <div className="text-[11px] text-muted-foreground truncate">
+            {m.email} · {m.role.toLowerCase()}
+          </div>
+        </div>
+        {isOwner && !isRevoked && (
+          <>
+            <button
+              type="button"
+              onClick={() => onEdit(m)}
+              className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+              title="Edit permissions"
+            >
+              <Settings2 className="h-3.5 w-3.5" strokeWidth={1.7} />
+            </button>
+            <button
+              type="button"
+              onClick={() => onRevoke(m)}
+              className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-negative"
+              title="Revoke access"
+            >
+              <Trash2 className="h-3.5 w-3.5" strokeWidth={1.7} />
+            </button>
+          </>
+        )}
+      </div>
+      {node.children.map((c) => (
+        <TreeNodeRow
+          key={c.member.id}
+          node={c}
+          depth={depth + 1}
+          isOwner={isOwner}
+          onEdit={onEdit}
+          onRevoke={onRevoke}
+        />
+      ))}
+    </>
+  );
+}
+
+// ─── Edit dialog ─────────────────────────────────────────────────────
+
+function EditMemberDialog({
+  familyId,
+  member,
+  onClose,
+}: {
+  familyId: string;
+  member: FamilyMemberRow;
+  onClose: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const [role, setRole] = useState<FamilyRole>(member.role);
+  const [visibleAssetClasses, setVisibleAssetClasses] = useState<string[]>(
+    member.visibleAssetClasses,
+  );
+  const [visibleCategories, setVisibleCategories] = useState<NonAcCategory[]>(
+    member.visibleCategories,
+  );
+
+  const saveMutation = useMutation({
+    mutationFn: () =>
+      familiesApi.updateMemberPermissions(familyId, member.userId, {
+        role,
+        visibleAssetClasses,
+        visibleCategories,
+      }),
+    onSuccess: () => {
+      toast.success('Permissions updated');
+      queryClient.invalidateQueries({ queryKey: ['families', familyId, 'members'] });
+      // Also invalidate the member's own family list so their Header
+      // switcher/banner reflect the new role on their next tick.
+      queryClient.invalidateQueries({ queryKey: ['families', 'mine'] });
+      onClose();
+    },
+    onError: (err) => toast.error(apiErrorMessage(err, 'Update failed')),
+  });
+
+  const toggleAll = <T extends string>(value: T[], all: readonly T[]) =>
+    value.length === all.length ? [] : [...all];
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/70 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-lg border border-border bg-card shadow-lg"
+      >
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border">
+          <div>
+            <div className="text-sm font-semibold">Edit {member.name}</div>
+            <div className="text-[11px] text-muted-foreground">{member.email}</div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 rounded hover:bg-muted text-muted-foreground"
+          >
+            <X className="h-4 w-4" strokeWidth={1.7} />
+          </button>
+        </div>
+
+        <div className="px-5 py-4 space-y-4">
+          {/* Role */}
+          <div className="space-y-1.5">
+            <Label>Role</Label>
+            <select
+              className="w-full h-9 rounded-md border border-border bg-background text-sm px-2"
+              value={role}
+              onChange={(e) => setRole(e.target.value as FamilyRole)}
+            >
+              <option value="OWNER">OWNER — full visibility, can manage family</option>
+              <option value="CONTRIBUTOR">
+                CONTRIBUTOR — filtered view, can write to family
+              </option>
+              <option value="VIEWER">VIEWER — filtered view, read-only</option>
+            </select>
+            <p className="text-[11px] text-muted-foreground">
+              OWNERs bypass the visibility filters below.
+            </p>
+          </div>
+
+          {/* Asset classes */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label>
+                Asset classes visible ({visibleAssetClasses.length}/
+                {ASSET_CLASSES.length})
+              </Label>
+              <button
+                type="button"
+                onClick={() =>
+                  setVisibleAssetClasses(toggleAll(visibleAssetClasses, ASSET_CLASSES))
+                }
+                className="text-[11px] text-accent hover:underline"
+              >
+                {visibleAssetClasses.length === ASSET_CLASSES.length ? 'None' : 'All'}
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-1 max-h-40 overflow-y-auto border border-border rounded p-2">
+              {ASSET_CLASSES.map((ac) => (
+                <label key={ac} className="flex items-center gap-1.5 text-xs">
+                  <input
+                    type="checkbox"
+                    checked={visibleAssetClasses.includes(ac)}
+                    onChange={(e) =>
+                      setVisibleAssetClasses((prev) =>
+                        e.target.checked ? [...prev, ac] : prev.filter((x) => x !== ac),
+                      )
+                    }
+                  />
+                  {ac.replace(/_/g, ' ').toLowerCase()}
+                </label>
+              ))}
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Only used when role is CONTRIBUTOR or VIEWER.
+            </p>
+          </div>
+
+          {/* Categories */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label>
+                Categories visible ({visibleCategories.length}/
+                {NON_AC_CATEGORIES.length})
+              </Label>
+              <button
+                type="button"
+                onClick={() =>
+                  setVisibleCategories(
+                    toggleAll(visibleCategories, NON_AC_CATEGORIES) as NonAcCategory[],
+                  )
+                }
+                className="text-[11px] text-accent hover:underline"
+              >
+                {visibleCategories.length === NON_AC_CATEGORIES.length ? 'None' : 'All'}
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-1 border border-border rounded p-2">
+              {NON_AC_CATEGORIES.map((c) => (
+                <label key={c} className="flex items-center gap-1.5 text-xs">
+                  <input
+                    type="checkbox"
+                    checked={visibleCategories.includes(c)}
+                    onChange={(e) =>
+                      setVisibleCategories((prev) =>
+                        e.target.checked ? [...prev, c] : prev.filter((x) => x !== c),
+                      )
+                    }
+                  />
+                  {c.replace(/_/g, ' ').toLowerCase()}
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-border">
+          <Button variant="outline" onClick={onClose} disabled={saveMutation.isPending}>
+            Cancel
+          </Button>
+          <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
+            {saveMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-1.5" />}
+            Save
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
