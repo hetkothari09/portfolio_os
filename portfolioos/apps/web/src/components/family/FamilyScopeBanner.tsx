@@ -40,7 +40,8 @@ export function FamilyScopeBanner() {
 
   const exitScope = () => {
     clear();
-    queryClient.clear();
+    queryClient.removeQueries();
+    void queryClient.invalidateQueries();
   };
 
   return (

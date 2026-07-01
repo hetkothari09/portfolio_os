@@ -57,12 +57,15 @@ export function FamilyScopeSwitcher() {
   const switchTo = (id: string | null, name: string | null) => {
     setFamily(id, name);
     setOpen(false);
-    // Nuking the entire cache is simpler than retrofitting every query
-    // key with a scope dimension. Rationale: query keys don't include
-    // userId today (client.ts:257 in the exploration report) — so
-    // switching identity while the cache is warm would otherwise serve
-    // stale data belonging to the previous scope.
-    queryClient.clear();
+    // Query keys don't include the family scope dimension, so we have
+    // to force every cached query to refetch under the new
+    // X-Viewing-As-Family header. `clear()` alone empties the cache
+    // but leaves mounted observers stuck on their last data — user
+    // sees no change until manual reload. Two-step is more reliable:
+    //   1. remove non-active queries (frees memory, drops stale keys),
+    //   2. invalidate everything → every active useQuery refetches now.
+    queryClient.removeQueries();
+    void queryClient.invalidateQueries();
   };
 
   const currentLabel = viewingAsFamilyId

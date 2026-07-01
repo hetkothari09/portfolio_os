@@ -89,7 +89,8 @@ export function FamilyPage() {
 
   const activateFamilyView = (familyId: string, familyName: string) => {
     setFamily(familyId, familyName);
-    queryClient.clear();
+    queryClient.removeQueries();
+    void queryClient.invalidateQueries();
     toast.success(`Viewing as ${familyName}`);
   };
 
