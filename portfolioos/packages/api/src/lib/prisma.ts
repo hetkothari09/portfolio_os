@@ -44,6 +44,13 @@ const USER_SCOPED_MODELS: ReadonlySet<string> = new Set([
   'LlmSpend',
   'MFCentralSyncJob',
   'MFCasMailbackJob',
+  // Family / HOF hierarchical feature. Family rows are visible only to
+  // members of that family; FamilyMember rows to self + OWNERs in the
+  // same family; FamilyInvitation rows to the inviter (invitee resolves
+  // via the emailed token on a public endpoint, not through RLS).
+  'Family',
+  'FamilyMember',
+  'FamilyInvitation',
 ]);
 
 const basePrisma =

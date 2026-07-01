@@ -10,11 +10,12 @@ import {
   getPortfolio,
   getPortfolioHoldings,
   getPortfolioSummary,
-  listPortfolios,
+  listPortfoliosForScope,
   updatePortfolio,
 } from '../services/portfolio.service.js';
 import { created, noContent, ok } from '../lib/response.js';
 import { UnauthorizedError } from '../lib/errors.js';
+import { parseFamilyId } from '../lib/familyHeader.js';
 
 const createSchema = z.object({
   name: z.string().min(1).max(100),
@@ -33,7 +34,7 @@ function userId(req: Request): string {
 }
 
 export async function list(req: Request, res: Response) {
-  ok(res, await listPortfolios(userId(req)));
+  ok(res, await listPortfoliosForScope(userId(req), parseFamilyId(req)));
 }
 
 export async function detail(req: Request, res: Response) {

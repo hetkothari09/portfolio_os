@@ -14,11 +14,18 @@ import { ForbiddenError, NotFoundError } from '../lib/errors.js';
 import { fetchHistorical, buildYahooSymbol } from '../priceFeeds/yahoo.service.js';
 import { valuationMethodFor } from './valuationMethod.js';
 import { isPriceStale } from './priceStaleness.js';
+import {
+  getEffectiveScope,
+  portfolioReadableWhere,
+  type EffectiveScope,
+} from './familyScope.service.js';
+import { runAsUser } from '../lib/requestContext.js';
 
 function toPortfolioDTO(p: Portfolio) {
   return {
     id: p.id,
     userId: p.userId,
+    familyId: p.familyId,
     clientId: p.clientId,
     name: p.name,
     description: p.description,
@@ -30,28 +37,133 @@ function toPortfolioDTO(p: Portfolio) {
   };
 }
 
-export async function listPortfolios(userId: string) {
-  const rows = await prisma.portfolio.findMany({
-    where: { userId },
-    orderBy: [{ isDefault: 'desc' }, { createdAt: 'asc' }],
-    include: {
-      _count: { select: { holdingProjections: true, transactions: true } },
-    },
-  });
+/**
+ * List portfolios visible to the caller, respecting family scope.
+ *
+ * Personal view (no `familyId`): returns the caller's own portfolios.
+ * Family view: returns family-shared portfolios of that family plus the
+ * caller's own personal portfolios. When the caller is OWNER, other
+ * members' personal portfolios are fetched via `runAsUser` fan-out so
+ * the existing single-owner RLS on personal rows keeps holding.
+ */
+export async function listPortfoliosForScope(
+  callerId: string,
+  familyId?: string,
+) {
+  const scope = await getEffectiveScope(callerId, { familyId });
+  return listPortfoliosWithScope(scope);
+}
 
-  // Aggregate current value per portfolio in one query
-  const portfolioIds = rows.map((p) => p.id);
-  const holdingValues = portfolioIds.length > 0
-    ? await prisma.holdingProjection.findMany({
-        where: { portfolioId: { in: portfolioIds } },
+/**
+ * @deprecated Prefer `listPortfoliosForScope`. Kept for the small number
+ * of callers that still pass a bare userId (system jobs, tests).
+ */
+export async function listPortfolios(userId: string) {
+  return listPortfoliosWithScope({
+    callerId: userId,
+    familyId: null,
+    role: null,
+    readableUserIds: [userId],
+    writableUserIds: [userId],
+    readableFamilyIds: [],
+    writableFamilyIds: [],
+    allowedAssetClasses: null,
+    allowedCategories: null,
+  });
+}
+
+async function listPortfoliosWithScope(scope: EffectiveScope) {
+  // OWNER cross-member reads on personal portfolios need to run under
+  // each member's user context so the personal-portfolio RLS branch
+  // (`userId = current`) permits them. Own personal + all family-shared
+  // fit inside a single query as the caller.
+  const isOwnerViewingFamily =
+    scope.role === 'OWNER' &&
+    scope.familyId !== null &&
+    scope.readableUserIds.length > 1;
+
+  const rows = await (async () => {
+    if (!isOwnerViewingFamily) {
+      // Fast path: single query. Personal (own) + family-shared match
+      // the RLS policy directly for the caller.
+      return prisma.portfolio.findMany({
+        where: portfolioReadableWhere(scope),
+        orderBy: [{ isDefault: 'desc' }, { createdAt: 'asc' }],
+        include: {
+          _count: { select: { holdingProjections: true, transactions: true } },
+        },
+      });
+    }
+    // OWNER family view: fan out per readable user for personal
+    // portfolios; add family-shared portfolios in one final call.
+    const otherUserIds = scope.readableUserIds.filter((u) => u !== scope.callerId);
+    const perMember = await Promise.all(
+      otherUserIds.map((uid) =>
+        runAsUser(uid, () =>
+          prisma.portfolio.findMany({
+            where: { userId: uid, familyId: null },
+            include: {
+              _count: { select: { holdingProjections: true, transactions: true } },
+            },
+          }),
+        ),
+      ),
+    );
+    const own = await prisma.portfolio.findMany({
+      where: portfolioReadableWhere(scope),
+      include: {
+        _count: { select: { holdingProjections: true, transactions: true } },
+      },
+    });
+    const all = [...own, ...perMember.flat()];
+    return all.sort((a, b) => {
+      if (a.isDefault !== b.isDefault) return a.isDefault ? -1 : 1;
+      return a.createdAt.getTime() - b.createdAt.getTime();
+    });
+  })();
+
+  // Aggregate current value per portfolio. Own + family-shared portfolios
+  // read in the caller's context (Portfolio RLS permits family via
+  // membership). Other members' personal portfolios (OWNER cross-member
+  // reads) run under each member's context via runAsUser so the child
+  // tables' `p.userId = current` RLS branch still holds.
+  const ownContextPortfolioIds: string[] = [];
+  const perMemberPortfolios = new Map<string, string[]>();
+  for (const p of rows) {
+    if (p.userId === scope.callerId || p.familyId !== null) {
+      ownContextPortfolioIds.push(p.id);
+    } else {
+      const bucket = perMemberPortfolios.get(p.userId) ?? [];
+      bucket.push(p.id);
+      perMemberPortfolios.set(p.userId, bucket);
+    }
+  }
+
+  const holdingBatches: Array<
+    Array<{ portfolioId: string; currentValue: Prisma.Decimal | null; totalCost: Prisma.Decimal }>
+  > = [];
+  if (ownContextPortfolioIds.length > 0) {
+    holdingBatches.push(
+      await prisma.holdingProjection.findMany({
+        where: { portfolioId: { in: ownContextPortfolioIds } },
         select: { portfolioId: true, currentValue: true, totalCost: true },
-      })
-    : [];
+      }),
+    );
+  }
+  for (const [memberUserId, ids] of perMemberPortfolios) {
+    holdingBatches.push(
+      await runAsUser(memberUserId, () =>
+        prisma.holdingProjection.findMany({
+          where: { portfolioId: { in: ids } },
+          select: { portfolioId: true, currentValue: true, totalCost: true },
+        }),
+      ),
+    );
+  }
 
   const valueByPortfolio = new Map<string, Decimal>();
-  for (const h of holdingValues) {
+  for (const h of holdingBatches.flat()) {
     const prev = valueByPortfolio.get(h.portfolioId) ?? new Decimal(0);
-    // Use currentValue if available, else fall back to cost (FDs, bonds, gold, etc.)
     const effective = h.currentValue !== null ? toDecimal(h.currentValue) : toDecimal(h.totalCost);
     valueByPortfolio.set(h.portfolioId, prev.plus(effective));
   }
