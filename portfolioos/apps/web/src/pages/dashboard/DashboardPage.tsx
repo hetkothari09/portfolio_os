@@ -31,6 +31,7 @@ import { ConnectGmailCard } from '@/components/dashboard/ConnectGmailCard';
 import { FamilyScopeBanner } from '@/components/family/FamilyScopeBanner';
 import { GmailScanProgressCard } from '@/components/dashboard/GmailScanProgressCard';
 import { DashboardFxStrip } from '@/pages/forex/DashboardFxStrip';
+import { HealthScore } from '@/components/intelligence/HealthScore';
 import { apiErrorMessage } from '@/api/client';
 import { usePrivacyStore } from '@/stores/privacy.store';
 import { useThemeStore } from '@/stores/theme.store';
@@ -602,6 +603,8 @@ export function DashboardPage() {
           </div>
         </Card>
       )}
+
+      <HealthScore />
 
       {/* Alerts bar — collapsible. In-session only; reload re-expands. */}
       {alerts.length > 0 && (() => {
