@@ -155,6 +155,19 @@ export const familiesApi = {
     return unwrap(data);
   },
 
+  async sharePortfolio(familyId: string, portfolioId: string) {
+    const { data } = await api.post<ApiResponse<{ id: string; familyId: string | null }>>(
+      `/api/families/${familyId}/portfolios/${portfolioId}/share`,
+    );
+    return unwrap(data);
+  },
+  async unsharePortfolio(familyId: string, portfolioId: string) {
+    const { data } = await api.post<ApiResponse<{ id: string; familyId: string | null }>>(
+      `/api/families/${familyId}/portfolios/${portfolioId}/unshare`,
+    );
+    return unwrap(data);
+  },
+
   async createFamilyPortfolio(
     familyId: string,
     input: { name: string; description?: string; currency?: string; type?: string },

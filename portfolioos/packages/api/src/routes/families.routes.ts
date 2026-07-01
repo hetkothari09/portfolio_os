@@ -18,6 +18,8 @@ import {
   listPendingInvitations,
   peekInvitation,
   revokeMember,
+  sharePortfolioWithFamily,
+  unsharePortfolioFromFamily,
   updateFamily,
   updateMemberPermissions,
 } from '../services/family.service.js';
@@ -193,5 +195,28 @@ familiesRouter.post(
       res,
       await createFamilyPortfolio(callerId(req), req.params.familyId!, data),
     );
+  }),
+);
+
+// Attach a caller-owned existing portfolio to the family.
+familiesRouter.post(
+  '/:familyId/portfolios/:portfolioId/share',
+  asyncHandler(async (req: Request, res: Response) => {
+    ok(
+      res,
+      await sharePortfolioWithFamily(
+        callerId(req),
+        req.params.familyId!,
+        req.params.portfolioId!,
+      ),
+    );
+  }),
+);
+
+// Detach a caller-owned portfolio back to personal (clears familyId).
+familiesRouter.post(
+  '/:familyId/portfolios/:portfolioId/unshare',
+  asyncHandler(async (req: Request, res: Response) => {
+    ok(res, await unsharePortfolioFromFamily(callerId(req), req.params.portfolioId!));
   }),
 );

@@ -447,6 +447,62 @@ export async function acceptInvitation(callerId: string, token: string) {
  * `familyId` marks it as shared — RLS + service scope treat these as
  * "readable by any active member, writable by OWNER/CONTRIBUTOR."
  */
+/**
+ * Attach an existing PERSONAL portfolio the caller already owns to a
+ * family, making it a family-shared portfolio going forward. Only the
+ * portfolio's own user can share it; OWNERs cannot forcibly share
+ * another member's personal portfolio. Symmetric `unshareFromFamily`
+ * clears the familyId if the caller changes their mind.
+ */
+export async function sharePortfolioWithFamily(
+  callerId: string,
+  familyId: string,
+  portfolioId: string,
+) {
+  const membership = await prisma.familyMember.findUnique({
+    where: { familyId_userId: { familyId, userId: callerId } },
+    select: { status: true },
+  });
+  if (!membership || membership.status !== 'ACTIVE') {
+    throw new ForbiddenError('You are not an active member of this family.');
+  }
+  const portfolio = await prisma.portfolio.findUnique({
+    where: { id: portfolioId },
+    select: { userId: true, familyId: true },
+  });
+  if (!portfolio) throw new NotFoundError('Portfolio not found.');
+  if (portfolio.userId !== callerId) {
+    throw new ForbiddenError('You can only share portfolios you own.');
+  }
+  if (portfolio.familyId && portfolio.familyId !== familyId) {
+    throw new BadRequestError(
+      'Portfolio is already shared with a different family. Unshare it first.',
+    );
+  }
+  return prisma.portfolio.update({
+    where: { id: portfolioId },
+    data: { familyId },
+  });
+}
+
+export async function unsharePortfolioFromFamily(
+  callerId: string,
+  portfolioId: string,
+) {
+  const portfolio = await prisma.portfolio.findUnique({
+    where: { id: portfolioId },
+    select: { userId: true, familyId: true },
+  });
+  if (!portfolio) throw new NotFoundError('Portfolio not found.');
+  if (portfolio.userId !== callerId) {
+    throw new ForbiddenError('You can only unshare portfolios you own.');
+  }
+  return prisma.portfolio.update({
+    where: { id: portfolioId },
+    data: { familyId: null },
+  });
+}
+
 export async function createFamilyPortfolio(
   callerId: string,
   familyId: string,

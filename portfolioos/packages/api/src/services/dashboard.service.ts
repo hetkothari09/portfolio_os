@@ -500,52 +500,21 @@ export async function getDashboardNetWorthForScope(
     return getDashboardNetWorth(callerId, opts.portfolioId);
   }
 
-  // Family view. Callers within the family see:
-  //   - OWNER              → fan-out across every readable member; each
-  //                          pass picks up that user's personal
-  //                          portfolios plus any family portfolios they
-  //                          created (since family portfolios still
-  //                          carry `userId = creator`).
-  //   - CONTRIBUTOR/VIEWER → own personal dashboard, PLUS family-shared
-  //                          portfolios owned by OTHER members so the
-  //                          family pot actually shows up in their
-  //                          net-worth totals. Rule A holds — peers'
-  //                          personal portfolios stay hidden.
-  const dashboards: DashboardNetWorth[] = [];
-  if (scope.role === 'OWNER') {
-    const perMember = await Promise.all(
-      scope.readableUserIds.map((uid) =>
-        uid === callerId
-          ? getDashboardNetWorth(uid, opts.portfolioId)
-          : runAsUser(uid, () => getDashboardNetWorth(uid, opts.portfolioId)),
-      ),
-    );
-    dashboards.push(...perMember);
-  } else {
-    dashboards.push(await getDashboardNetWorth(callerId, opts.portfolioId));
-    const familyPortfolios = await prisma.portfolio.findMany({
-      where: {
-        familyId: scope.familyId,
-        userId: { not: callerId },
-      },
-      select: { id: true, userId: true },
-    });
-    const byCreator = new Map<string, string[]>();
-    for (const p of familyPortfolios) {
-      const bucket = byCreator.get(p.userId) ?? [];
-      bucket.push(p.id);
-      byCreator.set(p.userId, bucket);
-    }
-    for (const [creatorId, portfolioIds] of byCreator) {
-      const perPortfolio = await Promise.all(
-        portfolioIds.map((pid) =>
-          runAsUser(creatorId, () => getDashboardNetWorth(creatorId, pid)),
-        ),
-      );
-      dashboards.push(...perPortfolio);
-    }
-  }
-  return mergeNetWorthResults(dashboards);
+  // Family view — fan out across every active member (regardless of
+  // role). Each pass picks up that user's own personal portfolios plus
+  // any family portfolios they created (family portfolios still carry
+  // `userId = creator`, so a per-user fetch collects them exactly once
+  // through their creator's pass). OWNER sees the full union; other
+  // roles see the same union — AC/category filters apply per-widget on
+  // the frontend rather than zeroing totals here.
+  const perMember = await Promise.all(
+    scope.readableUserIds.map((uid) =>
+      uid === callerId
+        ? getDashboardNetWorth(uid, opts.portfolioId)
+        : runAsUser(uid, () => getDashboardNetWorth(uid, opts.portfolioId)),
+    ),
+  );
+  return mergeNetWorthResults(perMember);
 }
 
 function mergeNetWorthResults(results: DashboardNetWorth[]): DashboardNetWorth {

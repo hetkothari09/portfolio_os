@@ -19,19 +19,25 @@ import { runAsUser } from '../lib/requestContext.js';
  * loops in dashboard/analytics change — every downstream caller keeps
  * using the same `EffectiveScope` shape.
  *
- * Rules (locked in Phase 3):
- *   - OWNER      → sees every active member's personal assets + all
- *                  family-shared assets; no visibility filter applies.
- *                  Can write to any member's family portfolios.
- *   - CONTRIBUTOR → sees own personal + family-shared assets. Filtered
- *                  by their `visibleAssetClasses` / `visibleCategories`.
- *                  Can write to family portfolios of families they
- *                  belong to. Cannot see peers' personal data.
- *   - VIEWER     → same visibility as CONTRIBUTOR. Read-only on family
- *                  portfolios; can still write to own personal
- *                  portfolios.
- * Rule A: CONTRIBUTOR/VIEWER never see another member's personal data.
- * To grant cross-member visibility → promote to OWNER.
+ * Rules (revised post-feedback):
+ *   - Personal view (no familyId) → caller sees own data only.
+ *   - Family view (familyId set)  → the "family scope" is the UNION of
+ *     every active member's personal data + every family-shared entity.
+ *       - OWNER      → sees the whole union; no visibility filter.
+ *       - CONTRIBUTOR → sees the whole union filtered by their
+ *                       `visibleAssetClasses` / `visibleCategories`
+ *                       (empty = no restriction = allow all). Restricted
+ *                       classes render blank on the member's screens.
+ *                       Can add own transactions; can write to family
+ *                       portfolios; cannot mutate peer personal data.
+ *       - VIEWER     → same visibility as CONTRIBUTOR but read-only.
+ *
+ * The earlier "Rule A" (peers never see each other's personal data) was
+ * reversed after real-world testing showed family members expect to see
+ * the household's whole picture. Restrictions are now a filter on the
+ * aggregated family view, not a firewall against peer personal data.
+ * Personal-view semantics unchanged — a solo user's personal login
+ * still shows only their own data.
  */
 
 /** Non-AssetClass category tokens used by `FamilyMember.visibleCategories`. */
@@ -144,22 +150,25 @@ export async function getEffectiveScope(
   const family = opts.familyId;
   const role = membership.role;
 
+  // Family view — every active member of the family is readable to
+  // every other active member. Restrictions applied downstream via
+  // allowedAssetClasses / allowedCategories filter (empty = no
+  // restriction).
+  const siblings = await prisma.familyMember.findMany({
+    where: { familyId: family, status: 'ACTIVE' },
+    select: { userId: true },
+  });
+  const readableUserIds = dedupe([callerId, ...siblings.map((s) => s.userId)]);
+
   if (role === 'OWNER') {
-    // Owner sees every active member's personal + all family-shared
-    // assets, unfiltered.
-    const siblings = await prisma.familyMember.findMany({
-      where: { familyId: family, status: 'ACTIVE' },
-      select: { userId: true },
-    });
     return {
       callerId,
       familyId: family,
       role,
-      readableUserIds: dedupe([callerId, ...siblings.map((s) => s.userId)]),
-      // v1: writes on behalf of another user's *personal* data are not
-      // allowed — an OWNER can only write to family portfolios of that
-      // family, not into another user's personal portfolios. Personal
-      // stays personal even for OWNERs.
+      readableUserIds,
+      // Writes remain limited to caller's own userId — an OWNER cannot
+      // silently mutate another member's personal portfolios/holdings.
+      // Family-shared portfolios are written via `writableFamilyIds`.
       writableUserIds: [callerId],
       readableFamilyIds: [family],
       writableFamilyIds: [family],
@@ -168,20 +177,12 @@ export async function getEffectiveScope(
     };
   }
 
-  // CONTRIBUTOR / VIEWER: rule A — no peer personal data. Filter caps
-  // apply to own personal + family-shared reads uniformly.
-  //
-  // Empty array semantics: an EMPTY visibility array means "no
-  // restriction" (allow all), not "deny all". This is the opposite of
-  // the earlier draft — the OWNER experience was surprising because a
-  // freshly-invited member with unset arrays saw nothing at all.
-  // Restriction is now opt-in per class/category; blank = default open.
   const knownCats = filterKnownCategories(membership.visibleCategories);
   return {
     callerId,
     familyId: family,
     role,
-    readableUserIds: [callerId],
+    readableUserIds,
     writableUserIds: [callerId],
     readableFamilyIds: [family],
     writableFamilyIds: role === 'CONTRIBUTOR' ? [family] : [],

@@ -77,15 +77,14 @@ async function listPortfoliosWithScope(scope: EffectiveScope) {
   // each member's user context so the personal-portfolio RLS branch
   // (`userId = current`) permits them. Own personal + all family-shared
   // fit inside a single query as the caller.
-  const isOwnerViewingFamily =
-    scope.role === 'OWNER' &&
-    scope.familyId !== null &&
-    scope.readableUserIds.length > 1;
+  // Family view (any role) reads across all active members via fan-out
+  // — the Portfolio RLS policy only permits family-shared reads for
+  // members; peer personal portfolios still need runAsUser context.
+  const isFamilyView =
+    scope.familyId !== null && scope.readableUserIds.length > 1;
 
   const rows = await (async () => {
-    if (!isOwnerViewingFamily) {
-      // Fast path: single query. Personal (own) + family-shared match
-      // the RLS policy directly for the caller.
+    if (!isFamilyView) {
       return prisma.portfolio.findMany({
         where: portfolioReadableWhere(scope),
         orderBy: [{ isDefault: 'desc' }, { createdAt: 'asc' }],
@@ -94,8 +93,6 @@ async function listPortfoliosWithScope(scope: EffectiveScope) {
         },
       });
     }
-    // OWNER family view: fan out per readable user for personal
-    // portfolios; add family-shared portfolios in one final call.
     const otherUserIds = scope.readableUserIds.filter((u) => u !== scope.callerId);
     const perMember = await Promise.all(
       otherUserIds.map((uid) =>
@@ -177,17 +174,73 @@ async function listPortfoliosWithScope(scope: EffectiveScope) {
 }
 
 export async function getPortfolio(userId: string, id: string) {
-  const p = await prisma.portfolio.findUnique({ where: { id } });
-  if (!p) throw new NotFoundError('Portfolio not found');
-  if (p.userId !== userId) throw new ForbiddenError();
+  const p = await ensureReadable(userId, id);
   return toPortfolioDTO(p);
 }
 
 async function ensureOwnership(userId: string, id: string) {
   const p = await prisma.portfolio.findUnique({ where: { id } });
   if (!p) throw new NotFoundError('Portfolio not found');
-  if (p.userId !== userId) throw new ForbiddenError();
-  return p;
+  if (p.userId === userId) return p;
+  // Family-shared portfolios: any ACTIVE OWNER (or the CONTRIBUTOR
+  // creator, already handled above via userId equality) may manage
+  // them. Personal portfolios of another user stay untouchable.
+  if (p.familyId) {
+    const membership = await prisma.familyMember.findUnique({
+      where: { familyId_userId: { familyId: p.familyId, userId } },
+      select: { role: true, status: true },
+    });
+    if (membership?.status === 'ACTIVE' && membership.role === 'OWNER') {
+      return p;
+    }
+  }
+  throw new ForbiddenError();
+}
+
+/**
+ * Permissive ownership check for READ paths. Returns the portfolio if:
+ *   - Caller owns it (userId equality), OR
+ *   - It's a family-shared portfolio and caller is an ACTIVE member of
+ *     that family (any role), OR
+ *   - It's a peer PERSONAL portfolio owned by a member of a family the
+ *     caller also belongs to (any role, ACTIVE). This is the new
+ *     "family view sees everyone's data" semantic.
+ *
+ * Writes must still route through `ensureOwnership` — this helper is
+ * strictly for read-only paths (holdings, summary, valuation, cash-
+ * flows, etc.).
+ */
+export async function ensureReadable(userId: string, id: string) {
+  const p = await prisma.portfolio.findUnique({ where: { id } });
+  if (!p) throw new NotFoundError('Portfolio not found');
+  if (p.userId === userId) return p;
+
+  if (p.familyId) {
+    const membership = await prisma.familyMember.findUnique({
+      where: { familyId_userId: { familyId: p.familyId, userId } },
+      select: { status: true },
+    });
+    if (membership?.status === 'ACTIVE') return p;
+  }
+
+  // Peer personal portfolio: readable if caller shares a family with
+  // the portfolio's owner. Confirms via a single join across the
+  // FamilyMember table — both rows must be ACTIVE.
+  const sharedFamily = await prisma.familyMember.findFirst({
+    where: {
+      userId,
+      status: 'ACTIVE',
+      family: {
+        members: {
+          some: { userId: p.userId, status: 'ACTIVE' },
+        },
+      },
+    },
+    select: { familyId: true },
+  });
+  if (sharedFamily) return p;
+
+  throw new ForbiddenError();
 }
 
 export async function createPortfolio(
@@ -330,11 +383,18 @@ export async function getPortfolioSummary(userId: string, id: string) {
 }
 
 export async function getPortfolioHoldings(userId: string, id: string) {
-  await ensureOwnership(userId, id);
-  const holdings = await prisma.holdingProjection.findMany({
-    where: { portfolioId: id },
-    orderBy: { computedAt: 'desc' },
-  });
+  const portfolio = await ensureReadable(userId, id);
+  // Peer personal portfolios still need runAsUser context so child-
+  // table RLS (HoldingProjection joins Portfolio.userId = current)
+  // permits the read.
+  const readCtx = <T>(fn: () => Promise<T>): Promise<T> =>
+    portfolio.userId === userId || portfolio.familyId ? fn() : runAsUser(portfolio.userId, fn);
+  const holdings = await readCtx(() =>
+    prisma.holdingProjection.findMany({
+      where: { portfolioId: id },
+      orderBy: { computedAt: 'desc' },
+    }),
+  );
 
   // HoldingProjection stores assetName/isin directly — we still need stock
   // symbol / fund schemeCode for display, so batch-fetch those in one round-

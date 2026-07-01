@@ -249,6 +249,7 @@ function FamilyWorkspace({
   const [editingMember, setEditingMember] = useState<FamilyMemberRow | null>(null);
   const [inviting, setInviting] = useState(false);
   const [creatingPortfolio, setCreatingPortfolio] = useState(false);
+  const [sharingExisting, setSharingExisting] = useState(false);
 
   const revokeMutation = useMutation({
     mutationFn: (memberUserId: string) =>
@@ -347,13 +348,23 @@ function FamilyWorkspace({
       {/* Family-shared portfolios */}
       <Card>
         <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <CardTitle>Shared portfolios</CardTitle>
             {(isOwner || family.role === 'CONTRIBUTOR') && (
-              <Button size="sm" onClick={() => setCreatingPortfolio(true)}>
-                <Plus className="h-4 w-4" strokeWidth={2} />
-                <span className="ml-1">New shared portfolio</span>
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setSharingExisting(true)}
+                >
+                  <Briefcase className="h-4 w-4" strokeWidth={1.9} />
+                  <span className="ml-1">Share existing</span>
+                </Button>
+                <Button size="sm" onClick={() => setCreatingPortfolio(true)}>
+                  <Plus className="h-4 w-4" strokeWidth={2} />
+                  <span className="ml-1">New shared portfolio</span>
+                </Button>
+              </div>
             )}
           </div>
         </CardHeader>
@@ -412,7 +423,114 @@ function FamilyWorkspace({
           onClose={() => setCreatingPortfolio(false)}
         />
       )}
+      {sharingExisting && (isOwner || family.role === 'CONTRIBUTOR') && (
+        <ShareExistingPortfolioDialog
+          familyId={family.id}
+          currentUserId={currentUserId}
+          onClose={() => setSharingExisting(false)}
+        />
+      )}
     </div>
+  );
+}
+
+// ─── Share existing portfolio ────────────────────────────────────────
+
+function ShareExistingPortfolioDialog({
+  familyId,
+  currentUserId,
+  onClose,
+}: {
+  familyId: string;
+  currentUserId: string | undefined;
+  onClose: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const portfoliosQuery = useQuery({
+    queryKey: ['portfolios', 'own-personal', currentUserId],
+    queryFn: () => portfoliosApi.list(),
+  });
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const shareMutation = useMutation({
+    mutationFn: (portfolioId: string) => familiesApi.sharePortfolio(familyId, portfolioId),
+    onSuccess: () => {
+      toast.success('Portfolio shared with family');
+      queryClient.invalidateQueries({ queryKey: ['portfolios'] });
+      queryClient.invalidateQueries({
+        queryKey: ['portfolios', 'family-shared', familyId],
+      });
+      onClose();
+    },
+    onError: (err) => toast.error(apiErrorMessage(err, 'Share failed')),
+  });
+
+  // Only show portfolios the caller owns AND are not already family-
+  // shared (with any family). Callers can't share peer portfolios.
+  const shareable = (portfoliosQuery.data ?? []).filter(
+    (p) => p.userId === currentUserId && !p.familyId,
+  );
+
+  return (
+    <ModalShell title="Share an existing portfolio" onClose={onClose}>
+      <div className="space-y-4">
+        <p className="text-xs text-muted-foreground">
+          Pick one of your own personal portfolios to attach to this family.
+          The portfolio becomes visible to every active member and writable by
+          OWNERs + CONTRIBUTORs. You can unshare it later.
+        </p>
+        {portfoliosQuery.isLoading ? (
+          <div className="text-center py-4">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground mx-auto" />
+          </div>
+        ) : shareable.length === 0 ? (
+          <div className="rounded-md border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
+            No personal portfolios available to share. Every portfolio you own
+            is either already shared with a family or is a shared portfolio.
+          </div>
+        ) : (
+          <div className="space-y-1.5 max-h-72 overflow-y-auto">
+            {shareable.map((p) => (
+              <label
+                key={p.id}
+                className={`flex items-center gap-3 rounded-md border px-3 py-2 cursor-pointer transition-colors ${
+                  selectedId === p.id
+                    ? 'border-accent bg-accent/5'
+                    : 'border-border hover:bg-muted/50'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="share-portfolio"
+                  checked={selectedId === p.id}
+                  onChange={() => setSelectedId(p.id)}
+                />
+                <Briefcase className="h-4 w-4 text-muted-foreground" strokeWidth={1.7} />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium truncate">{p.name}</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {p.currency} · {p.holdingCount} holdings ·{' '}
+                    {p.transactionCount} transactions
+                  </div>
+                </div>
+              </label>
+            ))}
+          </div>
+        )}
+      </div>
+      <ModalFooter>
+        <Button variant="outline" onClick={onClose} disabled={shareMutation.isPending}>
+          Cancel
+        </Button>
+        <Button
+          onClick={() => selectedId && shareMutation.mutate(selectedId)}
+          disabled={!selectedId || shareMutation.isPending}
+        >
+          {shareMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-1.5" />}
+          Share
+        </Button>
+      </ModalFooter>
+    </ModalShell>
   );
 }
 
