@@ -170,6 +170,13 @@ export async function getEffectiveScope(
 
   // CONTRIBUTOR / VIEWER: rule A — no peer personal data. Filter caps
   // apply to own personal + family-shared reads uniformly.
+  //
+  // Empty array semantics: an EMPTY visibility array means "no
+  // restriction" (allow all), not "deny all". This is the opposite of
+  // the earlier draft — the OWNER experience was surprising because a
+  // freshly-invited member with unset arrays saw nothing at all.
+  // Restriction is now opt-in per class/category; blank = default open.
+  const knownCats = filterKnownCategories(membership.visibleCategories);
   return {
     callerId,
     familyId: family,
@@ -178,8 +185,11 @@ export async function getEffectiveScope(
     writableUserIds: [callerId],
     readableFamilyIds: [family],
     writableFamilyIds: role === 'CONTRIBUTOR' ? [family] : [],
-    allowedAssetClasses: membership.visibleAssetClasses,
-    allowedCategories: filterKnownCategories(membership.visibleCategories),
+    allowedAssetClasses:
+      membership.visibleAssetClasses.length === 0
+        ? null
+        : membership.visibleAssetClasses,
+    allowedCategories: knownCats.length === 0 ? null : knownCats,
   };
 }
 

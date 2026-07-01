@@ -4,6 +4,8 @@ import type { Money, Quantity } from '../decimal.js';
 export interface Portfolio {
   id: string;
   userId: string;
+  /** Set for family-shared / HUF portfolios; null for personal ones. */
+  familyId?: string | null;
   clientId?: string | null;
   name: string;
   description?: string | null;

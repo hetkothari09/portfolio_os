@@ -11,6 +11,7 @@ import { PortfolioGroupDetailPage } from './pages/portfolios/PortfolioGroupDetai
 import { SettingsPage } from './pages/settings/SettingsPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { AcceptInvitationPage } from './pages/family/AcceptInvitationPage';
+import { FamilyPage } from './pages/family/FamilyPage';
 import { TransactionsPage } from './pages/transactions/TransactionsPage';
 import { StocksPage } from './pages/assetClasses/StocksPage';
 import { MutualFundsPage } from './pages/assetClasses/MutualFundsPage';
@@ -97,6 +98,7 @@ export function App() {
         <Route path="/portfolios" element={<PortfolioListPage />} />
         <Route path="/portfolios/:id" element={<PortfolioDetailPage />} />
         <Route path="/portfolio-groups/:id" element={<PortfolioGroupDetailPage />} />
+        <Route path="/family" element={<FamilyPage />} />
         <Route path="/transactions" element={<TransactionsPage />} />
         <Route path="/stocks" element={<StocksPage />} />
         <Route path="/mutual-funds" element={<MutualFundsPage />} />
