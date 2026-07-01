@@ -26,7 +26,12 @@ function monthsAgo(n: number): Date {
 
 async function estimateMonthlyIncome(userId: string): Promise<Decimal> {
   const events = await prisma.canonicalEvent.findMany({
-    where: { userId, eventType: { in: ['NEFT_CREDIT', 'UPI_CREDIT'] }, eventDate: { gte: monthsAgo(3) } },
+    where: {
+      userId,
+      eventType: { in: ['NEFT_CREDIT', 'UPI_CREDIT'] },
+      eventDate: { gte: monthsAgo(3) },
+      status: { in: ['CONFIRMED', 'PROJECTED'] },
+    },
     select: { amount: true },
   });
   const total = events.reduce((s, e) => s.plus(d(e.amount)), ZERO);
@@ -35,7 +40,12 @@ async function estimateMonthlyIncome(userId: string): Promise<Decimal> {
 
 async function estimateMonthlyExpenses(userId: string): Promise<Decimal> {
   const events = await prisma.canonicalEvent.findMany({
-    where: { userId, eventType: { in: ['CARD_PURCHASE', 'UPI_DEBIT', 'NEFT_DEBIT'] }, eventDate: { gte: monthsAgo(3) } },
+    where: {
+      userId,
+      eventType: { in: ['CARD_PURCHASE', 'UPI_DEBIT', 'NEFT_DEBIT'] },
+      eventDate: { gte: monthsAgo(3) },
+      status: { in: ['CONFIRMED', 'PROJECTED'] },
+    },
     select: { amount: true },
   });
   const total = events.reduce((s, e) => s.plus(d(e.amount)), ZERO);
@@ -44,7 +54,12 @@ async function estimateMonthlyExpenses(userId: string): Promise<Decimal> {
 
 async function estimateMonthlyInvestment(userId: string): Promise<Decimal> {
   const events = await prisma.canonicalEvent.findMany({
-    where: { userId, eventType: { in: ['SIP_INSTALLMENT', 'BUY'] }, eventDate: { gte: monthsAgo(3) } },
+    where: {
+      userId,
+      eventType: { in: ['SIP_INSTALLMENT', 'BUY'] },
+      eventDate: { gte: monthsAgo(3) },
+      status: { in: ['CONFIRMED', 'PROJECTED'] },
+    },
     select: { amount: true },
   });
   const total = events.reduce((s, e) => s.plus(d(e.amount)), ZERO);
@@ -149,7 +164,8 @@ export async function computeHealthScore(userId: string, opts: { force?: boolean
     age,
   });
   const ins = insuranceScore(life.sumAssured, annualIncome, life.hasPolicies);
-  const gp = goalProgressScore(goals.map((g) => g.progressPct));
+  const activeGoals = goals.filter((g) => g.status === 'ACTIVE');
+  const gp = goalProgressScore(activeGoals.map((g) => g.progressPct));
 
   const { overall, grade } = weightedOverall({
     emergencyFund: ef.score, investmentRate: ir.score, debtBurden: db.score,
@@ -186,10 +202,10 @@ export async function computeHealthScore(userId: string, opts: { force?: boolean
     },
     goalProgress: {
       score: Math.round(gp.score),
-      insight: goals.length > 0
+      insight: activeGoals.length > 0
         ? `You are averaging ${Math.round(gp.score)}% progress across your active goals.`
         : 'You have not set any financial goals yet.',
-      action: goals.length > 0 ? 'Review goals that are falling behind.' : 'Set your first financial goal.',
+      action: activeGoals.length > 0 ? 'Review goals that are falling behind.' : 'Set your first financial goal.',
     },
   };
 
