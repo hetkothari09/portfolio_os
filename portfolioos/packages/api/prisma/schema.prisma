@@ -123,6 +123,14 @@ model User {
   // Account Aggregator consents — currently Finfactor (Finvu) only;
   // future AA partners stamp the `provider` column.
   aaConsents AaConsent[]
+
+  // Family / HOF feature — a user may create N families, be a member of N
+  // families (own household + parental, in-laws, HUF entity, ...), and send
+  // invitations. Roles + per-member visibility live on FamilyMember.
+  familiesCreated       Family[]           @relation("FamilyCreatedBy")
+  familyMemberships     FamilyMember[]     @relation("FamilyMembership")
+  familyInvitesReceived FamilyMember[]     @relation("FamilyMemberInvitedBy")
+  familyInvitationsSent FamilyInvitation[] @relation("FamilyInvitationInviter")
 }
 
 model UserNotificationConfig {
@@ -290,6 +298,11 @@ model Portfolio {
   id          String        @id @default(cuid())
   userId      String
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Family-shared portfolios (HUF, ancestral pot, joint account) set
+  // `familyId` and use `userId` to record the creating owner. Personal
+  // portfolios leave `familyId` NULL. Exactly one meaning per row.
+  familyId    String?
+  family      Family?       @relation(fields: [familyId], references: [id])
   clientId    String?
   client      Client?       @relation(fields: [clientId], references: [id])
   name        String
@@ -335,6 +348,7 @@ model Portfolio {
 
   @@index([userId])
   @@index([clientId])
+  @@index([familyId])
 }
 
 enum PortfolioType {
@@ -2802,4 +2816,114 @@ model AaConsent {
   @@unique([userId, consentHandle])
   @@index([userId, status])
   @@index([provider, status])
+}
+
+// ─── FAMILY / HOF (hierarchical multi-user) ─────────────────────────
+//
+// A Family is a graph of real User rows tied by FamilyMember rows.
+// Multiple OWNERs are supported so joint families (grandfather + father
+// + uncle, each an OWNER) work natively. A single OWNER + N members is
+// a nuclear family. A user can belong to N families (own household +
+// parental + in-laws + HUF entity), each membership carrying its own
+// role + per-member visibility caps.
+//
+// Portfolios and (future) non-portfolio entities carry an optional
+// `familyId` for the family-shared pot (HUF, ancestral fund, joint
+// bank account). Personal assets keep `familyId` NULL and belong to
+// exactly one User.
+//
+// Access rules (enforced by getEffectiveScope in the service layer,
+// with RLS as defense-in-depth):
+//   - OWNER    → sees every member's personal assets + all family
+//                assets; can invite/remove/edit members.
+//   - CONTRIBUTOR → sees own personal + family-shared, filtered by
+//                own visibleAssetClasses / visibleCategories; can
+//                write to family portfolios.
+//   - VIEWER   → same visibility as CONTRIBUTOR but read-only on
+//                family portfolios.
+// CONTRIBUTOR/VIEWER never see another member's personal data (rule
+// A locked in Phase 3). To grant cross-member visibility → promote
+// to OWNER.
+
+enum FamilyRole {
+  OWNER
+  CONTRIBUTOR
+  VIEWER
+}
+
+enum FamilyMemberStatus {
+  PENDING // invited, not yet accepted
+  ACTIVE
+  REVOKED // access revoked; row kept for audit trail
+}
+
+model Family {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdById String
+  createdBy   User     @relation("FamilyCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members     FamilyMember[]
+  invitations FamilyInvitation[]
+  portfolios  Portfolio[]
+
+  @@index([createdById])
+}
+
+model FamilyMember {
+  id       String @id @default(cuid())
+  familyId String
+  family   Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User   @relation("FamilyMembership", fields: [userId], references: [id], onDelete: Cascade)
+
+  role   FamilyRole         @default(CONTRIBUTOR)
+  status FamilyMemberStatus @default(ACTIVE)
+
+  // Per-member visibility caps. Ignored when role = OWNER (OWNERs see
+  // everything). CONTRIBUTOR/VIEWER queries intersect these lists with
+  // the underlying data. Empty array = deny-all for that dimension.
+  visibleAssetClasses AssetClass[] @default([])
+  // Freeform tokens for non-AssetClass entity categories: VEHICLE,
+  // RENTAL, INSURANCE, LOAN, CREDIT_CARD, BANK_ACCOUNT,
+  // OWNED_PROPERTY, GOAL. String[] (not an enum) so new categories
+  // don't require a migration when added.
+  visibleCategories String[] @default([])
+
+  invitedById String?
+  invitedBy   User?    @relation("FamilyMemberInvitedBy", fields: [invitedById], references: [id])
+  joinedAt    DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([familyId, userId])
+  @@index([userId, status])
+  @@index([familyId, status])
+}
+
+model FamilyInvitation {
+  id                  String       @id @default(cuid())
+  familyId            String
+  family              Family       @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  invitedEmail        String
+  invitedName         String?
+  role                FamilyRole   @default(CONTRIBUTOR)
+  visibleAssetClasses AssetClass[] @default([])
+  visibleCategories   String[]     @default([])
+  invitedById         String
+  invitedBy           User         @relation("FamilyInvitationInviter", fields: [invitedById], references: [id])
+
+  // Random 32+ byte hex token emailed to the invitee for the accept
+  // flow. Single-use; cleared on accept. Never trust the token holder
+  // to change role/visibility — those come from the row, not the URL.
+  token      String    @unique
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([invitedEmail])
+  @@index([familyId])
+  @@index([expiresAt])
 }
