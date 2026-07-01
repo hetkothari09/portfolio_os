@@ -153,6 +153,7 @@ export async function computeHealthScore(userId: string, opts: { force?: boolean
   const monthlyDebtPayments = monthlyEmi.plus(ccMinimums);
   const equityPct = netWorth.allocationBreakdown.find((a) => a.key === 'EQUITY')?.percent ?? 0;
   const annualIncome = monthlyIncome.times(12);
+  const hasAnyHoldings = netWorth.allocationBreakdown.length > 0;
 
   const ef = emergencyFundScore(liquidAssets, monthlyExpenses);
   const ir = investmentRateScore(monthlyInvestment, monthlyIncome);
@@ -167,17 +168,33 @@ export async function computeHealthScore(userId: string, opts: { force?: boolean
   const activeGoals = goals.filter((g) => g.status === 'ACTIVE');
   const gp = goalProgressScore(activeGoals.map((g) => g.progressPct));
 
+  // A brand-new user with zero holdings of any kind has no signal for emergency-fund
+  // coverage or diversification — the pure-math functions optimistically return 100 on
+  // their zero-denominator guard clauses (correct for a real user who happens to have
+  // zero recent expenses), which is misleading here. Treat it as "insufficient data" (50),
+  // matching the existing convention used by insuranceScore/goalProgressScore below.
+  // These overridden values feed BOTH the sub-score cards and weightedOverall so the
+  // gauge and the cards never disagree.
+  const emergencyFundScoreForOverall = hasAnyHoldings ? ef.score : 50;
+  const diversificationScoreForOverall = hasAnyHoldings ? dv.score : 50;
+
   const { overall, grade } = weightedOverall({
-    emergencyFund: ef.score, investmentRate: ir.score, debtBurden: db.score,
-    diversification: dv.score, insurance: ins.score, goalProgress: gp.score,
+    emergencyFund: emergencyFundScoreForOverall, investmentRate: ir.score, debtBurden: db.score,
+    diversification: diversificationScoreForOverall, insurance: ins.score, goalProgress: gp.score,
   });
 
   const subScores: HealthScoreResult['subScores'] = {
-    emergencyFund: {
-      score: Math.round(ef.score),
-      insight: `You have ${ef.monthsCovered === Infinity ? '20+' : ef.monthsCovered.toFixed(1)} months of expenses covered. Target is 6 months.`,
-      action: 'Build your emergency fund toward 6 months of expenses in liquid assets (savings, FDs).',
-    },
+    emergencyFund: hasAnyHoldings
+      ? {
+        score: Math.round(ef.score),
+        insight: `You have ${ef.monthsCovered === Infinity ? '20+' : ef.monthsCovered.toFixed(1)} months of expenses covered. Target is 6 months.`,
+        action: 'Build your emergency fund toward 6 months of expenses in liquid assets (savings, FDs).',
+      }
+      : {
+        score: 50,
+        insight: 'No portfolio data yet — add your bank accounts or investments to get an emergency-fund score.',
+        action: 'Connect a bank account or add your investments to get scored.',
+      },
     investmentRate: {
       score: Math.round(ir.score),
       insight: `You're investing ${ir.ratePct.toFixed(1)}% of income. Target is 20%.`,
@@ -188,11 +205,17 @@ export async function computeHealthScore(userId: string, opts: { force?: boolean
       insight: `Your EMIs and card payments consume ${db.burdenPct.toFixed(1)}% of income. Keep it under 40%.`,
       action: 'Consider prepaying high-interest debt or consolidating loans.',
     },
-    diversification: {
-      score: Math.round(dv.score),
-      insight: `Your equity allocation is ${equityPct.toFixed(1)}% of your portfolio.`,
-      action: 'Rebalance so no single asset class or holding dominates your portfolio.',
-    },
+    diversification: hasAnyHoldings
+      ? {
+        score: Math.round(dv.score),
+        insight: `Your equity allocation is ${equityPct.toFixed(1)}% of your portfolio.`,
+        action: 'Rebalance so no single asset class or holding dominates your portfolio.',
+      }
+      : {
+        score: 50,
+        insight: 'No portfolio data yet to assess diversification.',
+        action: 'Add your investments to get scored.',
+      },
     insurance: {
       score: Math.round(ins.score),
       insight: life.hasPolicies
