@@ -11,6 +11,7 @@ import type { IncomeType } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 import { BadRequestError, NotFoundError } from '../lib/errors.js';
 import { serializeMoney } from '@portfolioos/shared';
+import { computeUserFoPnl } from './foPnl.service.js';
 
 export const INCOME_TYPES = [
   'SALARY', 'BUSINESS', 'TRADING', 'FREELANCE', 'RENTAL', 'INTEREST_DIVIDEND', 'CAPITAL_GAINS', 'OTHER',
@@ -112,4 +113,89 @@ export async function deleteIncome(userId: string, id: string) {
 export async function activeMonthlyIncomeTotal(userId: string): Promise<Decimal> {
   const rows = await prisma.income.findMany({ where: { userId, isActive: true }, select: { monthlyAmount: true } });
   return rows.reduce((s, r) => s.plus(d(r.monthlyAmount)), ZERO);
+}
+
+// ── Suggestions: pull a starting monthlyAmount from data the user has
+// already entered elsewhere, instead of asking them to retype it. ──────
+
+export interface IncomeSuggestion {
+  sourceName: string;
+  monthlyAmount: string;
+  payDay?: number;
+  note: string;
+}
+
+function monthsAgo(n: number): Date {
+  const dt = new Date();
+  dt.setUTCMonth(dt.getUTCMonth() - n);
+  return dt;
+}
+
+/** One suggestion per active tenancy — rent is a known, stable monthly figure. */
+async function rentalSuggestions(userId: string): Promise<IncomeSuggestion[]> {
+  const properties = await prisma.rentalProperty.findMany({
+    where: { userId, isActive: true },
+    select: {
+      name: true,
+      tenancies: { where: { isActive: true }, select: { tenantName: true, monthlyRent: true, rentDueDay: true } },
+    },
+  });
+  return properties.flatMap((p) =>
+    p.tenancies.map((t) => ({
+      sourceName: `${p.name} — ${t.tenantName}`,
+      monthlyAmount: serializeMoney(d(t.monthlyRent)),
+      payDay: t.rentDueDay,
+      note: 'From your Rental section',
+    })),
+  );
+}
+
+/** Average of dividend/interest transactions over the trailing 12 months. */
+async function interestDividendSuggestion(userId: string): Promise<IncomeSuggestion[]> {
+  const txs = await prisma.transaction.findMany({
+    where: {
+      portfolio: { userId },
+      transactionType: { in: ['DIVIDEND_PAYOUT', 'INTEREST_RECEIVED'] },
+      tradeDate: { gte: monthsAgo(12) },
+    },
+    select: { netAmount: true },
+  });
+  if (txs.length === 0) return [];
+  const monthly = txs.reduce((s, t) => s.plus(d(t.netAmount)), ZERO).dividedBy(12);
+  if (monthly.lessThanOrEqualTo(0)) return [];
+  return [{
+    sourceName: 'Portfolio dividends & interest',
+    monthlyAmount: serializeMoney(monthly),
+    note: 'Average of dividend/interest transactions over the last 12 months',
+  }];
+}
+
+/**
+ * Average of realized F&O P&L over the trailing 12 months, clamped to zero
+ * — trading P&L can go negative for a stretch, and a negative "monthly
+ * income" would corrupt the health-score math (and any other consumer
+ * expecting income to be non-negative). Reuses the same replay engine as
+ * the F&O tax report (foPnl.service) rather than re-deriving P&L here.
+ */
+async function tradingSuggestion(userId: string): Promise<IncomeSuggestion[]> {
+  const { rows } = await computeUserFoPnl(userId);
+  const cutoff = monthsAgo(12);
+  const recent = rows.filter((r) => new Date(r.expiryDate) >= cutoff);
+  if (recent.length === 0) return [];
+  const monthly = recent.reduce((s, r) => s.plus(d(r.realizedPnl)), ZERO).dividedBy(12);
+  if (monthly.lessThanOrEqualTo(0)) return [];
+  return [{
+    sourceName: 'F&O trading',
+    monthlyAmount: serializeMoney(monthly),
+    note: 'Estimated from realized F&O P&L over the last 12 months — trading income varies, adjust as needed',
+  }];
+}
+
+export async function getIncomeSuggestions(userId: string, type: IncomeType): Promise<IncomeSuggestion[]> {
+  switch (type) {
+    case 'RENTAL': return rentalSuggestions(userId);
+    case 'INTEREST_DIVIDEND': return interestDividendSuggestion(userId);
+    case 'TRADING': return tradingSuggestion(userId);
+    default: return [];
+  }
 }

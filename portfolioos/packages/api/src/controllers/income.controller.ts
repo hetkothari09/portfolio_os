@@ -1,10 +1,10 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import {
-  INCOME_TYPES, listIncomes, getIncome, createIncome, updateIncome, deleteIncome,
+  INCOME_TYPES, listIncomes, getIncome, createIncome, updateIncome, deleteIncome, getIncomeSuggestions,
 } from '../services/income.service.js';
 import { ok } from '../lib/response.js';
-import { UnauthorizedError } from '../lib/errors.js';
+import { BadRequestError, UnauthorizedError } from '../lib/errors.js';
 
 const moneyString = z.union([
   z.string().regex(/^\d+(\.\d+)?$/, 'Expected positive decimal string'),
@@ -21,6 +21,14 @@ const baseSchema = z.object({
 });
 
 const updateSchema = baseSchema.partial();
+
+export async function suggestions(req: Request, res: Response) {
+  if (!req.user) throw new UnauthorizedError();
+  const type = z.enum(INCOME_TYPES).safeParse(req.query['type']);
+  if (!type.success) throw new BadRequestError('Valid type query param required');
+  const data = await getIncomeSuggestions(req.user.id, type.data);
+  return ok(res, data);
+}
 
 export async function list(req: Request, res: Response) {
   if (!req.user) throw new UnauthorizedError();

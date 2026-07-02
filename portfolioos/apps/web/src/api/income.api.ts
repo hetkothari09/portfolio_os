@@ -37,9 +37,20 @@ export interface IncomeInput {
   notes?: string | null;
 }
 
+export interface IncomeSuggestion {
+  sourceName: string;
+  monthlyAmount: string;
+  payDay?: number;
+  note: string;
+}
+
 export const incomeApi = {
   async list(): Promise<IncomeDTO[]> {
     const { data } = await api.get<ApiResponse<IncomeDTO[]>>('/api/income');
+    return unwrap(data);
+  },
+  async suggestions(type: IncomeType): Promise<IncomeSuggestion[]> {
+    const { data } = await api.get<ApiResponse<IncomeSuggestion[]>>('/api/income/suggestions', { params: { type } });
     return unwrap(data);
   },
   async get(id: string): Promise<IncomeDTO> {

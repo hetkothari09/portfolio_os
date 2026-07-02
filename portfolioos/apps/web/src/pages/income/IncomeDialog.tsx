@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Sparkles } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -14,10 +14,10 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { incomeApi, type IncomeDTO, type IncomeInput, type IncomeType } from '@/api/income.api';
+import { incomeApi, type IncomeDTO, type IncomeInput, type IncomeType, type IncomeSuggestion } from '@/api/income.api';
 import { INCOME_TYPE_LABEL, INCOME_TYPE_SOURCE_LABEL, INCOME_TYPE_SOURCE_PLACEHOLDER } from './incomeTypeMeta';
 import { apiErrorMessage } from '@/api/client';
-import { toDecimal } from '@portfolioos/shared';
+import { formatINR, toDecimal } from '@portfolioos/shared';
 
 interface Props {
   open: boolean;
@@ -25,6 +25,8 @@ interface Props {
   onClose: () => void;
   onSaved: () => void;
 }
+
+const SUGGESTABLE_TYPES: IncomeType[] = ['RENTAL', 'INTEREST_DIVIDEND', 'TRADING'];
 
 export function IncomeDialog({ open, existing, onClose, onSaved }: Props) {
   const isEdit = !!existing;
@@ -34,6 +36,19 @@ export function IncomeDialog({ open, existing, onClose, onSaved }: Props) {
   const [payDay, setPayDay] = useState(existing?.payDay ?? 1);
   const [isActive, setIsActive] = useState(existing?.isActive ?? true);
   const [notes, setNotes] = useState(existing?.notes ?? '');
+
+  const canSuggest = SUGGESTABLE_TYPES.includes(type);
+  const { data: suggestions, isLoading: suggestionsLoading } = useQuery({
+    queryKey: ['income', 'suggestions', type],
+    queryFn: () => incomeApi.suggestions(type),
+    enabled: canSuggest,
+  });
+
+  const applySuggestion = (s: IncomeSuggestion) => {
+    setSourceName(s.sourceName);
+    setMonthlyAmount(s.monthlyAmount);
+    if (s.payDay != null) setPayDay(s.payDay);
+  };
 
   const saveMut = useMutation({
     mutationFn: (input: IncomeInput) =>
@@ -82,6 +97,44 @@ export function IncomeDialog({ open, existing, onClose, onSaved }: Props) {
               ))}
             </Select>
           </div>
+
+          {canSuggest && (
+            <div className="rounded-lg border border-accent/25 bg-accent/[0.06] p-3">
+              <p className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-kerned text-accent-ink/85">
+                <Sparkles className="h-3 w-3" /> Fetch from your data
+              </p>
+              {suggestionsLoading && (
+                <p className="mt-1.5 text-[12px] text-muted-foreground">
+                  <Loader2 className="h-3 w-3 animate-spin inline" /> Checking…
+                </p>
+              )}
+              {!suggestionsLoading && (suggestions ?? []).length === 0 && (
+                <p className="mt-1.5 text-[12px] text-muted-foreground">
+                  Nothing found yet — enter it manually below.
+                </p>
+              )}
+              {!suggestionsLoading && (suggestions ?? []).length > 0 && (
+                <div className="mt-1.5 space-y-1.5">
+                  {suggestions!.map((s, i) => (
+                    <button
+                      key={`${s.sourceName}-${i}`}
+                      type="button"
+                      onClick={() => applySuggestion(s)}
+                      className="flex w-full items-center justify-between gap-2 rounded-md border border-border/60 bg-card px-2.5 py-1.5 text-left text-[12.5px] hover:border-accent/50"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate font-medium text-foreground">{s.sourceName}</span>
+                        <span className="block truncate text-[10.5px] text-muted-foreground">{s.note}</span>
+                      </span>
+                      <span className="numeric-display shrink-0 font-semibold text-accent-ink">
+                        {formatINR(s.monthlyAmount)}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <div>
             <Label htmlFor="sourceName">{INCOME_TYPE_SOURCE_LABEL[type]}</Label>
