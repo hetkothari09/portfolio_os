@@ -189,9 +189,13 @@ function AgentHeader({
 }) {
   const remaining = quota ? Math.max(0, quota.limit - quota.used) : null;
   return (
-    <div className="relative overflow-hidden border-b border-border">
+    // Do NOT set overflow-hidden here — the kebab dropdown popover
+    // renders as `absolute right-0 top-full` inside this container and
+    // any parent clip would swallow it. The gradient below is already
+    // bounded by inset-0 so it can't bleed.
+    <div className="relative border-b border-border">
       <div
-        className="absolute inset-0"
+        className="absolute inset-0 pointer-events-none rounded-none"
         style={{
           background:
             'radial-gradient(120% 90% at 0% 0%, hsl(var(--accent) / 0.25) 0px, transparent 55%), radial-gradient(100% 80% at 100% 20%, hsl(var(--primary) / 0.15) 0px, transparent 55%), linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--card) / 0.95) 100%)',
