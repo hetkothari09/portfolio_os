@@ -37,9 +37,15 @@ import { useAuthStore } from '@/stores/auth.store';
 interface Props {
   open: boolean;
   onClose: () => void;
+  /**
+   * When set, the panel opens with this question pre-sent (as if the
+   * user had typed and hit send). Cleared by the parent once the
+   * conversation state has picked it up.
+   */
+  pendingPrompt?: string | null;
 }
 
-export function AIAssistant({ open, onClose }: Props) {
+export function AIAssistant({ open, onClose, pendingPrompt }: Props) {
   const [input, setInput] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const user = useAuthStore((s) => s.user);
@@ -73,6 +79,20 @@ export function AIAssistant({ open, onClose }: Props) {
     setTimeout(() => inputRef.current?.focus(), 60);
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
+
+  // When opened via a teaser bubble the parent passes a question to
+  // pre-send. Wait for history load so it lands after existing rows.
+  const pendingFiredRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!open) {
+      pendingFiredRef.current = null;
+      return;
+    }
+    if (!pendingPrompt || loadingHistory) return;
+    if (pendingFiredRef.current === pendingPrompt) return;
+    pendingFiredRef.current = pendingPrompt;
+    void sendMessage(pendingPrompt);
+  }, [open, pendingPrompt, loadingHistory, sendMessage]);
 
   if (!open) return null;
 
