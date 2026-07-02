@@ -26,6 +26,14 @@ interface State {
   suggestedQuestions: AiSuggestion[];
   quota: AiQuota | null;
   loadingHistory: boolean;
+  /**
+   * Latches true after `loadHistory` completes at least once for the
+   * current open session. Callers (like the teaser pending-prompt
+   * autosend) must wait for this before sending — otherwise the
+   * history replace races with the optimistic user message and wipes
+   * it. Reset to false whenever `active` flips false.
+   */
+  historyLoaded: boolean;
 }
 
 let idCounter = 0;
@@ -49,6 +57,7 @@ export function useAIAssistant(active: boolean) {
     suggestedQuestions: [],
     quota: null,
     loadingHistory: false,
+    historyLoaded: false,
   });
   const abortRef = useRef<AbortController | null>(null);
 
@@ -66,18 +75,24 @@ export function useAIAssistant(active: boolean) {
         suggestedQuestions: suggested,
         quota,
         loadingHistory: false,
+        historyLoaded: true,
       }));
     } catch (err) {
       setState((s) => ({
         ...s,
         loadingHistory: false,
+        historyLoaded: true,
         error: err instanceof Error ? err.message : 'Failed to load conversation.',
       }));
     }
   }, []);
 
   useEffect(() => {
-    if (!active) return;
+    if (!active) {
+      // Reset ready flag so a later re-open forces a fresh wait.
+      setState((s) => (s.historyLoaded ? { ...s, historyLoaded: false } : s));
+      return;
+    }
     void loadHistory();
     return () => {
       abortRef.current?.abort();

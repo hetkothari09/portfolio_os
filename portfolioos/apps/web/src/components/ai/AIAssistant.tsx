@@ -56,6 +56,7 @@ export function AIAssistant({ open, onClose, pendingPrompt }: Props) {
     suggestedQuestions,
     quota,
     loadingHistory,
+    historyLoaded,
     sendMessage,
     clearConversation,
   } = useAIAssistant(open);
@@ -81,18 +82,21 @@ export function AIAssistant({ open, onClose, pendingPrompt }: Props) {
   }, [open, onClose]);
 
   // When opened via a teaser bubble the parent passes a question to
-  // pre-send. Wait for history load so it lands after existing rows.
+  // pre-send. Wait for `historyLoaded` — otherwise the pending send
+  // races the history-fetch reducer and the optimistic user + streaming
+  // placeholder get wiped by the history replace.
   const pendingFiredRef = useRef<string | null>(null);
   useEffect(() => {
     if (!open) {
       pendingFiredRef.current = null;
       return;
     }
-    if (!pendingPrompt || loadingHistory) return;
+    if (!pendingPrompt || !historyLoaded) return;
     if (pendingFiredRef.current === pendingPrompt) return;
     pendingFiredRef.current = pendingPrompt;
     void sendMessage(pendingPrompt);
-  }, [open, pendingPrompt, loadingHistory, sendMessage]);
+  }, [open, pendingPrompt, historyLoaded, sendMessage]);
+  void loadingHistory;
 
   if (!open) return null;
 
