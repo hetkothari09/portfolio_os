@@ -40,6 +40,7 @@ import { InsuranceDetailPage } from './pages/insurance/InsuranceDetailPage';
 import { LoanListPage } from './pages/loans/LoanListPage';
 import { LoanDetailPage } from './pages/loans/LoanDetailPage';
 import { GoalsPage } from './pages/goals/GoalsPage';
+import { IncomePage } from './pages/income/IncomePage';
 import { HealthScorePage } from './pages/intelligence/HealthScorePage';
 import { CreditCardListPage } from './pages/creditCards/CreditCardListPage';
 import { CreditCardDetailPage } from './pages/creditCards/CreditCardDetailPage';
@@ -131,6 +132,7 @@ export function App() {
         <Route path="/loans" element={<LoanListPage />} />
         <Route path="/loans/:id" element={<LoanDetailPage />} />
         <Route path="/goals" element={<GoalsPage />} />
+        <Route path="/income" element={<IncomePage />} />
         <Route path="/health-score" element={<HealthScorePage />} />
         <Route path="/credit-cards" element={<CreditCardListPage />} />
         <Route path="/credit-cards/:id" element={<CreditCardDetailPage />} />

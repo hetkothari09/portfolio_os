@@ -36,6 +36,7 @@ import {
   Split,
   Target,
   HeartPulse,
+  IndianRupee,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
@@ -73,6 +74,7 @@ export const OVERVIEW_ITEMS: NavItem[] = [
   { label: 'Portfolios', to: '/portfolios', icon: Briefcase },
   { label: 'Family', to: '/family', icon: Users },
   { label: 'Goals', to: '/goals', icon: Target },
+  { label: 'Income', to: '/income', icon: IndianRupee },
   { label: 'Transactions', to: '/transactions', icon: Receipt },
   { label: 'Cash Activity', to: '/cashflows', icon: ArrowLeftRight },
 ];

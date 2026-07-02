@@ -3,6 +3,7 @@ import { formatINR } from '@portfolioos/shared';
 import { prisma } from '../lib/prisma.js';
 import { getDashboardNetWorth } from './dashboard.service.js';
 import { listGoals } from './goals.service.js';
+import { activeMonthlyIncomeTotal } from './income.service.js';
 import {
   emergencyFundScore, investmentRateScore, debtBurdenScore,
   diversificationScore, insuranceScore, goalProgressScore, weightedOverall,
@@ -54,16 +55,32 @@ async function estimateMonthlyExpenses(userId: string): Promise<Decimal> {
 }
 
 async function estimateMonthlyInvestment(userId: string): Promise<Decimal> {
-  const events = await prisma.canonicalEvent.findMany({
-    where: {
-      userId,
-      eventType: { in: ['SIP_INSTALLMENT', 'BUY'] },
-      eventDate: { gte: monthsAgo(3) },
-      status: { in: ['CONFIRMED', 'PROJECTED'] },
-    },
-    select: { amount: true },
-  });
-  const total = events.reduce((s, e) => s.plus(d(e.amount)), ZERO);
+  const [events, transactions] = await Promise.all([
+    prisma.canonicalEvent.findMany({
+      where: {
+        userId,
+        eventType: { in: ['SIP_INSTALLMENT', 'BUY'] },
+        eventDate: { gte: monthsAgo(3) },
+        status: { in: ['CONFIRMED', 'PROJECTED'] },
+      },
+      select: { amount: true },
+    }),
+    // Most users add BUYs/SIPs by hand rather than via Gmail — count those
+    // too. canonicalEventId: null avoids double-counting rows already
+    // captured above once they're projected into a Transaction.
+    prisma.transaction.findMany({
+      where: {
+        portfolio: { userId },
+        transactionType: { in: ['BUY', 'SIP'] },
+        tradeDate: { gte: monthsAgo(3) },
+        canonicalEventId: null,
+      },
+      select: { netAmount: true },
+    }),
+  ]);
+  const total = events
+    .reduce((s, e) => s.plus(d(e.amount)), ZERO)
+    .plus(transactions.reduce((s, t) => s.plus(d(t.netAmount)), ZERO));
   return total.dividedBy(3);
 }
 
@@ -151,10 +168,11 @@ export async function computeHealthScore(userId: string, opts: { force?: boolean
     }
   }
 
-  const [netWorth, goals, monthlyIncome, monthlyExpenses, monthlyInvestment, liquidAssets, largestHoldingPct, ccMinimums, life, age] =
+  const [netWorth, goals, salaryIncome, estimatedIncome, monthlyExpenses, monthlyInvestment, liquidAssets, largestHoldingPct, ccMinimums, life, age] =
     await Promise.all([
       getDashboardNetWorth(userId),
       listGoals(userId),
+      activeMonthlyIncomeTotal(userId),
       estimateMonthlyIncome(userId),
       estimateMonthlyExpenses(userId),
       estimateMonthlyInvestment(userId),
@@ -165,14 +183,20 @@ export async function computeHealthScore(userId: string, opts: { force?: boolean
       userAge(userId),
     ]);
 
+  // Manual salary entries are the preferred income source — most users
+  // don't have Gmail connected, so the NEFT/UPI-credit estimate is a
+  // fallback, not the primary signal.
+  const monthlyIncome = salaryIncome.greaterThan(0) ? salaryIncome : estimatedIncome;
+
   const monthlyEmi = new Decimal(netWorth.liabilities.monthlyEmiTotal);
   const monthlyDebtPayments = monthlyEmi.plus(ccMinimums);
   const equityPct = netWorth.allocationBreakdown.find((a) => a.key === 'EQUITY')?.percent ?? 0;
   const annualIncome = monthlyIncome.times(12);
   const hasAnyHoldings = netWorth.allocationBreakdown.length > 0;
-  // No confirmed NEFT/UPI credit events in the last 3 months. A real user
-  // always has *some* income, so this is a reliable proxy for "we haven't
-  // seen your income yet" rather than "you earn nothing."
+  // No active salary entries and no confirmed NEFT/UPI credit events in the
+  // last 3 months. A real user always has *some* income, so this is a
+  // reliable proxy for "we haven't seen your income yet" rather than "you
+  // earn nothing."
   const hasIncomeData = monthlyIncome.greaterThan(0);
 
   const ef = emergencyFundScore(liquidAssets, monthlyExpenses);
@@ -219,7 +243,7 @@ export async function computeHealthScore(userId: string, opts: { force?: boolean
   const investmentTarget = monthlyIncome.times(0.2);
   const investmentGap = investmentTarget.minus(monthlyInvestment);
   const investmentRateAction = !hasIncomeData
-    ? 'Connect your bank or Gmail so we can see your income and score this accurately.'
+    ? 'Add your salary under Income, or connect Gmail, so we can see your income and score this accurately.'
     : investmentGap.greaterThan(0)
       ? `Increase your monthly investing by ${formatINR(investmentGap.toString())} to hit the 20% target (${formatINR(investmentTarget.toString())}/month).`
       : "You're investing at or above the 20% target — keep it up.";
@@ -228,7 +252,7 @@ export async function computeHealthScore(userId: string, opts: { force?: boolean
   const debtComfortCap = monthlyIncome.times(0.4);
   const debtExcess = monthlyDebtPayments.minus(debtComfortCap);
   const debtBurdenAction = !hasIncomeData
-    ? 'Connect your bank or Gmail so we can see your income and score this accurately.'
+    ? 'Add your salary under Income, or connect Gmail, so we can see your income and score this accurately.'
     : debtExcess.greaterThan(0)
       ? `Cut ${formatINR(debtExcess.toString())}/month from EMIs or card dues to get under the comfortable 40% line.`
       : 'Your EMIs and card payments are comfortably within a healthy range.';
@@ -259,7 +283,7 @@ export async function computeHealthScore(userId: string, opts: { force?: boolean
   const insuranceAction = !life.hasPolicies
     ? 'Add a term or life policy — you currently have none tracked.'
     : !hasIncomeData
-      ? 'Connect your bank or Gmail so we can see your income and check if your cover is enough.'
+      ? 'Add your salary under Income, or connect Gmail, so we can see your income and check if your cover is enough.'
       : insuranceGap.greaterThan(0)
         ? `Add ${formatINR(insuranceGap.toString())} more life cover to reach the 10x-income target of ${formatINR(insuranceRequiredCover.toString())}.`
         : "Your life cover meets the 10x-income target — no action needed.";

@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import {
   PiggyBank,
   TrendingUp,
@@ -8,6 +9,7 @@ import {
   Target,
   RefreshCw,
   Loader2,
+  ArrowUpRight,
   type LucideIcon,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -20,11 +22,17 @@ import { HealthScoreGauge } from '@/components/intelligence/HealthScoreGauge';
 
 type DimensionId = 'emergencyFund' | 'investmentRate' | 'debtBurden' | 'diversification' | 'insurance' | 'goalProgress';
 
+interface DimensionLink {
+  label: string;
+  to: string;
+}
+
 interface DimensionMeta {
   label: string;
   weight: number;
   icon: LucideIcon;
   explanation: string;
+  links: DimensionLink[];
 }
 
 const DIMENSION_META: Record<DimensionId, DimensionMeta> = {
@@ -33,36 +41,49 @@ const DIMENSION_META: Record<DimensionId, DimensionMeta> = {
     weight: 20,
     icon: PiggyBank,
     explanation: 'How many months of expenses your liquid assets (savings, FDs) could cover. Target: 6 months.',
+    links: [
+      { label: 'Bank Accounts', to: '/bank-accounts' },
+      { label: 'FDs & RDs', to: '/fds' },
+    ],
   },
   investmentRate: {
     label: 'Investment Rate',
     weight: 20,
     icon: TrendingUp,
     explanation: 'Share of your income going into investments each month, based on the last 3 months. Target: 20%.',
+    links: [{ label: 'Transactions', to: '/transactions' }, { label: 'Income', to: '/income' }],
   },
   debtBurden: {
     label: 'Debt Burden',
     weight: 20,
     icon: Scale,
     explanation: 'Share of your income going toward EMIs and credit card minimums. Full score at 20% or under, zero at 60% or above.',
+    links: [
+      { label: 'Loans', to: '/loans' },
+      { label: 'Credit Cards', to: '/credit-cards' },
+      { label: 'Income', to: '/income' },
+    ],
   },
   diversification: {
     label: 'Diversification',
     weight: 20,
     icon: PieChart,
     explanation: 'How spread out your portfolio is across asset classes and holdings, and whether your equity mix fits your age.',
+    links: [{ label: 'Analytics', to: '/analytics' }, { label: 'Portfolios', to: '/portfolios' }],
   },
   insurance: {
     label: 'Insurance Coverage',
     weight: 10,
     icon: Shield,
     explanation: 'Your life insurance sum assured measured against 10x your annual income.',
+    links: [{ label: 'Insurance', to: '/insurance' }, { label: 'Income', to: '/income' }],
   },
   goalProgress: {
     label: 'Goal Progress',
     weight: 10,
     icon: Target,
     explanation: 'Average progress across your active financial goals.',
+    links: [{ label: 'Goals', to: '/goals' }],
   },
 };
 
@@ -202,6 +223,18 @@ function DimensionDetailCard({ id, sub }: { id: DimensionId; sub: HealthSubScore
         <div className="rounded-lg border border-accent/25 bg-accent/[0.06] p-3">
           <p className="text-[10px] font-medium uppercase tracking-kerned text-accent-ink/85">Fix this</p>
           <p className="mt-1 text-[13px] text-foreground">{sub.action}</p>
+        </div>
+
+        <div className="flex flex-wrap gap-x-4 gap-y-1 pt-0.5">
+          {meta.links.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              className="inline-flex items-center gap-1 text-[12.5px] font-medium text-accent-ink hover:underline"
+            >
+              Go to {link.label} <ArrowUpRight className="h-3 w-3" />
+            </Link>
+          ))}
         </div>
       </CardContent>
     </Card>
