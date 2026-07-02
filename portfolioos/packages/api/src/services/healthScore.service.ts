@@ -1,4 +1,5 @@
 import { Decimal } from 'decimal.js';
+import { formatINR } from '@portfolioos/shared';
 import { prisma } from '../lib/prisma.js';
 import { getDashboardNetWorth } from './dashboard.service.js';
 import { listGoals } from './goals.service.js';
@@ -74,16 +75,31 @@ async function liquidAssetsTotal(userId: string): Promise<Decimal> {
   return rows.reduce((s, h) => s.plus(h.currentValue !== null ? d(h.currentValue) : d(h.totalCost)), ZERO);
 }
 
-async function largestSingleHoldingPct(userId: string): Promise<number> {
+interface LargestHolding {
+  pct: number;
+  name: string | null;
+}
+
+async function largestSingleHoldingPct(userId: string): Promise<LargestHolding> {
   const rows = await prisma.holdingProjection.findMany({
     where: { portfolio: { userId } },
-    select: { currentValue: true, totalCost: true },
+    select: { currentValue: true, totalCost: true, assetName: true },
   });
-  const values = rows.map((h) => (h.currentValue !== null ? d(h.currentValue) : d(h.totalCost)));
-  const total = values.reduce((s, v) => s.plus(v), ZERO);
-  if (total.lessThanOrEqualTo(0)) return 0;
-  const max = values.reduce((m, v) => (v.greaterThan(m) ? v : m), ZERO);
-  return max.dividedBy(total).times(100).toNumber();
+  const values = rows.map((h) => ({
+    value: h.currentValue !== null ? d(h.currentValue) : d(h.totalCost),
+    name: h.assetName,
+  }));
+  const total = values.reduce((s, v) => s.plus(v.value), ZERO);
+  if (total.lessThanOrEqualTo(0)) return { pct: 0, name: null };
+  const max = values.reduce((m, v) => (v.value.greaterThan(m.value) ? v : m), { value: ZERO, name: null as string | null });
+  return { pct: max.value.dividedBy(total).times(100).toNumber(), name: max.name };
+}
+
+function humanizeAssetClass(key: string): string {
+  return key
+    .split('_')
+    .map((w) => w.charAt(0) + w.slice(1).toLowerCase())
+    .join(' ');
 }
 
 async function monthlyCcMinimums(userId: string): Promise<Decimal> {
@@ -154,13 +170,17 @@ export async function computeHealthScore(userId: string, opts: { force?: boolean
   const equityPct = netWorth.allocationBreakdown.find((a) => a.key === 'EQUITY')?.percent ?? 0;
   const annualIncome = monthlyIncome.times(12);
   const hasAnyHoldings = netWorth.allocationBreakdown.length > 0;
+  // No confirmed NEFT/UPI credit events in the last 3 months. A real user
+  // always has *some* income, so this is a reliable proxy for "we haven't
+  // seen your income yet" rather than "you earn nothing."
+  const hasIncomeData = monthlyIncome.greaterThan(0);
 
   const ef = emergencyFundScore(liquidAssets, monthlyExpenses);
   const ir = investmentRateScore(monthlyInvestment, monthlyIncome);
   const db = debtBurdenScore(monthlyDebtPayments, monthlyIncome);
   const dv = diversificationScore({
     classPercents: netWorth.allocationBreakdown.map((a) => ({ assetClass: a.key, percent: a.percent })),
-    largestSingleHoldingPct: largestHoldingPct,
+    largestSingleHoldingPct: largestHoldingPct.pct,
     equityPct,
     age,
   });
@@ -168,48 +188,129 @@ export async function computeHealthScore(userId: string, opts: { force?: boolean
   const activeGoals = goals.filter((g) => g.status === 'ACTIVE');
   const gp = goalProgressScore(activeGoals.map((g) => g.progressPct));
 
-  // A brand-new user with zero holdings of any kind has no signal for emergency-fund
-  // coverage or diversification — the pure-math functions optimistically return 100 on
-  // their zero-denominator guard clauses (correct for a real user who happens to have
-  // zero recent expenses), which is misleading here. Treat it as "insufficient data" (50),
-  // matching the existing convention used by insuranceScore/goalProgressScore below.
-  // These overridden values feed BOTH the sub-score cards and weightedOverall so the
-  // gauge and the cards never disagree.
+  // A brand-new user with zero holdings has no signal for emergency-fund coverage or
+  // diversification, and a user with zero confirmed income events has no signal for
+  // investment rate, debt burden, or "is my cover enough" — the pure-math functions
+  // optimistically resolve their zero-denominator guard clauses to values that read as
+  // real judgments (0, 100, ...) when they're actually "insufficient data." Override to
+  // the neutral 50 already used elsewhere (insuranceScore/goalProgressScore with no
+  // policies/goals). These overridden values feed BOTH the sub-score cards and
+  // weightedOverall so the gauge and the cards never disagree.
   const emergencyFundScoreForOverall = hasAnyHoldings ? ef.score : 50;
   const diversificationScoreForOverall = hasAnyHoldings ? dv.score : 50;
+  const investmentRateScoreForOverall = hasIncomeData ? ir.score : 50;
+  const debtBurdenScoreForOverall = hasIncomeData ? db.score : 50;
+  const insuranceNeedsIncomeToJudge = life.hasPolicies && !hasIncomeData;
+  const insuranceScoreForOverall = insuranceNeedsIncomeToJudge ? 50 : ins.score;
 
   const { overall, grade } = weightedOverall({
-    emergencyFund: emergencyFundScoreForOverall, investmentRate: ir.score, debtBurden: db.score,
-    diversification: diversificationScoreForOverall, insurance: ins.score, goalProgress: gp.score,
+    emergencyFund: emergencyFundScoreForOverall, investmentRate: investmentRateScoreForOverall, debtBurden: debtBurdenScoreForOverall,
+    diversification: diversificationScoreForOverall, insurance: insuranceScoreForOverall, goalProgress: gp.score,
   });
+
+  // Emergency fund: point at the exact shortfall, or confirm the buffer if already met.
+  const emergencyTarget = monthlyExpenses.times(6);
+  const emergencyShortfall = emergencyTarget.minus(liquidAssets);
+  const emergencyFundAction = emergencyShortfall.greaterThan(0)
+    ? `You need ${formatINR(emergencyShortfall.toString())} more in liquid assets (savings, FDs) to reach the 6-month target of ${formatINR(emergencyTarget.toString())}.`
+    : "You're fully covered for 6 months of expenses — keep this buffer growing as your expenses rise.";
+
+  // Investment rate: exact ₹/month gap to the 20% target.
+  const investmentTarget = monthlyIncome.times(0.2);
+  const investmentGap = investmentTarget.minus(monthlyInvestment);
+  const investmentRateAction = !hasIncomeData
+    ? 'Connect your bank or Gmail so we can see your income and score this accurately.'
+    : investmentGap.greaterThan(0)
+      ? `Increase your monthly investing by ${formatINR(investmentGap.toString())} to hit the 20% target (${formatINR(investmentTarget.toString())}/month).`
+      : "You're investing at or above the 20% target — keep it up.";
+
+  // Debt burden: exact ₹/month to cut to get under the 40% comfort line.
+  const debtComfortCap = monthlyIncome.times(0.4);
+  const debtExcess = monthlyDebtPayments.minus(debtComfortCap);
+  const debtBurdenAction = !hasIncomeData
+    ? 'Connect your bank or Gmail so we can see your income and score this accurately.'
+    : debtExcess.greaterThan(0)
+      ? `Cut ${formatINR(debtExcess.toString())}/month from EMIs or card dues to get under the comfortable 40% line.`
+      : 'Your EMIs and card payments are comfortably within a healthy range.';
+
+  // Diversification: name the single worst driver (holding, then asset class, then
+  // equity-vs-age guideline) instead of a generic "rebalance" nudge.
+  const maxClass = netWorth.allocationBreakdown.reduce<{ key: string; percent: number } | null>(
+    (m, a) => (m === null || a.percent > m.percent ? a : m), null,
+  );
+  const targetEquityPct = age != null ? Math.max(0, 100 - age) : null;
+  const equityGap = targetEquityPct != null ? Math.abs(equityPct - targetEquityPct) : null;
+  let diversificationAction: string;
+  if (largestHoldingPct.pct > 50) {
+    diversificationAction = `${largestHoldingPct.name ?? 'Your largest holding'} is ${largestHoldingPct.pct.toFixed(0)}% of your portfolio — trim it below 50% to reduce concentration risk.`;
+  } else if (maxClass && maxClass.percent > 60) {
+    diversificationAction = `${humanizeAssetClass(maxClass.key)} makes up ${maxClass.percent.toFixed(0)}% of your portfolio — bring it under 60% by adding other asset classes.`;
+  } else if (equityGap != null && equityGap > 10 && targetEquityPct != null) {
+    diversificationAction = equityPct > targetEquityPct
+      ? `Your equity allocation (${equityPct.toFixed(0)}%) is well above the age-based guideline of ${targetEquityPct.toFixed(0)}% — consider shifting some toward debt.`
+      : `Your equity allocation (${equityPct.toFixed(0)}%) is well below the age-based guideline of ${targetEquityPct.toFixed(0)}% — consider adding equity exposure.`;
+  } else {
+    diversificationAction = "Your portfolio is well spread across holdings and asset classes — no rebalancing needed right now.";
+  }
+
+  // Insurance: exact ₹ gap to the 10x-income target, or flag missing income data.
+  const insuranceRequiredCover = annualIncome.times(10);
+  const insuranceGap = insuranceRequiredCover.minus(life.sumAssured);
+  const insuranceAction = !life.hasPolicies
+    ? 'Add a term or life policy — you currently have none tracked.'
+    : !hasIncomeData
+      ? 'Connect your bank or Gmail so we can see your income and check if your cover is enough.'
+      : insuranceGap.greaterThan(0)
+        ? `Add ${formatINR(insuranceGap.toString())} more life cover to reach the 10x-income target of ${formatINR(insuranceRequiredCover.toString())}.`
+        : "Your life cover meets the 10x-income target — no action needed.";
+
+  // Goal progress: name the specific goal dragging the average down.
+  const worstGoal = activeGoals.length > 0
+    ? [...activeGoals].sort((a, b) => a.progressPct - b.progressPct)[0]
+    : null;
+  const goalProgressAction = worstGoal
+    ? `"${worstGoal.name}" is your furthest-behind goal at ${Math.round(worstGoal.progressPct)}% progress — review contributions or timeline.`
+    : 'Set your first financial goal.';
 
   const subScores: HealthScoreResult['subScores'] = {
     emergencyFund: hasAnyHoldings
       ? {
         score: Math.round(ef.score),
         insight: `You have ${ef.monthsCovered === Infinity ? '20+' : ef.monthsCovered.toFixed(1)} months of expenses covered. Target is 6 months.`,
-        action: 'Build your emergency fund toward 6 months of expenses in liquid assets (savings, FDs).',
+        action: emergencyFundAction,
       }
       : {
         score: 50,
         insight: 'No portfolio data yet — add your bank accounts or investments to get an emergency-fund score.',
         action: 'Connect a bank account or add your investments to get scored.',
       },
-    investmentRate: {
-      score: Math.round(ir.score),
-      insight: `You're investing ${ir.ratePct.toFixed(1)}% of income. Target is 20%.`,
-      action: 'Increase your monthly SIP or equity investment toward 20% of income.',
-    },
-    debtBurden: {
-      score: Math.round(db.score),
-      insight: `Your EMIs and card payments consume ${db.burdenPct.toFixed(1)}% of income. Keep it under 40%.`,
-      action: 'Consider prepaying high-interest debt or consolidating loans.',
-    },
+    investmentRate: hasIncomeData
+      ? {
+        score: Math.round(ir.score),
+        insight: `You're investing ${ir.ratePct.toFixed(1)}% of income. Target is 20%.`,
+        action: investmentRateAction,
+      }
+      : {
+        score: 50,
+        insight: "We don't have enough confirmed income data yet to estimate your investment rate.",
+        action: investmentRateAction,
+      },
+    debtBurden: hasIncomeData
+      ? {
+        score: Math.round(db.score),
+        insight: `Your EMIs and card payments consume ${db.burdenPct.toFixed(1)}% of income. Keep it under 40%.`,
+        action: debtBurdenAction,
+      }
+      : {
+        score: 50,
+        insight: `We don't have enough confirmed income data yet to score this. You have ${formatINR(monthlyDebtPayments.toString())}/month in EMIs and card dues.`,
+        action: debtBurdenAction,
+      },
     diversification: hasAnyHoldings
       ? {
         score: Math.round(dv.score),
         insight: `Your equity allocation is ${equityPct.toFixed(1)}% of your portfolio.`,
-        action: 'Rebalance so no single asset class or holding dominates your portfolio.',
+        action: diversificationAction,
       }
       : {
         score: 50,
@@ -217,18 +318,20 @@ export async function computeHealthScore(userId: string, opts: { force?: boolean
         action: 'Add your investments to get scored.',
       },
     insurance: {
-      score: Math.round(ins.score),
-      insight: life.hasPolicies
-        ? `Your life cover is ₹${life.sumAssured.toFixed(0)}. Target is 10x annual income.`
-        : 'No life insurance policies found — add one manually to get scored.',
-      action: 'Review whether your life cover is at least 10x your annual income.',
+      score: Math.round(insuranceNeedsIncomeToJudge ? 50 : ins.score),
+      insight: !life.hasPolicies
+        ? 'No life insurance policies found — add one manually to get scored.'
+        : insuranceNeedsIncomeToJudge
+          ? `Your life cover is ${formatINR(life.sumAssured.toString())}, but we don't have enough income data yet to check if that's enough.`
+          : `Your life cover is ${formatINR(life.sumAssured.toString())}. Target is 10x annual income.`,
+      action: insuranceAction,
     },
     goalProgress: {
       score: Math.round(gp.score),
       insight: activeGoals.length > 0
         ? `You are averaging ${Math.round(gp.score)}% progress across your active goals.`
         : 'You have not set any financial goals yet.',
-      action: activeGoals.length > 0 ? 'Review goals that are falling behind.' : 'Set your first financial goal.',
+      action: goalProgressAction,
     },
   };
 

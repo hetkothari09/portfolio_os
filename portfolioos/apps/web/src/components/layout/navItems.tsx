@@ -35,6 +35,7 @@ import {
   Calculator,
   Split,
   Target,
+  HeartPulse,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
@@ -67,6 +68,7 @@ export const ASSET_CLASS_ITEMS: NavItem[] = [
 
 export const OVERVIEW_ITEMS: NavItem[] = [
   { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
+  { label: 'Health Score', to: '/health-score', icon: HeartPulse },
   { label: 'Analytics', to: '/analytics', icon: BarChart3 },
   { label: 'Portfolios', to: '/portfolios', icon: Briefcase },
   { label: 'Family', to: '/family', icon: Users },

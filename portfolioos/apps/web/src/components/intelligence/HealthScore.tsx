@@ -1,70 +1,60 @@
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import { intelligenceApi, type HealthSubScore } from '@/api/intelligence.api';
+import { intelligenceApi } from '@/api/intelligence.api';
 import { HealthScoreGauge } from './HealthScoreGauge';
-import { useState } from 'react';
 
-const DIMENSION_LABELS: Record<string, string> = {
-  emergencyFund: 'Emergency Fund',
-  investmentRate: 'Investment Rate',
-  debtBurden: 'Debt Burden',
-  diversification: 'Diversification',
-  insurance: 'Insurance Coverage',
-  goalProgress: 'Goal Progress',
+const GRADE_BLURB: Record<string, string> = {
+  A: 'Excellent — your finances are in great shape.',
+  B: 'Good — a few areas could use attention.',
+  C: 'Fair — some gaps are holding you back.',
+  D: 'Needs work — several areas need attention.',
+  F: 'At risk — start with the lowest-scoring area.',
 };
 
-function dimensionColor(score: number): string {
-  if (score < 40) return 'bg-negative';
-  if (score < 70) return 'bg-orange-500';
-  return 'bg-positive';
-}
-
-function DimensionCard({ id, sub }: { id: string; sub: HealthSubScore }) {
-  const [expanded, setExpanded] = useState(false);
-  return (
-    <Card className="p-4">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">{DIMENSION_LABELS[id] ?? id}</span>
-        <span className="numeric-display text-sm font-semibold">{sub.score}</span>
-      </div>
-      <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted/60">
-        <div className={`h-full ${dimensionColor(sub.score)}`} style={{ width: `${sub.score}%` }} />
-      </div>
-      <p className="mt-2 text-[11.5px] text-muted-foreground">{sub.insight}</p>
-      <button
-        type="button"
-        className="mt-1 text-[11.5px] font-medium text-accent-ink hover:underline"
-        onClick={() => setExpanded((e) => !e)}
-      >
-        Fix this →
-      </button>
-      {expanded && <p className="mt-1 text-[11.5px] text-muted-foreground">{sub.action}</p>}
-    </Card>
-  );
-}
-
+/**
+ * Dashboard summary only: gauge + one-line takeaway + link to /health-score
+ * for the full per-dimension breakdown. Keeps the dashboard scannable
+ * instead of repeating all six dimension cards inline.
+ */
 export function HealthScore() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['intelligence', 'health-score'],
     queryFn: () => intelligenceApi.healthScore(),
   });
 
-  if (isLoading) return <Card className="p-6 animate-pulse text-sm text-muted-foreground">Computing your financial health score…</Card>;
-  if (error || !data) return <Card className="p-6 text-sm text-negative">Couldn't load your health score. Try again shortly.</Card>;
+  if (isLoading) {
+    return (
+      <Card className="p-6 animate-pulse text-sm text-muted-foreground">
+        Computing your financial health score…
+      </Card>
+    );
+  }
+  if (error || !data) {
+    return (
+      <Card className="p-6 text-sm text-negative">
+        Couldn't load your health score. Try again shortly.
+      </Card>
+    );
+  }
 
   return (
-    <div className="space-y-4">
-      <Card className="flex flex-col items-center gap-2 p-6">
-        <HealthScoreGauge score={data.overallScore} grade={data.grade} />
-        <p className="text-xs text-muted-foreground">
-          Updated {new Date(data.computedAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
-        </p>
+    <Link to="/health-score" className="group block">
+      <Card className="flex flex-col items-center gap-4 p-5 transition-shadow hover:shadow-sm sm:flex-row sm:gap-5">
+        <HealthScoreGauge score={data.overallScore} grade={data.grade} size={84} />
+        <div className="min-w-0 flex-1 text-center sm:text-left">
+          <p className="text-[10px] font-medium uppercase tracking-kerned text-accent-ink/85">
+            Financial Health Score
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {GRADE_BLURB[data.grade] ?? 'See your full breakdown.'}
+          </p>
+        </div>
+        <span className="flex shrink-0 items-center gap-1 text-sm font-medium text-accent-ink group-hover:underline">
+          View breakdown <ArrowRight className="h-4 w-4" />
+        </span>
       </Card>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {Object.entries(data.subScores).map(([id, sub]) => (
-          <DimensionCard key={id} id={id} sub={sub} />
-        ))}
-      </div>
-    </div>
+    </Link>
   );
 }
