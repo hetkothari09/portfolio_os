@@ -23,17 +23,22 @@ export interface QuotaCheckResult {
 }
 
 function dailyLimitFor(plan: PlanTier): number {
+  // MVP gating: assistant is open to every authenticated user; tiers
+  // just widen the daily quota. Real "wealth-tier lock" comes back
+  // when subscription billing is live. FREE/LITE users would otherwise
+  // hit a 403 immediately, which is the wrong first impression during
+  // beta.
   switch (plan) {
     case 'ADVISOR':
     case 'FAMILY_OFFICE':
-      return 200;
+      return 500;
     case 'HNI':
     case 'PLUS':
-      return 50;
+      return 100;
     case 'FREE':
     case 'LITE':
     default:
-      return 0;
+      return 30;
   }
 }
 
