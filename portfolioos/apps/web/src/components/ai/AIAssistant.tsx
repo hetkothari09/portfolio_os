@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  UserRound,
+  Sparkles,
   X,
   Send,
   Trash2,
@@ -200,7 +200,7 @@ function AgentHeader({
       <div className="relative flex items-center gap-3 px-4 py-4">
         <div className="relative">
           <div className="h-11 w-11 rounded-full bg-gradient-to-br from-accent via-accent/85 to-accent/60 flex items-center justify-center shadow-md ring-2 ring-background">
-            <UserRound className="h-5 w-5 text-accent-foreground" strokeWidth={2} />
+            <Sparkles className="h-5 w-5 text-accent-foreground" strokeWidth={2} />
           </div>
           <span
             className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ring-2 ring-background ${
@@ -272,7 +272,7 @@ function EmptyState({
     <div className="flex-1 flex flex-col justify-center px-5 py-8 gap-6">
       <div className="text-center space-y-2">
         <div className="mx-auto h-16 w-16 rounded-full bg-gradient-to-br from-accent/25 to-accent/10 flex items-center justify-center ring-1 ring-accent/20">
-          <UserRound className="h-7 w-7 text-accent" strokeWidth={1.7} />
+          <Sparkles className="h-7 w-7 text-accent" strokeWidth={1.7} />
         </div>
         <div className="text-lg font-semibold">Hi {firstName}. Ask me anything.</div>
         <div className="text-[13px] text-muted-foreground max-w-[340px] mx-auto leading-relaxed">
