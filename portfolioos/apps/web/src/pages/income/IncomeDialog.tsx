@@ -83,7 +83,7 @@ export function IncomeDialog({ open, existing, onClose, onSaved }: Props) {
           <DialogTitle>{isEdit ? 'Edit income' : 'Add income'}</DialogTitle>
         </DialogHeader>
 
-        <div className="grid gap-3 py-2">
+        <div className="grid min-w-0 gap-3 py-2">
           <div>
             <Label htmlFor="type">Income type</Label>
             <Select
@@ -120,13 +120,13 @@ export function IncomeDialog({ open, existing, onClose, onSaved }: Props) {
                       key={`${s.sourceName}-${i}`}
                       type="button"
                       onClick={() => applySuggestion(s)}
-                      className="flex w-full items-center justify-between gap-2 rounded-md border border-border/60 bg-card px-2.5 py-1.5 text-left text-[12.5px] hover:border-accent/50"
+                      className="flex w-full items-start justify-between gap-2 rounded-md border border-border/60 bg-card px-2.5 py-1.5 text-left text-[12.5px] hover:border-accent/50"
                     >
-                      <span className="min-w-0">
+                      <span className="min-w-0 flex-1">
                         <span className="block truncate font-medium text-foreground">{s.sourceName}</span>
-                        <span className="block truncate text-[10.5px] text-muted-foreground">{s.note}</span>
+                        <span className="block text-[10.5px] text-muted-foreground">{s.note}</span>
                       </span>
-                      <span className="numeric-display shrink-0 font-semibold text-accent-ink">
+                      <span className="numeric-display shrink-0 whitespace-nowrap font-semibold text-accent-ink">
                         {formatINR(s.monthlyAmount)}
                       </span>
                     </button>
