@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { Decimal, sumDecimal } from '@portfolioos/shared';
+import { sumDecimal } from '@portfolioos/shared';
 import { ok, noContent } from '../lib/response.js';
 import { BadRequestError } from '../lib/errors.js';
 import {
@@ -10,7 +10,7 @@ import {
   type FmvRecord,
   type GrandfatheringRow,
 } from '../services/fmvOverride.service.js';
-import { schedule112ACsv } from '../services/tax.service.js';
+import { schedule112ACsv, ratesForDate } from '../services/tax.service.js';
 
 function getFy(req: Request): string | undefined {
   const fy = (req.query.fy as string | undefined)?.trim();
@@ -58,7 +58,17 @@ export async function getTaxGrandfathering(req: Request, res: Response) {
   const rows = await listGrandfatheringRows(req.user!.id, getFy(req));
   const totalUncorrectedGain = sumDecimal(rows.map((r) => r.gainLoss));
   const totalCorrectedGain = sumDecimal(rows.map((r) => r.correctedGain ?? r.gainLoss));
-  const totalTaxSaving = sumDecimal(rows.map((r) => r.gainDifference ?? new Decimal(0)));
+  // Compute per-row tax saving: |gainDifference| × LTCG rate at the time of sale.
+  // gainDifference is negative when grandfathering helps (correctedGain < gainLoss),
+  // so we abs() it. Rows with no FMV data have gainDifference = null — skip them.
+  const totalTaxSaving = sumDecimal(
+    rows
+      .filter((r) => r.gainDifference !== null && r.gainDifference.isNegative())
+      .map((r) => {
+        const ltcgRatePct = ratesForDate(r.sellDate).ltcgEquityPct;
+        return r.gainDifference!.abs().times(ltcgRatePct).dividedBy(100);
+      }),
+  );
   ok(res, {
     rows: rows.map(grandfatheringRowToJson),
     summary: {

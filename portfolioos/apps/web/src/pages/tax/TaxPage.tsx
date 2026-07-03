@@ -1028,7 +1028,7 @@ function GrandfatheringView({
             <div className="text-2xl font-semibold text-positive">
               ₹{fmt(data.summary.totalTaxSaving)}
             </div>
-            <div className="text-xs text-muted-foreground mt-1">Est. at 12.5% LTCG rate</div>
+            <div className="text-xs text-muted-foreground mt-1">Est. at applicable LTCG rate</div>
           </CardContent>
         </Card>
       </div>
@@ -1178,9 +1178,15 @@ function GrandfatheringView({
                       {r.correctedGain ? `₹${fmt(r.correctedGain)}` : '—'}
                     </td>
                     <td className="p-2 text-right text-positive text-xs">
-                      {r.gainDifference && toDecimal(r.gainDifference).greaterThan(0)
-                        ? `₹${fmt(r.gainDifference)}`
-                        : '—'}
+                      {(() => {
+                        if (!r.gainDifference) return '—';
+                        const diff = toDecimal(r.gainDifference);
+                        if (!diff.isNegative()) return '—'; // no FMV benefit for this row
+                        const isPostRateChange = new Date(r.sellDate) >= new Date('2024-07-23T00:00:00Z');
+                        const ltcgRatePct = isPostRateChange ? 12.5 : 10;
+                        const taxSaved = diff.abs().times(ltcgRatePct).dividedBy(100);
+                        return `₹${fmt(taxSaved.toFixed(2))}`;
+                      })()}
                     </td>
                   </tr>
                 ))}
