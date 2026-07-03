@@ -13,6 +13,7 @@ import {
   getTaxHarvest,
   downloadSchedule112ACsv,
   getAvailableFys,
+  downloadCapitalGainsTaxReport,
 } from '../controllers/tax.controller.js';
 import {
   getTaxGrandfathering,
@@ -36,6 +37,7 @@ taxRouter.get('/schedule-43', asyncHandler(getUserSchedule43));
 taxRouter.get('/income', asyncHandler(getUserIncome));
 taxRouter.get('/harvest', asyncHandler(getTaxHarvest));
 taxRouter.get('/schedule-112a.csv', asyncHandler(downloadSchedule112ACsv));
+taxRouter.get('/capital-gains-report', asyncHandler(downloadCapitalGainsTaxReport));
 taxRouter.get('/grandfathering', asyncHandler(getTaxGrandfathering));
 taxRouter.get('/fmv-overrides', asyncHandler(getFmvOverrides));
 taxRouter.put('/fmv-overrides/:isin', asyncHandler(putFmvOverride));
