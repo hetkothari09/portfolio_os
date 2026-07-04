@@ -10,8 +10,8 @@ interface PageHeaderProps {
 export function PageHeader({ title, description, actions, eyebrow }: PageHeaderProps) {
   return (
     <div className="mb-7 reveal">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
+      <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+        <div className="min-w-0 flex-1 sm:basis-80">
           <p className="text-[10px] font-medium uppercase tracking-kerned text-accent-ink/85">
             {eyebrow ?? 'Portfolio'}
           </p>
@@ -25,7 +25,7 @@ export function PageHeader({ title, description, actions, eyebrow }: PageHeaderP
           )}
         </div>
         {actions && (
-          <div className="flex shrink-0 items-center gap-2 self-start sm:self-end">
+          <div className="flex flex-wrap items-center gap-2 self-start sm:ml-auto sm:justify-end sm:self-end">
             {actions}
           </div>
         )}
