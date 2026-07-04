@@ -2,25 +2,33 @@ import { useState } from 'react';
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { SidebarNav } from './SidebarNav';
+import { useMediaQuery, LG_QUERY } from '@/hooks/useMediaQuery';
 
 export { ASSET_CLASS_ITEMS } from './navItems';
 
 const SIDEBAR_KEY = 'sidebar_collapsed';
 
 export function Sidebar() {
-  const [collapsed, setCollapsed] = useState<boolean>(
+  const [userCollapsed, setUserCollapsed] = useState<boolean>(
     () => localStorage.getItem(SIDEBAR_KEY) === 'true',
   );
 
+  // At/above lg the sidebar honours the user's saved preference. In the
+  // md–lg tablet band there isn't room for the full 256px rail, so it is
+  // forced to the icon rail regardless of preference (and the manual
+  // toggle is hidden — it wouldn't do anything).
+  const isDesktop = useMediaQuery(LG_QUERY);
+  const collapsed = isDesktop ? userCollapsed : true;
+
   function toggleCollapsed() {
-    setCollapsed((v) => {
+    setUserCollapsed((v) => {
       const next = !v;
       localStorage.setItem(SIDEBAR_KEY, String(next));
       return next;
     });
   }
 
-  const toggle = (
+  const toggle = isDesktop ? (
     <button
       type="button"
       onClick={toggleCollapsed}
@@ -29,7 +37,7 @@ export function Sidebar() {
     >
       {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
     </button>
-  );
+  ) : undefined;
 
   return (
     <aside
