@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import {
   ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip,
-  CartesianGrid, ReferenceLine, PieChart, Pie, Cell, Legend,
+  CartesianGrid, ReferenceLine, PieChart, Pie, Cell,
 } from 'recharts';
 import { Decimal, formatINR, type HoldingRow, type TransactionDTO } from '@portfolioos/shared';
 import { Button } from '@/components/ui/button';

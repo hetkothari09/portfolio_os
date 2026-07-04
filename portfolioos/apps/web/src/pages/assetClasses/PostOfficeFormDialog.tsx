@@ -16,9 +16,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { transactionsApi } from '@/api/transactions.api';
 import { portfoliosApi } from '@/api/portfolios.api';
 import { apiErrorMessage } from '@/api/client';
-import type { TransactionDTO, AssetClass, TransactionType } from '@portfolioos/shared';
+import type { AssetClass, TransactionType } from '@portfolioos/shared';
 import type { FormDialogProps } from './FDFormDialog';
-import { SCHEMES, SCHEME_ORDER, assetClassToScheme, type SchemeType } from '@/lib/poSchemes';
+import { SCHEMES, SCHEME_ORDER, assetClassToScheme, schemeForAssetClass, type SchemeType } from '@/lib/poSchemes';
 
 const n = (v: unknown) => (v === '' || v == null ? undefined : v);
 const moneyReq = z.preprocess(n, z.coerce.number().nonnegative('Enter amount'));
@@ -39,9 +39,14 @@ const schema = z.object({
 type FormValues = z.input<typeof schema>;
 type FormOutput = z.output<typeof schema>;
 
-export function PostOfficeFormDialog({ open, onOpenChange, initial, defaultPortfolioId }: FormDialogProps) {
+export function PostOfficeFormDialog({ open, onOpenChange, initial, defaultPortfolioId, defaultAssetClass }: FormDialogProps) {
   const queryClient = useQueryClient();
   const isEdit = !!initial;
+
+  // For new entries opened from a per-scheme "Add" button, preselect that scheme.
+  const defaultScheme: SchemeType =
+    (defaultAssetClass ? schemeForAssetClass(defaultAssetClass) : undefined) ?? 'NSC';
+  const defaultTxnType = SCHEMES[defaultScheme].txnTypes[0]!;
 
   const { data: portfolios } = useQuery({ queryKey: ['portfolios'], queryFn: portfoliosApi.list });
 
@@ -49,8 +54,8 @@ export function PostOfficeFormDialog({ open, onOpenChange, initial, defaultPortf
     resolver: zodResolver(schema),
     defaultValues: {
       portfolioId: defaultPortfolioId ?? '',
-      schemeType: 'NSC',
-      transactionType: 'BUY',
+      schemeType: defaultScheme,
+      transactionType: defaultTxnType,
       tradeDate: new Date().toISOString().slice(0, 10),
     },
   });
@@ -97,13 +102,13 @@ export function PostOfficeFormDialog({ open, onOpenChange, initial, defaultPortf
       } else {
         reset({
           portfolioId: defaultPortfolioId ?? portfolios?.[0]?.id ?? '',
-          schemeType: 'NSC',
-          transactionType: 'BUY',
+          schemeType: defaultScheme,
+          transactionType: defaultTxnType,
           tradeDate: new Date().toISOString().slice(0, 10),
         });
       }
     }
-  }, [open, initial, defaultPortfolioId, portfolios, reset]);
+  }, [open, initial, defaultPortfolioId, portfolios, reset, defaultScheme, defaultTxnType]);
 
   const mutation = useMutation({
     mutationFn: (values: FormOutput) => {

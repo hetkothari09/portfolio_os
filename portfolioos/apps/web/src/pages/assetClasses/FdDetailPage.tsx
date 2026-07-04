@@ -392,9 +392,11 @@ export function FdDetailPage() {
     onError: (err) => toast.error(apiErrorMessage(err, 'Failed to mark paid')),
   });
 
-  if (!holding) return null;
-
-  const isRD = holding.assetClass === 'RECURRING_DEPOSIT';
+  // NOTE: hooks below (useMemo) must run unconditionally, so the `!holding`
+  // guard is deferred to just before the JSX return. Derived values are made
+  // null-safe so they can be computed even on the (transient) no-holding render
+  // that immediately redirects via the effect above.
+  const isRD = holding?.assetClass === 'RECURRING_DEPOSIT';
   const titleNoun = isRD ? 'Recurring Deposit' : 'Fixed Deposit';
   const Icon = isRD ? CalendarClock : PiggyBank;
 
@@ -402,12 +404,12 @@ export function FdDetailPage() {
   // tiny inconsistency in stored asset names (extra spaces, slightly different
   // case, partial bank-name typo) doesn't leave the detail page empty.
   const allTxns = (txnData?.items ?? []).filter(
-    (t) => (!holding.portfolioId || t.portfolioId === holding.portfolioId) &&
-           t.assetClass === holding.assetClass,
+    (t) => (!holding?.portfolioId || t.portfolioId === holding.portfolioId) &&
+           t.assetClass === holding?.assetClass,
   );
   const matched = (() => {
-    const isin = normalizeText(holding.isin);
-    const name = normalizeText(holding.assetName);
+    const isin = normalizeText(holding?.isin);
+    const name = normalizeText(holding?.assetName);
     if (isin) {
       const r = allTxns.filter((t) => normalizeText(t.isin) === isin);
       if (r.length > 0) return r;
@@ -441,8 +443,8 @@ export function FdDetailPage() {
     : new Decimal(0);
   const todayIso = new Date().toISOString().slice(0, 10);
 
-  const principal = new Decimal(holding.totalCost);
-  const currentValue = holding.currentValue ? new Decimal(holding.currentValue) : null;
+  const principal = new Decimal(holding?.totalCost ?? '0');
+  const currentValue = holding?.currentValue ? new Decimal(holding.currentValue) : null;
   const earned = currentValue ? currentValue.minus(principal) : null;
   const earnedPct = earned && !principal.isZero() ? earned.div(principal).times(100).toNumber() : null;
 
@@ -579,8 +581,7 @@ export function FdDetailPage() {
       // out each period).
       const perPeriod = principal.times(annualRate).div(periodsPerYear);
       const endIso = maturity && maturity < todayIso ? maturity : todayIso;
-      let m = periodMonths;
-      while (true) {
+      for (let m = periodMonths; ; m += periodMonths) {
         const date = addMonthsIso(openDate, m);
         if (date > endIso) break;
         const hasReal = sorted.some(
@@ -596,7 +597,6 @@ export function FdDetailPage() {
             txn: null,
           });
         }
-        m += periodMonths;
       }
     }
 
@@ -604,6 +604,9 @@ export function FdDetailPage() {
     rows.sort((a, b) => b.date.localeCompare(a.date));
     return rows;
   }, [sorted, isRD, openDate, annualRate, freq, periodsPerYear, principal, maturity, todayIso]);
+
+  // All hooks have run; safe to bail out for the transient no-holding render.
+  if (!holding) return null;
 
   function openEdit(txn: TransactionDTO) {
     setEditTxn(txn);
