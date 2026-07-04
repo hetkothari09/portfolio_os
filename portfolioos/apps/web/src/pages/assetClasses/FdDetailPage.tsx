@@ -16,6 +16,10 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { apiErrorMessage } from '@/api/client';
 import { transactionsApi } from '@/api/transactions.api';
+import {
+  accruedValue, monthsBetween, addMonthsIso, shortMonth, formatDate, daysUntil,
+  normalizeText, INR_COMPACT, TOOLTIP_STYLE, TOOLTIP_LABEL_STYLE,
+} from '@/lib/depositMath';
 import { FDFormDialog } from './FDFormDialog';
 
 type FDHolding = HoldingRow & { portfolioName: string; portfolioId?: string };
@@ -52,80 +56,12 @@ const TXN_COLORS: Record<string, string> = {
   WITHDRAWAL: 'text-amber-600',
 };
 
-const TOOLTIP_STYLE: React.CSSProperties = {
-  background: 'hsl(var(--popover))',
-  border: '1px solid hsl(var(--border))',
-  borderRadius: 8,
-  fontSize: 11,
-};
-const TOOLTIP_LABEL_STYLE: React.CSSProperties = {
-  color: 'hsl(var(--muted-foreground))',
-  fontSize: 11,
-};
-
 // Match the loans-page chart palette: neutral foreground for the growth/
 // balance line, positive (green) for principal, negative (red) for interest.
 const CHART_GROWTH = 'hsl(var(--foreground))';
 const CHART_GROWTH_DIM = 'hsl(var(--muted-foreground))';
 const CHART_PRINCIPAL = 'hsl(var(--positive))';
 const CHART_INTEREST = 'hsl(var(--negative))';
-
-function daysUntil(iso: string): number {
-  return Math.round((new Date(iso).getTime() - Date.now()) / 86_400_000);
-}
-
-function monthsBetween(from: string, to: string): number {
-  const a = new Date(`${from}T00:00:00Z`);
-  const b = new Date(`${to}T00:00:00Z`);
-  return (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
-}
-
-function normalizeText(value: string | null | undefined): string {
-  return (value ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
-}
-
-function addMonthsIso(iso: string, months: number): string {
-  const d = new Date(`${iso}T00:00:00Z`);
-  d.setUTCMonth(d.getUTCMonth() + months);
-  return d.toISOString().slice(0, 10);
-}
-
-function shortMonth(iso: string): string {
-  const d = new Date(`${iso}T00:00:00Z`);
-  return d.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
-}
-
-function formatDate(iso: string | null | undefined) {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-}
-
-const INR_COMPACT = (v: number): string => {
-  if (v >= 1e7) return `₹${(v / 1e7).toFixed(2)}Cr`;
-  if (v >= 1e5) return `₹${(v / 1e5).toFixed(2)}L`;
-  if (v >= 1e3) return `₹${(v / 1e3).toFixed(1)}K`;
-  return `₹${v.toFixed(0)}`;
-};
-
-/**
- * Compound accrual at an arbitrary valuation date for a single deposit.
- * Matches the backend FD accrual formula in holdingsProjection.ts.
- */
-function accruedValue(opts: {
-  principal: Decimal;
-  rate: Decimal;
-  startIso: string;
-  valuationIso: string;
-  periodsPerYear: number;
-}): Decimal {
-  const ms = new Date(`${opts.valuationIso}T00:00:00Z`).getTime() -
-             new Date(`${opts.startIso}T00:00:00Z`).getTime();
-  if (ms <= 0) return opts.principal;
-  const years = new Decimal(ms / (365.25 * 24 * 60 * 60 * 1000));
-  const periodRate = opts.rate.div(opts.periodsPerYear);
-  const periods = years.times(opts.periodsPerYear);
-  return opts.principal.times(new Decimal(1).plus(periodRate).pow(periods));
-}
 
 function MaturityBadge({ date }: { date: string }) {
   const d = daysUntil(date);
