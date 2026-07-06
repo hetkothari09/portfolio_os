@@ -1,0 +1,3302 @@
+[
+  {
+    "isin": "INF044D01773",
+    "scripName": "Taurus Large Cap Fund - Regular Plan - Growth",
+    "fmvPerUnit": "76.0100"
+  },
+  {
+    "isin": "INF044D01815",
+    "scripName": "Taurus Mid Cap Fund - Regular Plan - Growth",
+    "fmvPerUnit": "46.1800"
+  },
+  {
+    "isin": "INF044D01864",
+    "scripName": "Taurus Ethical Fund - Regular Plan - Growth",
+    "fmvPerUnit": "50.3200"
+  },
+  {
+    "isin": "INF044D01906",
+    "scripName": "Taurus Infrastructure Fund - Regular Plan - Growth",
+    "fmvPerUnit": "27.1400"
+  },
+  {
+    "isin": "INF044D01948",
+    "scripName": "Taurus Nifty 50 Index Fund - Regular Plan - Growth",
+    "fmvPerUnit": "20.1879"
+  },
+  {
+    "isin": "INF044D01989",
+    "scripName": "Taurus Flexi Cap Fund - Regular Plan - Growth",
+    "fmvPerUnit": "118.7600"
+  },
+  {
+    "isin": "INF044D01AC9",
+    "scripName": "Taurus ELSS Tax Saver Fund - Regular Plan - Growth",
+    "fmvPerUnit": "78.3200"
+  },
+  {
+    "isin": "INF044D01BI4",
+    "scripName": "Taurus Banking & Financial Services Fund - Regular Plan - Growth",
+    "fmvPerUnit": "23.6000"
+  },
+  {
+    "isin": "INF044D01BU9",
+    "scripName": "Taurus Flexi Cap Fund - Direct Plan - Growth",
+    "fmvPerUnit": "122.8200"
+  },
+  {
+    "isin": "INF044D01BX3",
+    "scripName": "Taurus Large Cap Fund - Direct Plan - Growth",
+    "fmvPerUnit": "79.2000"
+  },
+  {
+    "isin": "INF044D01CA9",
+    "scripName": "Taurus Mid Cap Fund - Direct Plan - Growth",
+    "fmvPerUnit": "47.3100"
+  },
+  {
+    "isin": "INF044D01CD3",
+    "scripName": "Taurus Infrastructure Fund - Direct Plan - Growth",
+    "fmvPerUnit": "28.1800"
+  },
+  {
+    "isin": "INF044D01CG6",
+    "scripName": "Taurus ELSS Tax Saver Fund - Direct Plan - Growth",
+    "fmvPerUnit": "81.1900"
+  },
+  {
+    "isin": "INF044D01CJ0",
+    "scripName": "Taurus Ethical Fund - Direct Plan - Growth",
+    "fmvPerUnit": "52.2700"
+  },
+  {
+    "isin": "INF044D01CN2",
+    "scripName": "Taurus Banking & Financial Services Fund - Direct Plan - Growth",
+    "fmvPerUnit": "24.8800"
+  },
+  {
+    "isin": "INF044D01CQ5",
+    "scripName": "Taurus Nifty 50 Index Fund - Direct Plan - Growth",
+    "fmvPerUnit": "21.0495"
+  },
+  {
+    "isin": "INF082J01036",
+    "scripName": "Quantum Value Fund - Direct Plan Growth Option",
+    "fmvPerUnit": "55.2300"
+  },
+  {
+    "isin": "INF082J01069",
+    "scripName": "Quantum ELSS Tax Saver Fund - Direct Plan Growth Option",
+    "fmvPerUnit": "54.9300"
+  },
+  {
+    "isin": "INF082J01242",
+    "scripName": "Quantum Value Fund - Regular Plan Growth Option",
+    "fmvPerUnit": "55.1500"
+  },
+  {
+    "isin": "INF082J01366",
+    "scripName": "Quantum ELSS Tax Saver Fund - Regular Plan Growth Option",
+    "fmvPerUnit": "54.8400"
+  },
+  {
+    "isin": "INF084M01309",
+    "scripName": "Aditya Birla Sun Life Tax Savings Fund - Regular Plan - Growth Option",
+    "fmvPerUnit": "73.1800"
+  },
+  {
+    "isin": "INF084M01BU6",
+    "scripName": "Aditya Birla Sun Life Tax Savings Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "75.2800"
+  },
+  {
+    "isin": "INF090I01171",
+    "scripName": "Franklin India Large Cap Fund-Growth",
+    "fmvPerUnit": "476.7981"
+  },
+  {
+    "isin": "INF090I01205",
+    "scripName": "Franklin India Large & Mid Cap Fund - Growth Plan",
+    "fmvPerUnit": "82.4867"
+  },
+  {
+    "isin": "INF090I01239",
+    "scripName": "Franklin India Flexi Cap Fund - Growth",
+    "fmvPerUnit": "607.8165"
+  },
+  {
+    "isin": "INF090I01296",
+    "scripName": "Templeton India Value Fund - Growth Plan",
+    "fmvPerUnit": "280.8659"
+  },
+  {
+    "isin": "INF090I01569",
+    "scripName": "Franklin India Small Cap Fund-Growth",
+    "fmvPerUnit": "62.0048"
+  },
+  {
+    "isin": "INF090I01742",
+    "scripName": "Franklin India Technology Fund-Growth",
+    "fmvPerUnit": "143.8213"
+  },
+  {
+    "isin": "INF090I01775",
+    "scripName": "Franklin India ELSS Tax Saver Fund-Growth",
+    "fmvPerUnit": "569.1672"
+  },
+  {
+    "isin": "INF090I01809",
+    "scripName": "Franklin India Mid Cap Fund-Growth",
+    "fmvPerUnit": "1010.9390"
+  },
+  {
+    "isin": "INF090I01841",
+    "scripName": "Franklin India Opportunities Fund - Growth",
+    "fmvPerUnit": "78.6531"
+  },
+  {
+    "isin": "INF090I01890",
+    "scripName": "Franklin India Index Fund- NSE Nifty 50 Index Fund - Growth",
+    "fmvPerUnit": "87.0227"
+  },
+  {
+    "isin": "INF090I01981",
+    "scripName": "Franklin India Focused Equity Fund - Growth Plan",
+    "fmvPerUnit": "41.8594"
+  },
+  {
+    "isin": "INF090I01AB3",
+    "scripName": "Franklin Asian Equity Fund - Growth Plan",
+    "fmvPerUnit": "23.6496"
+  },
+  {
+    "isin": "INF090I01AE7",
+    "scripName": "Franklin Build India Fund Growth Plan",
+    "fmvPerUnit": "44.0568"
+  },
+  {
+    "isin": "INF090I01FE6",
+    "scripName": "Franklin India Technology Fund - Direct - Growth",
+    "fmvPerUnit": "148.0021"
+  },
+  {
+    "isin": "INF090I01FH9",
+    "scripName": "Franklin India Mid Cap Fund - Direct - Growth",
+    "fmvPerUnit": "1066.0993"
+  },
+  {
+    "isin": "INF090I01FK3",
+    "scripName": "Franklin India Flexi Cap Fund - Direct - Growth",
+    "fmvPerUnit": "637.6120"
+  },
+  {
+    "isin": "INF090I01FN7",
+    "scripName": "Franklin India Large Cap Fund- Direct - Growth",
+    "fmvPerUnit": "497.5918"
+  },
+  {
+    "isin": "INF090I01GC8",
+    "scripName": "Franklin India Opportunities Fund - Direct - Growth",
+    "fmvPerUnit": "81.2338"
+  },
+  {
+    "isin": "INF090I01GS4",
+    "scripName": "Franklin India INDEX FUND- NSE NIFTY 50 INDEX FUND- Direct - Growth",
+    "fmvPerUnit": "88.6664"
+  },
+  {
+    "isin": "INF090I01GY2",
+    "scripName": "Templeton India Value Fund - Direct - Growth",
+    "fmvPerUnit": "290.6881"
+  },
+  {
+    "isin": "INF090I01IN1",
+    "scripName": "Franklin India Large & Mid Cap Fund - Direct - Growth",
+    "fmvPerUnit": "85.5647"
+  },
+  {
+    "isin": "INF090I01IQ4",
+    "scripName": "Franklin India Small Cap Fund - Direct - Growth",
+    "fmvPerUnit": "65.5900"
+  },
+  {
+    "isin": "INF090I01IW2",
+    "scripName": "Franklin India Focused Equity Fund - Direct - Growth",
+    "fmvPerUnit": "44.1893"
+  },
+  {
+    "isin": "INF090I01IZ5",
+    "scripName": "Franklin Asian Equity Fund - Direct - Growth",
+    "fmvPerUnit": "24.4558"
+  },
+  {
+    "isin": "INF090I01JF5",
+    "scripName": "Franklin Build India Fund - Direct - Growth",
+    "fmvPerUnit": "46.7055"
+  },
+  {
+    "isin": "INF090I01JS8",
+    "scripName": "Franklin India ELSS Tax Saver Fund - Direct - Growth",
+    "fmvPerUnit": "594.5431"
+  },
+  {
+    "isin": "INF109K011N7",
+    "scripName": "ICICI Prudential MidCap Fund - Direct Plan -  Growth",
+    "fmvPerUnit": "108.8700"
+  },
+  {
+    "isin": "INF109K011O5",
+    "scripName": "ICICI Prudential Large & Mid Cap Fund - Direct Plan - Growth",
+    "fmvPerUnit": "352.9700"
+  },
+  {
+    "isin": "INF109K012K1",
+    "scripName": "ICICI Prudential Value Fund (erstwhile Value Discovery Fund) - Direct Plan - Growth",
+    "fmvPerUnit": "157.6400"
+  },
+  {
+    "isin": "INF109K013J1",
+    "scripName": "ICICI Prudential Banking and Financial Services Fund - Direct Plan -  Growth",
+    "fmvPerUnit": "66.4900"
+  },
+  {
+    "isin": "INF109K01415",
+    "scripName": "ICICI Prudential FMCG Fund - Growth",
+    "fmvPerUnit": "220.1700"
+  },
+  {
+    "isin": "INF109K01431",
+    "scripName": "ICICI Prudential Large & Mid Cap Fund - Growth",
+    "fmvPerUnit": "336.9300"
+  },
+  {
+    "isin": "INF109K01464",
+    "scripName": "ICICI Prudential ELSS Tax Saver Fund - Growth",
+    "fmvPerUnit": "363.1600"
+  },
+  {
+    "isin": "INF109K014O9",
+    "scripName": "ICICI Prudential Multicap Fund - Direct Plan -  Growth",
+    "fmvPerUnit": "298.1800"
+  },
+  {
+    "isin": "INF109K01506",
+    "scripName": "ICICI Prudential Technology Fund - Growth",
+    "fmvPerUnit": "51.4600"
+  },
+  {
+    "isin": "INF109K015M0",
+    "scripName": "ICICI Prudential Smallcap Fund - Direct Plan - Growth",
+    "fmvPerUnit": "31.1800"
+  },
+  {
+    "isin": "INF109K01613",
+    "scripName": "ICICI Prudential Multicap Fund - Growth",
+    "fmvPerUnit": "285.7500"
+  },
+  {
+    "isin": "INF109K016L0",
+    "scripName": "ICICI Prudential Large Cap Fund (erstwhile Bluechip Fund) - Direct Plan - Growth",
+    "fmvPerUnit": "43.6800"
+  },
+  {
+    "isin": "INF109K018M4",
+    "scripName": "ICICI Prudential Infrastructure Fund - Direct Plan -  Growth",
+    "fmvPerUnit": "58.7800"
+  },
+  {
+    "isin": "INF109K018N2",
+    "scripName": "ICICI Prudential Focused Equity Fund - Direct Plan - Growth",
+    "fmvPerUnit": "31.4800"
+  },
+  {
+    "isin": "INF109K01AF8",
+    "scripName": "ICICI Prudential Value Fund (erstwhile Value Discovery Fund) - Growth",
+    "fmvPerUnit": "149.9800"
+  },
+  {
+    "isin": "INF109K01AN2",
+    "scripName": "ICICI Prudential MidCap Fund - Growth",
+    "fmvPerUnit": "104.1800"
+  },
+  {
+    "isin": "INF109K01AV5",
+    "scripName": "ICICI Prudential Infrastructure Fund - Growth",
+    "fmvPerUnit": "56.8100"
+  },
+  {
+    "isin": "INF109K01BB5",
+    "scripName": "ICICI Prudential Exports & Services Fund - Growth",
+    "fmvPerUnit": "60.9900"
+  },
+  {
+    "isin": "INF109K01BI0",
+    "scripName": "ICICI Prudential Smallcap Fund - Growth",
+    "fmvPerUnit": "30.3600"
+  },
+  {
+    "isin": "INF109K01BK6",
+    "scripName": "ICICI Prudential Smallcap Fund - Institutional Growth",
+    "fmvPerUnit": "30.3600"
+  },
+  {
+    "isin": "INF109K01BL4",
+    "scripName": "ICICI Prudential Large Cap Fund (erstwhile Bluechip Fund)  - Growth",
+    "fmvPerUnit": "41.7700"
+  },
+  {
+    "isin": "INF109K01BN0",
+    "scripName": "ICICI Prudential Bluechip Fund - Institutional Option - I - Growth",
+    "fmvPerUnit": "45.5300"
+  },
+  {
+    "isin": "INF109K01BU5",
+    "scripName": "ICICI Prudential Banking and Financial Services Fund -  Growth",
+    "fmvPerUnit": "63.1100"
+  },
+  {
+    "isin": "INF109K01BZ4",
+    "scripName": "ICICI Prudential Focused Equity Fund - Growth",
+    "fmvPerUnit": "29.9300"
+  },
+  {
+    "isin": "INF109K01E35",
+    "scripName": "ICICI Prudential US Bluechip Equity Fund - Growth",
+    "fmvPerUnit": "24.0400"
+  },
+  {
+    "isin": "INF109K01IF1",
+    "scripName": "ICICI Prudential Nifty Next 50 Index Fund - Growth",
+    "fmvPerUnit": "26.8887"
+  },
+  {
+    "isin": "INF109K01W25",
+    "scripName": "ICICI Prudential Exports & Services Fund - Direct Plan - Growth",
+    "fmvPerUnit": "63.3300"
+  },
+  {
+    "isin": "INF109K01Y31",
+    "scripName": "ICICI Prudential ELSS Tax Saver Fund - Direct Plan - Growth",
+    "fmvPerUnit": "382.1900"
+  },
+  {
+    "isin": "INF109K01Y80",
+    "scripName": "ICICI Prudential Nifty Next 50 Index Fund - Direct Plan -  Growth",
+    "fmvPerUnit": "27.5101"
+  },
+  {
+    "isin": "INF109K01Z14",
+    "scripName": "ICICI Prudential FMCG Fund - Direct Plan -  Growth",
+    "fmvPerUnit": "227.7200"
+  },
+  {
+    "isin": "INF109K01Z48",
+    "scripName": "ICICI Prudential Technology Fund - Direct Plan -  Growth",
+    "fmvPerUnit": "53.4800"
+  },
+  {
+    "isin": "INF109K01Z71",
+    "scripName": "ICICI Prudential US Bluechip Equity Fund - Direct Plan -  Growth",
+    "fmvPerUnit": "25.0600"
+  },
+  {
+    "isin": "INF109KA1XP2",
+    "scripName": "ICICI Prudential R.I.G.H.T. Fund Growth",
+    "fmvPerUnit": "43.7100"
+  },
+  {
+    "isin": "INF137A01037",
+    "scripName": "JM Value Fund (Regular) - Growth Option",
+    "fmvPerUnit": "33.8286"
+  },
+  {
+    "isin": "INF173K01155",
+    "scripName": "Principal Emerging Bluechip Fund - Growth Option",
+    "fmvPerUnit": "111.6200"
+  },
+  {
+    "isin": "INF173K01189",
+    "scripName": "Principal Focused Multicap Fund-Growth Option",
+    "fmvPerUnit": "63.5900"
+  },
+  {
+    "isin": "INF173K01940",
+    "scripName": "Principal Multi Cap Growth Fund-Growth Option",
+    "fmvPerUnit": "152.5400"
+  },
+  {
+    "isin": "INF173K01957",
+    "scripName": "Principal Multi Cap Growth Fund- Half Yearly Income Distribution CUM Capital Withdrawal Option",
+    "fmvPerUnit": "37.7200"
+  },
+  {
+    "isin": "INF173K01AG2",
+    "scripName": "Principal Nifty 100 Equal Weight Fund-Growth",
+    "fmvPerUnit": "76.2471"
+  },
+  {
+    "isin": "INF173K01EG4",
+    "scripName": "Principal Emerging Bluechip Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "116.6900"
+  },
+  {
+    "isin": "INF173K01EK6",
+    "scripName": "Principal Focused Multicap Fund- Direct Plan - Growth Option",
+    "fmvPerUnit": "65.6900"
+  },
+  {
+    "isin": "INF173K01EZ4",
+    "scripName": "Principal Nifty 100 Equal Weight Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "78.1242"
+  },
+  {
+    "isin": "INF173K01FN7",
+    "scripName": "Principal Multi Cap Growth Fund - Direct Plan -Half Yearly Income Distribution CUM Capital Withdrawal Option",
+    "fmvPerUnit": "47.2400"
+  },
+  {
+    "isin": "INF173K01FQ0",
+    "scripName": "Principal Multi Cap Growth Fund-Direct Plan - Growth Option",
+    "fmvPerUnit": "157.7200"
+  },
+  {
+    "isin": "INF174K01153",
+    "scripName": "Kotak Large Cap Fund - Growth",
+    "fmvPerUnit": "232.1620"
+  },
+  {
+    "isin": "INF174K01187",
+    "scripName": "Kotak Large & Midcap Fund - Growth-Regular",
+    "fmvPerUnit": "119.8180"
+  },
+  {
+    "isin": "INF174K01211",
+    "scripName": "Kotak-Small Cap Fund - Growth",
+    "fmvPerUnit": "81.6960"
+  },
+  {
+    "isin": "INF174K01245",
+    "scripName": "Kotak Contra Fund - Regular Plan - Growth",
+    "fmvPerUnit": "49.7010"
+  },
+  {
+    "isin": "INF174K01336",
+    "scripName": "Kotak Flexicap Fund - Growth",
+    "fmvPerUnit": "34.0700"
+  },
+  {
+    "isin": "INF174K01369",
+    "scripName": "Kotak ELSS Tax Saver Fund-Growth",
+    "fmvPerUnit": "42.8120"
+  },
+  {
+    "isin": "INF174K01DS9",
+    "scripName": "Kotak Midcap Fund - Regular Plan - Growth",
+    "fmvPerUnit": "40.7910"
+  },
+  {
+    "isin": "INF174K01KT2",
+    "scripName": "Kotak-Small Cap Fund - Growth - Direct",
+    "fmvPerUnit": "86.9170"
+  },
+  {
+    "isin": "INF174K01KW6",
+    "scripName": "Kotak Large Cap  Fund - Growth - Direct",
+    "fmvPerUnit": "244.6170"
+  },
+  {
+    "isin": "INF174K01KZ9",
+    "scripName": "Kotak Contra Fund - Direct Plan - Growth",
+    "fmvPerUnit": "53.0280"
+  },
+  {
+    "isin": "INF174K01LF9",
+    "scripName": "Kotak Large & Midcap Fund - Direct- Growth",
+    "fmvPerUnit": "126.2610"
+  },
+  {
+    "isin": "INF174K01LI3",
+    "scripName": "Kotak ELSS Tax Saver Fund-Growth - Direct",
+    "fmvPerUnit": "45.7200"
+  },
+  {
+    "isin": "INF174K01LS2",
+    "scripName": "Kotak Flexicap Fund - Growth - Direct",
+    "fmvPerUnit": "35.7860"
+  },
+  {
+    "isin": "INF174K01LT0",
+    "scripName": "Kotak Midcap Fund - Direct Plan - Growth",
+    "fmvPerUnit": "43.2070"
+  },
+  {
+    "isin": "INF174V01077",
+    "scripName": "Mahindra Manulife ELSS Tax Saver Fund- Regular Plan - Growth",
+    "fmvPerUnit": "12.3370"
+  },
+  {
+    "isin": "INF174V01093",
+    "scripName": "Mahindra Manulife ELSS Tax Saver Fund - Direct Plan -Growth",
+    "fmvPerUnit": "12.7257"
+  },
+  {
+    "isin": "INF174V01317",
+    "scripName": "Mahindra Manulife Multi Cap Fund - Regular Plan - Growth",
+    "fmvPerUnit": "11.1943"
+  },
+  {
+    "isin": "INF174V01341",
+    "scripName": "Mahindra Manulife Multi Cap Fund - Direct Plan -Growth",
+    "fmvPerUnit": "11.4152"
+  },
+  {
+    "isin": "INF178L01095",
+    "scripName": "Kotak Infrastructure & Economic Reform Fund - Standard Plan-Growth",
+    "fmvPerUnit": "22.9060"
+  },
+  {
+    "isin": "INF178L01AL9",
+    "scripName": "Kotak Infrastructure & Economic Reform Fund- Direct Plan- Growth Option",
+    "fmvPerUnit": "24.4510"
+  },
+  {
+    "isin": "INF179K01426",
+    "scripName": "HDFC Value Fund - Growth Plan",
+    "fmvPerUnit": "307.8460"
+  },
+  {
+    "isin": "INF179K01574",
+    "scripName": "HDFC Focused Fund - GROWTH PLAN",
+    "fmvPerUnit": "86.1900"
+  },
+  {
+    "isin": "INF179K01608",
+    "scripName": "HDFC Flexi Cap Fund - Growth Plan",
+    "fmvPerUnit": "672.3190"
+  },
+  {
+    "isin": "INF179K01996",
+    "scripName": "HDFC Long Term Advantage Plan - Growth Plan",
+    "fmvPerUnit": "361.1360"
+  },
+  {
+    "isin": "INF179K01BB8",
+    "scripName": "HDFC ELSS Tax saver - Growth Plan",
+    "fmvPerUnit": "559.1300"
+  },
+  {
+    "isin": "INF179K01BE2",
+    "scripName": "HDFC Large Cap Fund - Growth Option - Regular Plan",
+    "fmvPerUnit": "481.8880"
+  },
+  {
+    "isin": "INF179K01CR2",
+    "scripName": "HDFC Mid Cap Fund - Growth Plan",
+    "fmvPerUnit": "58.6330"
+  },
+  {
+    "isin": "INF179K01GF8",
+    "scripName": "HDFC Infrastructure Fund - Growth Plan",
+    "fmvPerUnit": "22.2210"
+  },
+  {
+    "isin": "INF179K01KZ8",
+    "scripName": "HDFC Nifty 50 Index Fund - Growth Plan",
+    "fmvPerUnit": "98.7389"
+  },
+  {
+    "isin": "INF179K01LA9",
+    "scripName": "HDFC BSE Sensex Index Fund - Growth Plan",
+    "fmvPerUnit": "315.1767"
+  },
+  {
+    "isin": "INF179K01UT0",
+    "scripName": "HDFC Flexi Cap Fund - Growth Option - Direct Plan",
+    "fmvPerUnit": "699.5850"
+  },
+  {
+    "isin": "INF179K01VC4",
+    "scripName": "HDFC Value Fund - Growth Option - Direct Plan",
+    "fmvPerUnit": "320.0090"
+  },
+  {
+    "isin": "INF179K01VK7",
+    "scripName": "HDFC Focused Fund - Growth Option - Direct Plan",
+    "fmvPerUnit": "89.9010"
+  },
+  {
+    "isin": "INF179K01WQ2",
+    "scripName": "HDFC Infrastructure Fund - Growth Option - Direct Plan",
+    "fmvPerUnit": "23.1590"
+  },
+  {
+    "isin": "INF179K01WX8",
+    "scripName": "HDFC Long Term Advantage Plan - Growth Option - Direct Plan",
+    "fmvPerUnit": "371.9920"
+  },
+  {
+    "isin": "INF179K01XQ0",
+    "scripName": "HDFC Mid Cap Fund - Growth Option - Direct Plan",
+    "fmvPerUnit": "61.1110"
+  },
+  {
+    "isin": "INF179K01YS4",
+    "scripName": "HDFC ELSS Tax saver - Growth Option - Direct Plan",
+    "fmvPerUnit": "576.5550"
+  },
+  {
+    "isin": "INF179K01YV8",
+    "scripName": "HDFC Large Cap Fund - Growth Option - Direct Plan",
+    "fmvPerUnit": "498.0290"
+  },
+  {
+    "isin": "INF179KA1RQ7",
+    "scripName": "HDFC Large and Mid Cap Fund - Growth Option - Direct Plan",
+    "fmvPerUnit": "118.3270"
+  },
+  {
+    "isin": "INF179KA1RT1",
+    "scripName": "HDFC Large and Mid Cap Fund - Growth Option",
+    "fmvPerUnit": "117.2710"
+  },
+  {
+    "isin": "INF179KA1RW5",
+    "scripName": "HDFC Small Cap Fund - Growth Option - Direct Plan",
+    "fmvPerUnit": "48.1390"
+  },
+  {
+    "isin": "INF179KA1RZ8",
+    "scripName": "HDFC Small Cap Fund - Growth Option",
+    "fmvPerUnit": "45.7600"
+  },
+  {
+    "isin": "INF179KC1965",
+    "scripName": "HDFC NIFTY 50 ETF - Growth Plan",
+    "fmvPerUnit": "1127.3700"
+  },
+  {
+    "isin": "INF179KC1AU3",
+    "scripName": "HDFC Housing Opportunities Fund  - Growth Option - Direct Plan",
+    "fmvPerUnit": "10.3460"
+  },
+  {
+    "isin": "INF179KC1AX7",
+    "scripName": "HDFC Housing Opportunities Fund  - Growth Option",
+    "fmvPerUnit": "10.3200"
+  },
+  {
+    "isin": "INF179KC1HX2",
+    "scripName": "HDFC BSE Sensex ETF - Growth Plan",
+    "fmvPerUnit": "3700.8800"
+  },
+  {
+    "isin": "INF192K01577",
+    "scripName": "JM Focused Fund (Regular) - Growth Option",
+    "fmvPerUnit": "8.9316"
+  },
+  {
+    "isin": "INF192K01601",
+    "scripName": "JM Large Cap Fund (Regular) - Growth Option",
+    "fmvPerUnit": "66.7950"
+  },
+  {
+    "isin": "INF192K01635",
+    "scripName": "JM Flexicap Fund (Regular) - Growth option",
+    "fmvPerUnit": "31.7090"
+  },
+  {
+    "isin": "INF192K01650",
+    "scripName": "JM ELSS Tax Saver Fund (Regular) - Growth option",
+    "fmvPerUnit": "16.7523"
+  },
+  {
+    "isin": "INF192K01BT3",
+    "scripName": "JM Value Fund (Direct) - Growth Option",
+    "fmvPerUnit": "35.8005"
+  },
+  {
+    "isin": "INF192K01BW7",
+    "scripName": "JM Focused Fund (Direct)  - Growth Option",
+    "fmvPerUnit": "9.4805"
+  },
+  {
+    "isin": "INF192K01BZ0",
+    "scripName": "JM Large Cap Fund (Direct) - Growth Option",
+    "fmvPerUnit": "70.5094"
+  },
+  {
+    "isin": "INF192K01CC7",
+    "scripName": "JM Flexicap Fund (Direct) - Growth Option",
+    "fmvPerUnit": "33.5950"
+  },
+  {
+    "isin": "INF192K01CE3",
+    "scripName": "JM ELSS Tax Saver Fund (Direct) - Growth Option",
+    "fmvPerUnit": "17.8809"
+  },
+  {
+    "isin": "INF194K011E2",
+    "scripName": "IDFC YS Interval Fund - Series II-Regular Plan-Growth",
+    "fmvPerUnit": "14.9197"
+  },
+  {
+    "isin": "INF194K01292",
+    "scripName": "BANDHAN ELSS Tax Saver Fund - Regular Plan - Growth",
+    "fmvPerUnit": "60.3290"
+  },
+  {
+    "isin": "INF194K012A8",
+    "scripName": "BANDHAN Nifty 50 Index Fund-Direct Plan-Growth",
+    "fmvPerUnit": "22.5077"
+  },
+  {
+    "isin": "INF194K01342",
+    "scripName": "Bandhan Value Fund - Regular Plan - Growth",
+    "fmvPerUnit": "57.7983"
+  },
+  {
+    "isin": "INF194K01391",
+    "scripName": "BANDHAN Flexi Cap Fund - Regular Plan - Growth",
+    "fmvPerUnit": "96.2991"
+  },
+  {
+    "isin": "INF194K013E8",
+    "scripName": "IDFC YS Interval Fund - Series II-Direct Plan-Growth",
+    "fmvPerUnit": "15.0342"
+  },
+  {
+    "isin": "INF194K01466",
+    "scripName": "Bandhan Focused Fund - Regular Plan - Growth",
+    "fmvPerUnit": "40.8937"
+  },
+  {
+    "isin": "INF194K01516",
+    "scripName": "BANDHAN Large Cap Fund - Regular Plan - Growth",
+    "fmvPerUnit": "32.6722"
+  },
+  {
+    "isin": "INF194K01524",
+    "scripName": "Bandhan Large & Mid Cap Fund - Regular Plan - Growth",
+    "fmvPerUnit": "47.4162"
+  },
+  {
+    "isin": "INF194K01920",
+    "scripName": "BANDHAN Nifty 50 Index Fund - Regular Plan - Growth",
+    "fmvPerUnit": "22.4176"
+  },
+  {
+    "isin": "INF194K01BY9",
+    "scripName": "BANDHAN Infrastructure Fund - Regular Plan - Growth",
+    "fmvPerUnit": "19.1866"
+  },
+  {
+    "isin": "INF194K01V89",
+    "scripName": "Bandhan Large & Mid Cap Fund - Direct Plan - Growth",
+    "fmvPerUnit": "50.4899"
+  },
+  {
+    "isin": "INF194K01W21",
+    "scripName": "Bandhan Focused Fund - Direct Plan - Growth",
+    "fmvPerUnit": "43.5139"
+  },
+  {
+    "isin": "INF194K01W62",
+    "scripName": "BANDHAN Flexi Cap Fund-Direct Plan-Growth",
+    "fmvPerUnit": "99.8626"
+  },
+  {
+    "isin": "INF194K01X46",
+    "scripName": "BANDHAN Infrastructure Fund-Direct Plan-Growth",
+    "fmvPerUnit": "20.5163"
+  },
+  {
+    "isin": "INF194K01Y29",
+    "scripName": "BANDHAN ELSS Tax Saver Fund - Direct Plan - Growth",
+    "fmvPerUnit": "63.5662"
+  },
+  {
+    "isin": "INF194K01Z44",
+    "scripName": "BANDHAN Large Cap Fund-Direct Plan-Growth",
+    "fmvPerUnit": "34.5182"
+  },
+  {
+    "isin": "INF194K01Z85",
+    "scripName": "Bandhan Value Fund - Direct Plan - Growth",
+    "fmvPerUnit": "60.3939"
+  },
+  {
+    "isin": "INF200K01180",
+    "scripName": "SBI Large Cap FUND-REGULAR PLAN GROWTH",
+    "fmvPerUnit": "39.2322"
+  },
+  {
+    "isin": "INF200K01214",
+    "scripName": "SBI ESG Exclusionary Strategy Fund - Regular Plan - Growth",
+    "fmvPerUnit": "99.2876"
+  },
+  {
+    "isin": "INF200K01222",
+    "scripName": "SBI Flexicap Fund - REGULAR PLAN -Growth Option",
+    "fmvPerUnit": "48.8557"
+  },
+  {
+    "isin": "INF200K01271",
+    "scripName": "SBI MNC FUND - REGULAR PLAN -GROWTH",
+    "fmvPerUnit": "179.7426"
+  },
+  {
+    "isin": "INF200K01305",
+    "scripName": "SBI LARGE & MIDCAP FUND- REGULAR PLAN -Growth",
+    "fmvPerUnit": "225.2258"
+  },
+  {
+    "isin": "INF200K01339",
+    "scripName": "SBI COMMA Fund - REGULAR PLAN - Growth",
+    "fmvPerUnit": "42.6192"
+  },
+  {
+    "isin": "INF200K01362",
+    "scripName": "SBI CONTRA FUND - REGULAR PLAN -GROWTH",
+    "fmvPerUnit": "123.6347"
+  },
+  {
+    "isin": "INF200K01370",
+    "scripName": "SBI FOCUSED FUND - REGULAR PLAN -GROWTH",
+    "fmvPerUnit": "136.4956"
+  },
+  {
+    "isin": "INF200K01446",
+    "scripName": "SBI HEALTHCARE OPPORTUNITIES FUND - REGULAR PLAN -GROWTH",
+    "fmvPerUnit": "128.4676"
+  },
+  {
+    "isin": "INF200K01495",
+    "scripName": "SBI ELSS Tax Saver FUND - REGULAR PLAN- GROWTH",
+    "fmvPerUnit": "151.1137"
+  },
+  {
+    "isin": "INF200K01537",
+    "scripName": "SBI NIFTY INDEX FUND - REGULAR PLAN - GROWTH",
+    "fmvPerUnit": "93.8176"
+  },
+  {
+    "isin": "INF200K01560",
+    "scripName": "SBI MIDCAP FUND - REGULAR PLAN - GROWTH",
+    "fmvPerUnit": "83.4588"
+  },
+  {
+    "isin": "INF200K016X3",
+    "scripName": "SBI LONG TERM ADVANTAGE FUND - SERIES I - REGULAR PLAN - GROWTH",
+    "fmvPerUnit": "15.1029"
+  },
+  {
+    "isin": "INF200K018X9",
+    "scripName": "SBI LONG TERM ADVANTAGE FUND - SERIES I - DIRECT PLAN - GROWTH",
+    "fmvPerUnit": "15.1683"
+  },
+  {
+    "isin": "INF200K01BC0",
+    "scripName": "SBI PSU Fund - REGULAR PLAN -Growth",
+    "fmvPerUnit": "12.4909"
+  },
+  {
+    "isin": "INF200K01CT2",
+    "scripName": "SBI INFRASTRUCTURE FUND -  REGULAR PLAN - GROWTH",
+    "fmvPerUnit": "16.6562"
+  },
+  {
+    "isin": "INF200K01IJ0",
+    "scripName": "SBI TAX ADVANTAGE FUND - SERIES I - GROWTH",
+    "fmvPerUnit": "31.8395"
+  },
+  {
+    "isin": "INF200K01JF6",
+    "scripName": "SBI TAX ADVANTAGE FUND - SERIES II - GROWTH",
+    "fmvPerUnit": "37.1525"
+  },
+  {
+    "isin": "INF200K01QX4",
+    "scripName": "SBI Large Cap FUND-DIRECT PLAN -GROWTH",
+    "fmvPerUnit": "41.0463"
+  },
+  {
+    "isin": "INF200K01RA0",
+    "scripName": "SBI CONTRA FUND - DIRECT PLAN - GROWTH",
+    "fmvPerUnit": "127.4658"
+  },
+  {
+    "isin": "INF200K01RJ1",
+    "scripName": "SBI FOCUSED FUND - DIRECT PLAN -GROWTH",
+    "fmvPerUnit": "142.5253"
+  },
+  {
+    "isin": "INF200K01RM5",
+    "scripName": "SBI CONSUMPTION OPPORTUNITIES FUND - DIRECT PLAN - GROWTH",
+    "fmvPerUnit": "125.5687"
+  },
+  {
+    "isin": "INF200K01RS2",
+    "scripName": "SBI INFRASTRUCTURE FUND -  DIRECT PLAN - GROWTH",
+    "fmvPerUnit": "17.1185"
+  },
+  {
+    "isin": "INF200K01RV6",
+    "scripName": "SBI TECHNOLOGY OPPORTUNITIES FUND - DIRECT PLAN - GROWTH",
+    "fmvPerUnit": "58.9362"
+  },
+  {
+    "isin": "INF200K01SB6",
+    "scripName": "SBI COMMA Fund - DIRECT PLAN - Growth",
+    "fmvPerUnit": "43.9231"
+  },
+  {
+    "isin": "INF200K01SE0",
+    "scripName": "SBI ESG Exclusionary Strategy Fund - Direct Plan -Growth",
+    "fmvPerUnit": "102.8854"
+  },
+  {
+    "isin": "INF200K01SN1",
+    "scripName": "SBI MNC FUND - DIRECT PLAN -GROWTH",
+    "fmvPerUnit": "187.4388"
+  },
+  {
+    "isin": "INF200K01T28",
+    "scripName": "SBI Small Cap Fund - Regular Plan - Growth",
+    "fmvPerUnit": "61.4367"
+  },
+  {
+    "isin": "INF200K01T51",
+    "scripName": "SBI Small Cap Fund - Direct Plan - Growth",
+    "fmvPerUnit": "64.8720"
+  },
+  {
+    "isin": "INF200K01TE8",
+    "scripName": "SBI NIFTY INDEX FUND - DIRECT PLAN - GROWTH",
+    "fmvPerUnit": "95.8658"
+  },
+  {
+    "isin": "INF200K01TP4",
+    "scripName": "SBI MIDCAP FUND - DIRECT PLAN - GROWTH",
+    "fmvPerUnit": "87.4487"
+  },
+  {
+    "isin": "INF200K01UG1",
+    "scripName": "SBI Flexicap Fund - DIRECT PLAN - Growth Option",
+    "fmvPerUnit": "50.9247"
+  },
+  {
+    "isin": "INF200K01UJ5",
+    "scripName": "SBI LARGE & MIDCAP FUND -DIRECT PLAN -Growth",
+    "fmvPerUnit": "230.2564"
+  },
+  {
+    "isin": "INF200K01UM9",
+    "scripName": "SBI ELSS Tax Saver FUND - DIRECT PLAN -GROWTH",
+    "fmvPerUnit": "155.5136"
+  },
+  {
+    "isin": "INF200K01UP2",
+    "scripName": "SBI HEALTHCARE OPPORTUNITIES FUND - DIRECT PLAN -GROWTH",
+    "fmvPerUnit": "135.7022"
+  },
+  {
+    "isin": "INF200K01UY4",
+    "scripName": "SBI PSU Fund - DIRECT PLAN - GROWTH",
+    "fmvPerUnit": "12.8013"
+  },
+  {
+    "isin": "INF200K01VR6",
+    "scripName": "SBI CONSUMPTION OPPORTUNITIES FUND - REGULAR - GROWTH",
+    "fmvPerUnit": "119.4835"
+  },
+  {
+    "isin": "INF200K01VS4",
+    "scripName": "SBI TECHNOLOGY OPPORTUNITIES FUND - REGULAR PLAN - GROWTH",
+    "fmvPerUnit": "56.3091"
+  },
+  {
+    "isin": "INF200K01W80",
+    "scripName": "SBI Tax Advantage Fund - Series III - Regular Plan - Growth",
+    "fmvPerUnit": "24.8588"
+  },
+  {
+    "isin": "INF200K01X06",
+    "scripName": "SBI Tax Advantage Fund - Series III - Direct Plan - Growth Option",
+    "fmvPerUnit": "25.0199"
+  },
+  {
+    "isin": "INF200KA1317",
+    "scripName": "SBI LONG TERM ADVANTAGE FUND - SERIES II - REGULAR PLAN - GROWTH",
+    "fmvPerUnit": "15.3017"
+  },
+  {
+    "isin": "INF200KA1333",
+    "scripName": "SBI LONG TERM ADVANTAGE FUND - SERIES II - DIRECT PLAN - GROWTH",
+    "fmvPerUnit": "15.3721"
+  },
+  {
+    "isin": "INF200KA1473",
+    "scripName": "SBI BANKING & FINANCIAL SERVICES FUND - REGULAR PLAN - GROWTH",
+    "fmvPerUnit": "15.5841"
+  },
+  {
+    "isin": "INF200KA1507",
+    "scripName": "SBI BANKING & FINANCIAL SERVICES FUND - DIRECT PLAN - GROWTH",
+    "fmvPerUnit": "15.9573"
+  },
+  {
+    "isin": "INF200KA1HL2",
+    "scripName": "SBI Long Term Advantage Fund - Series III - Regular Plan - Growth",
+    "fmvPerUnit": "14.5505"
+  },
+  {
+    "isin": "INF200KA1HN8",
+    "scripName": "SBI Long Term Advantage Fund - Series III - Direct Plan - Growth",
+    "fmvPerUnit": "14.9004"
+  },
+  {
+    "isin": "INF200KA1LQ3",
+    "scripName": "SBI Long Term Advantage Fund - Series IV - Regular Plan - Growth",
+    "fmvPerUnit": "13.7611"
+  },
+  {
+    "isin": "INF200KA1LS9",
+    "scripName": "SBI Long Term Advantage Fund - Series IV - Direct Plan - Growth",
+    "fmvPerUnit": "13.8662"
+  },
+  {
+    "isin": "INF204K01315",
+    "scripName": "Nippon India Growth Mid Cap Fund-Growth Plan-Bonus Option",
+    "fmvPerUnit": "196.0750"
+  },
+  {
+    "isin": "INF204K01323",
+    "scripName": "Nippon India Growth Mid Cap Fund-Growth Plan-Growth Option",
+    "fmvPerUnit": "1177.8459"
+  },
+  {
+    "isin": "INF204K01398",
+    "scripName": "Nippon India Vision Large & Midcap Fund-GROWTH PLAN-Bonus Option",
+    "fmvPerUnit": "104.0263"
+  },
+  {
+    "isin": "INF204K01406",
+    "scripName": "Nippon India Vision Large & Midcap Fund-GROWTH PLAN-Growth Option",
+    "fmvPerUnit": "617.6594"
+  },
+  {
+    "isin": "INF204K01471",
+    "scripName": "Nippon India Multi Cap Fund-Growth Plan-Bonus Option",
+    "fmvPerUnit": "99.1253"
+  },
+  {
+    "isin": "INF204K01489",
+    "scripName": "Nippon India Multi Cap Fund-Growth Plan-Growth Option",
+    "fmvPerUnit": "99.1253"
+  },
+  {
+    "isin": "INF204K01513",
+    "scripName": "Nippon India Large Cap Fund-Institutional Plan Growth Plan Bonus Option",
+    "fmvPerUnit": "35.2478"
+  },
+  {
+    "isin": "INF204K01554",
+    "scripName": "Nippon India Large Cap Fund- Growth Plan Bonus Option",
+    "fmvPerUnit": "34.1484"
+  },
+  {
+    "isin": "INF204K01562",
+    "scripName": "Nippon India Large Cap  Fund- Growth Plan -Growth Option",
+    "fmvPerUnit": "34.1484"
+  },
+  {
+    "isin": "INF204K01737",
+    "scripName": "Nippon India Quant Fund -Growth Plan -Bonus Option",
+    "fmvPerUnit": "26.2574"
+  },
+  {
+    "isin": "INF204K01760",
+    "scripName": "Nippon India Quant Fund -Growth Plan - Growth Option",
+    "fmvPerUnit": "26.2574"
+  },
+  {
+    "isin": "INF204K01919",
+    "scripName": "Nippon India Banking & Financial Services Fund-Growth Plan-Bonus Option",
+    "fmvPerUnit": "276.1121"
+  },
+  {
+    "isin": "INF204K01927",
+    "scripName": "Nippon India Banking & Financial Services Fund-Growth Plan-Growth Option",
+    "fmvPerUnit": "276.1121"
+  },
+  {
+    "isin": "INF204K01950",
+    "scripName": "Nippon India Pharma Fund-Growth Plan-Bonus Option",
+    "fmvPerUnit": "143.5104"
+  },
+  {
+    "isin": "INF204K01968",
+    "scripName": "Nippon India Pharma Fund-Growth Plan-Growth Option",
+    "fmvPerUnit": "143.5104"
+  },
+  {
+    "isin": "INF204K01AD2",
+    "scripName": "Nippon India Power & Infra Fund-Growth Plan-Bonus Option",
+    "fmvPerUnit": "122.5462"
+  },
+  {
+    "isin": "INF204K01AE0",
+    "scripName": "Nippon India Power & Infra Fund-Growth Plan -Growth Option",
+    "fmvPerUnit": "122.5462"
+  },
+  {
+    "isin": "INF204K01AP6",
+    "scripName": "Nippon India Consumption Fund-Growth Plan-Bonus Option",
+    "fmvPerUnit": "69.6036"
+  },
+  {
+    "isin": "INF204K01AQ4",
+    "scripName": "Nippon India Consumption Fund-Growth Plan-Growth Option",
+    "fmvPerUnit": "69.6036"
+  },
+  {
+    "isin": "INF204K01B81",
+    "scripName": "Nippon India Annual Interval Fund - Series I - Direct Plan Growth Plan - Growth",
+    "fmvPerUnit": "17.3716"
+  },
+  {
+    "isin": "INF204K01CV0",
+    "scripName": "Nippon India Interval Fund-Monthly Interval Fund-Series-I- Growth Option",
+    "fmvPerUnit": "22.7272"
+  },
+  {
+    "isin": "INF204K01D22",
+    "scripName": "Nippon India Banking & Financial Services Fund - Direct Plan Growth Plan - Bonus Option",
+    "fmvPerUnit": "284.9968"
+  },
+  {
+    "isin": "INF204K01D30",
+    "scripName": "Nippon India Large Cap Fund - Direct Plan Growth Plan - Bonus Option",
+    "fmvPerUnit": "35.6854"
+  },
+  {
+    "isin": "INF204K01D55",
+    "scripName": "Nippon India Multi Cap Fund - Direct Plan Growth Plan - Bonus Option",
+    "fmvPerUnit": "103.0500"
+  },
+  {
+    "isin": "INF204K01DB0",
+    "scripName": "Nippon India Interval Fund-Monthly Interval Fund-Series-II -Growth Option",
+    "fmvPerUnit": "22.6359"
+  },
+  {
+    "isin": "INF204K01DH7",
+    "scripName": "Nippon India Interval Fund-Quarterly Interval Fund-Series-I - Growth Option",
+    "fmvPerUnit": "23.1830"
+  },
+  {
+    "isin": "INF204K01DN5",
+    "scripName": "Nippon India Interval Fund-Quarterly Interval Fund Series-II-Growth Option",
+    "fmvPerUnit": "23.3445"
+  },
+  {
+    "isin": "INF204K01DT2",
+    "scripName": "Nippon India Interval Fund-Quarterly Interval Fund-Series-III- Growth Option",
+    "fmvPerUnit": "23.1343"
+  },
+  {
+    "isin": "INF204K01DW6",
+    "scripName": "Nippon India Interval Fund-Quarterly Interval Fund-Series-III-Institutional Plan-Growth Option",
+    "fmvPerUnit": "17.9330"
+  },
+  {
+    "isin": "INF204K01DZ9",
+    "scripName": "Nippon India Interval Fund Annual Interval Fund Series-I-Retail Plan Growth Option",
+    "fmvPerUnit": "23.3217"
+  },
+  {
+    "isin": "INF204K01E21",
+    "scripName": "Nippon India Growth Mid Cap Fund - Direct Plan Growth Plan - Bonus Option",
+    "fmvPerUnit": "202.8243"
+  },
+  {
+    "isin": "INF204K01E54",
+    "scripName": "Nippon India Growth Mid Cap Fund - Direct Plan Growth Plan - Growth Option",
+    "fmvPerUnit": "1220.9014"
+  },
+  {
+    "isin": "INF204K01E96",
+    "scripName": "Nippon India Vision Large & Mid Cap Fund - Direct Plan Growth Plan - Bonus Option",
+    "fmvPerUnit": "108.2073"
+  },
+  {
+    "isin": "INF204K01EC6",
+    "scripName": "Nippon India Interval Fund Annual Interval Fund Series-I- Growth Option",
+    "fmvPerUnit": "17.2939"
+  },
+  {
+    "isin": "INF204K01F20",
+    "scripName": "Nippon India Vision Large & Mid Cap Fund - Direct Plan Growth Plan - Growth Option",
+    "fmvPerUnit": "638.2372"
+  },
+  {
+    "isin": "INF204K01F61",
+    "scripName": "Nippon India Quarterly Interval Fund - Series II - Direct Plan Growth Plan - Growth",
+    "fmvPerUnit": "23.4634"
+  },
+  {
+    "isin": "INF204K01F95",
+    "scripName": "Nippon India Focused Fund - Direct Plan Growth Plan - Growth Option",
+    "fmvPerUnit": "52.4840"
+  },
+  {
+    "isin": "INF204K01G29",
+    "scripName": "Nippon India Consumption Fund - Direct Plan Growth Plan - Bonus",
+    "fmvPerUnit": "72.3328"
+  },
+  {
+    "isin": "INF204K01G52",
+    "scripName": "Nippon India Consumption Fund - Direct Plan Growth Plan - Growth Option",
+    "fmvPerUnit": "72.3328"
+  },
+  {
+    "isin": "INF204K01GB3",
+    "scripName": "Nippon India Value Fund- Growth Plan",
+    "fmvPerUnit": "77.0047"
+  },
+  {
+    "isin": "INF204K01GE7",
+    "scripName": "Nippon India Focused Fund -Growth Plan -Growth Option",
+    "fmvPerUnit": "50.2956"
+  },
+  {
+    "isin": "INF204K01GK4",
+    "scripName": "Nippon India ELSS Tax Saver Fund-Growth Plan-Growth Option",
+    "fmvPerUnit": "67.8291"
+  },
+  {
+    "isin": "INF204K01H02",
+    "scripName": "Nippon India Index Fund - Nifty 50 Plan - Direct Plan Growth Plan - Bonus Option",
+    "fmvPerUnit": "18.7919"
+  },
+  {
+    "isin": "INF204K01H36",
+    "scripName": "Nippon India Index Fund - Nifty 50 Plan - Direct Plan Growth Plan - Growth Option",
+    "fmvPerUnit": "18.7919"
+  },
+  {
+    "isin": "INF204K01HY3",
+    "scripName": "Nippon India Small Cap Fund - Growth Plan - Growth Option",
+    "fmvPerUnit": "46.5399"
+  },
+  {
+    "isin": "INF204K01HZ0",
+    "scripName": "Nippon India Small Cap Fund - Growth Plan - Bonus Option",
+    "fmvPerUnit": "46.5399"
+  },
+  {
+    "isin": "INF204K01I27",
+    "scripName": "Nippon India Pharma Fund - Direct Plan Growth Plan - Bonus Option",
+    "fmvPerUnit": "149.5975"
+  },
+  {
+    "isin": "INF204K01I50",
+    "scripName": "Nippon India Pharma Fund - Direct Plan Growth Plan - Growth Option",
+    "fmvPerUnit": "149.5975"
+  },
+  {
+    "isin": "INF204K01I68",
+    "scripName": "Nippon India Power & Infra Fund - Direct Plan Growth Plan - Bonus Option",
+    "fmvPerUnit": "126.4087"
+  },
+  {
+    "isin": "INF204K01I92",
+    "scripName": "Nippon India Power & Infra Fund - Direct Plan Growth Plan - Growth Option",
+    "fmvPerUnit": "126.4087"
+  },
+  {
+    "isin": "INF204K01IE3",
+    "scripName": "Nippon India Index Fund - Nifty 50 Plan - Growth Plan - Growth Option",
+    "fmvPerUnit": "18.3487"
+  },
+  {
+    "isin": "INF204K01IF0",
+    "scripName": "Nippon India Index Fund - Nifty 50 Plan - Growth Plan - Bonus Option",
+    "fmvPerUnit": "18.3487"
+  },
+  {
+    "isin": "INF204K01IM6",
+    "scripName": "Nippon India Index Fund - BSE Sensex Plan - Growth Plan - Growth Option",
+    "fmvPerUnit": "17.6366"
+  },
+  {
+    "isin": "INF204K01IN4",
+    "scripName": "Nippon India Index Fund - BSE Sensex Plan - Growth Plan - Bonus Option",
+    "fmvPerUnit": "17.6366"
+  },
+  {
+    "isin": "INF204K01J00",
+    "scripName": "Nippon India Quant Fund - Direct Plan Growth Plan - Bonus Option",
+    "fmvPerUnit": "27.0621"
+  },
+  {
+    "isin": "INF204K01J34",
+    "scripName": "Nippon India Quant Fund - Direct Plan Growth Plan - Growth Option",
+    "fmvPerUnit": "27.0621"
+  },
+  {
+    "isin": "INF204K01J83",
+    "scripName": "Nippon India Small Cap Fund - Direct Plan Growth Plan - Bonus Option",
+    "fmvPerUnit": "48.7779"
+  },
+  {
+    "isin": "INF204K01K15",
+    "scripName": "Nippon India Small Cap Fund - Direct Plan Growth Plan - Growth Option",
+    "fmvPerUnit": "48.7779"
+  },
+  {
+    "isin": "INF204K01K49",
+    "scripName": "Nippon India Value Fund - Direct Plan Growth Plan",
+    "fmvPerUnit": "80.0989"
+  },
+  {
+    "isin": "INF204K01K56",
+    "scripName": "Nippon India Index Fund - BSE Sensex Plan - Direct Plan Growth Plan - Bonus Option",
+    "fmvPerUnit": "18.0399"
+  },
+  {
+    "isin": "INF204K01K80",
+    "scripName": "Nippon India Index Fund - BSE Sensex Plan - Direct Plan Growth Plan - Growth Option",
+    "fmvPerUnit": "18.0399"
+  },
+  {
+    "isin": "INF204K01L55",
+    "scripName": "Nippon India ELSS Tax Saver Fund - Direct Plan Growth Plan - Growth Option",
+    "fmvPerUnit": "70.5233"
+  },
+  {
+    "isin": "INF204K01M05",
+    "scripName": "Nippon India Yearly Interval Fund - Series 1 - Growth Plan - Growth Option",
+    "fmvPerUnit": "14.8983"
+  },
+  {
+    "isin": "INF204K01M39",
+    "scripName": "Nippon India Yearly Interval Fund - Series 1 - Direct Plan - Growth Plan - Growth Option",
+    "fmvPerUnit": "14.9581"
+  },
+  {
+    "isin": "INF204K01OM4",
+    "scripName": "Reliance Equity Linked Saving Fund - Series I - Growth Plan",
+    "fmvPerUnit": "35.4202"
+  },
+  {
+    "isin": "INF204K01XF9",
+    "scripName": "Nippon India Multi Cap Fund - Direct Plan Growth Plan - Growth Option",
+    "fmvPerUnit": "103.0500"
+  },
+  {
+    "isin": "INF204K01XI3",
+    "scripName": "Nippon India Large Cap Fund - Direct Plan Growth Plan - Growth Option",
+    "fmvPerUnit": "35.6854"
+  },
+  {
+    "isin": "INF204K01XO1",
+    "scripName": "Nippon India Banking & Financial Services Fund - Direct Plan Growth Plan - Growth Option",
+    "fmvPerUnit": "284.9968"
+  },
+  {
+    "isin": "INF204K01XT0",
+    "scripName": "Nippon India Interval Fund - Quarterly Plan - Series I - Direct Plan Growth Plan - Growth",
+    "fmvPerUnit": "23.2842"
+  },
+  {
+    "isin": "INF204K01XW4",
+    "scripName": "Nippon India Quarterly Interval Fund - Series III - Direct Plan Growth Plan - Growth",
+    "fmvPerUnit": "14.1117"
+  },
+  {
+    "isin": "INF204K01ZA5",
+    "scripName": "Nippon India Monthly Interval Fund - Series I - Direct Plan Growth Plan - Growth",
+    "fmvPerUnit": "22.8118"
+  },
+  {
+    "isin": "INF204K01ZD9",
+    "scripName": "Nippon India Monthly Interval Fund - Series II - Direct Plan Growth Plan - Growth",
+    "fmvPerUnit": "22.8371"
+  },
+  {
+    "isin": "INF204KA11F6",
+    "scripName": "Reliance Interval Fund -IV -Series 2 - Growth Option",
+    "fmvPerUnit": "12.3054"
+  },
+  {
+    "isin": "INF204KA12G2",
+    "scripName": "Nippon India US Equity Opportunities Fund- Growth Plan- Growth Option",
+    "fmvPerUnit": "13.0236"
+  },
+  {
+    "isin": "INF204KA13F2",
+    "scripName": "Reliance Interval Fund -IV -Series 2 - Direct Plan - Growth Option",
+    "fmvPerUnit": "12.5665"
+  },
+  {
+    "isin": "INF204KA13I6",
+    "scripName": "Reliance Interval Fund IV- Series 3- Growth option",
+    "fmvPerUnit": "12.0447"
+  },
+  {
+    "isin": "INF204KA15G5",
+    "scripName": "Nippon India US Equity Opportunities Fund- Direct Plan- Growth Plan- Growth Option",
+    "fmvPerUnit": "13.3413"
+  },
+  {
+    "isin": "INF204KA15I1",
+    "scripName": "Reliance Interval Fund IV- Series 3- Direct Plan-Growth option",
+    "fmvPerUnit": "12.2717"
+  },
+  {
+    "isin": "INF204KA1SH3",
+    "scripName": "Nippon India Japan Equity Fund- Growth Plan- Growth Option",
+    "fmvPerUnit": "12.8193"
+  },
+  {
+    "isin": "INF204KA1SI1",
+    "scripName": "Nippon India Japan Equity Fund- Direct Plan- Growth Plan- Growth Option",
+    "fmvPerUnit": "13.1319"
+  },
+  {
+    "isin": "INF204KA1SJ9",
+    "scripName": "Nippon India Japan Equity Fund- Growth Plan- Bonus Option",
+    "fmvPerUnit": "12.8193"
+  },
+  {
+    "isin": "INF204KA1SK7",
+    "scripName": "Nippon India Japan Equity Fund- Direct Plan- Growth Plan- Bonus Option",
+    "fmvPerUnit": "13.1319"
+  },
+  {
+    "isin": "INF205K01155",
+    "scripName": "Invesco India Financial Services Fund - Regular Plan - Growth",
+    "fmvPerUnit": "54.6900"
+  },
+  {
+    "isin": "INF205K01189",
+    "scripName": "Invesco India Contra Fund - Regular Plan - Growth",
+    "fmvPerUnit": "48.3000"
+  },
+  {
+    "isin": "INF205K01247",
+    "scripName": "Invesco India Large & Mid Cap Fund - Regular Plan - Growth",
+    "fmvPerUnit": "33.6000"
+  },
+  {
+    "isin": "INF205K01270",
+    "scripName": "Invesco India ELSS Tax Saver Fund - Regular Plan - Growth",
+    "fmvPerUnit": "50.7300"
+  },
+  {
+    "isin": "INF205K01304",
+    "scripName": "Invesco India Largecap Fund - Regular Plan - Growth",
+    "fmvPerUnit": "28.3700"
+  },
+  {
+    "isin": "INF205K01338",
+    "scripName": "Invesco India PSU Equity Fund - Regular Plan - Growth",
+    "fmvPerUnit": "19.7000"
+  },
+  {
+    "isin": "INF205K01BC9",
+    "scripName": "Invesco India Midcap Fund - Regular Plan - Growth Option",
+    "fmvPerUnit": "49.7100"
+  },
+  {
+    "isin": "INF205K01CD5",
+    "scripName": "Invesco India Infrastructure Fund - Regular Plan - Growth Option",
+    "fmvPerUnit": "18.9100"
+  },
+  {
+    "isin": "INF205K01DN2",
+    "scripName": "Invesco India Multicap Fund - Regular Plan - Growth Option",
+    "fmvPerUnit": "51.5700"
+  },
+  {
+    "isin": "INF205K01FS6",
+    "scripName": "Invesco India AGILE Tax Fund - Growth Option",
+    "fmvPerUnit": "12.7600"
+  },
+  {
+    "isin": "INF205K01KY4",
+    "scripName": "Invesco India Financial Services Fund - Direct Plan - Growth",
+    "fmvPerUnit": "59.0200"
+  },
+  {
+    "isin": "INF205K01LB0",
+    "scripName": "Invesco India Largecap Fund - Direct Plan - Growth",
+    "fmvPerUnit": "30.5700"
+  },
+  {
+    "isin": "INF205K01LE4",
+    "scripName": "Invesco India Contra Fund - Direct Plan - Growth",
+    "fmvPerUnit": "51.8000"
+  },
+  {
+    "isin": "INF205K01MA0",
+    "scripName": "Invesco India Large & Mid Cap Fund - Direct Plan - Growth",
+    "fmvPerUnit": "36.2600"
+  },
+  {
+    "isin": "INF205K01MD4",
+    "scripName": "Invesco India Infrastructure Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "20.4000"
+  },
+  {
+    "isin": "INF205K01MS2",
+    "scripName": "Invesco India Multicap Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "55.4600"
+  },
+  {
+    "isin": "INF205K01MV6",
+    "scripName": "Invesco India Midcap Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "53.7300"
+  },
+  {
+    "isin": "INF205K01NG5",
+    "scripName": "Invesco India PSU Equity Fund - Direct Plan - Growth",
+    "fmvPerUnit": "21.1400"
+  },
+  {
+    "isin": "INF205K01NT8",
+    "scripName": "Invesco India ELSS Tax Saver Fund - Direct Plan - Growth",
+    "fmvPerUnit": "54.6300"
+  },
+  {
+    "isin": "INF205K01V03",
+    "scripName": "Invesco India Annual Interval Fund - Series 1 - Plan B - Regular Sub-Plan - Growth",
+    "fmvPerUnit": "12.2820"
+  },
+  {
+    "isin": "INF205K01V29",
+    "scripName": "Invesco India Annual Interval Fund - Series 1 - Plan B - Direct Sub-Plan - Growth",
+    "fmvPerUnit": "12.3188"
+  },
+  {
+    "isin": "INF209K01108",
+    "scripName": "Aditya Birla Sun Life ELSS Tax Saver Fund - Growth Option",
+    "fmvPerUnit": "31.9700"
+  },
+  {
+    "isin": "INF209K01140",
+    "scripName": "Aditya Birla Sun Life Digital India Fund - Growth - Regular Plan",
+    "fmvPerUnit": "47.6000"
+  },
+  {
+    "isin": "INF209K01165",
+    "scripName": "Aditya Birla Sun Life Large & Mid Cap Fund - Regular Growth",
+    "fmvPerUnit": "437.3200"
+  },
+  {
+    "isin": "INF209K011W7",
+    "scripName": "Aditya Birla Sun Life Banking and Financial Services Fund - Regular Plan - Growth",
+    "fmvPerUnit": "28.4400"
+  },
+  {
+    "isin": "INF209K01207",
+    "scripName": "Aditya Birla Sun Life Commodity Equities Fund - Global Agri Plan - Growth - Regular Plan",
+    "fmvPerUnit": "24.0689"
+  },
+  {
+    "isin": "INF209K01322",
+    "scripName": "Aditya Birla Sun Life MNC Fund - Growth - Regular Plan",
+    "fmvPerUnit": "766.4000"
+  },
+  {
+    "isin": "INF209K01348",
+    "scripName": "Aditya Birla Sun Life Tax Plan - Regular Plan - Growth Option",
+    "fmvPerUnit": "40.0300"
+  },
+  {
+    "isin": "INF209K01363",
+    "scripName": "Aditya Birla Sun Life MIDCAP Fund-Growth",
+    "fmvPerUnit": "327.8800"
+  },
+  {
+    "isin": "INF209K01447",
+    "scripName": "Aditya Birla Sun Life Consumption Fund-Growth Option",
+    "fmvPerUnit": "80.6100"
+  },
+  {
+    "isin": "INF209K01462",
+    "scripName": "Aditya Birla Sun Life Focused Fund -Growth Option",
+    "fmvPerUnit": "59.7451"
+  },
+  {
+    "isin": "INF209K014W1",
+    "scripName": "Aditya Birla Sun Life Banking and Financial Services Fund - Direct Plan - Growth",
+    "fmvPerUnit": "29.5900"
+  },
+  {
+    "isin": "INF209K01504",
+    "scripName": "Aditya Birla Sun Life Infrastructure Fund-Growth",
+    "fmvPerUnit": "38.2400"
+  },
+  {
+    "isin": "INF209K01520",
+    "scripName": "Aditya Birla Sun Life International Equity Fund - Growth - Regular Plan",
+    "fmvPerUnit": "18.9693"
+  },
+  {
+    "isin": "INF209K01546",
+    "scripName": "Aditya Birla Sun Life International Equity Fund - Plan B - Growth - Regular Plan",
+    "fmvPerUnit": "18.8387"
+  },
+  {
+    "isin": "INF209K01AJ8",
+    "scripName": "Aditya Birla Sun Life Flexi Cap Fund - Growth - Regular Plan",
+    "fmvPerUnit": "738.0200"
+  },
+  {
+    "isin": "INF209K01BR9",
+    "scripName": "Aditya Birla Sun Life Large Cap Fund-Growth",
+    "fmvPerUnit": "226.6000"
+  },
+  {
+    "isin": "INF209K01EN2",
+    "scripName": "Aditya Birla Sun Life Small Cap Fund - GROWTH",
+    "fmvPerUnit": "43.3211"
+  },
+  {
+    "isin": "INF209K01LB2",
+    "scripName": "Aditya Birla Sun Life Nifty 50 Index Fund - Growth - Regular Plan",
+    "fmvPerUnit": "107.7992"
+  },
+  {
+    "isin": "INF209K01LF3",
+    "scripName": "Aditya Birla Sun Life Value Fund - Growth Option",
+    "fmvPerUnit": "66.4660"
+  },
+  {
+    "isin": "INF209K01Q30",
+    "scripName": "Aditya Birla Sun Life Midcap Fund - Growth - Direct Plan",
+    "fmvPerUnit": "341.9000"
+  },
+  {
+    "isin": "INF209K01UN8",
+    "scripName": "Aditya Birla Sun Life ELSS Tax Saver Fund - Growth - Direct Plan",
+    "fmvPerUnit": "33.4100"
+  },
+  {
+    "isin": "INF209K01VF2",
+    "scripName": "Aditya Birla Sun Life Digital India Fund - Growth - Direct Plan",
+    "fmvPerUnit": "49.3700"
+  },
+  {
+    "isin": "INF209K01VH8",
+    "scripName": "Aditya Birla Sun Life Large & Mid Cap Fund - Growth - Direct Plan",
+    "fmvPerUnit": "455.2100"
+  },
+  {
+    "isin": "INF209K01VL0",
+    "scripName": "Aditya Birla Sun Life Commodity Equities Fund - Global Agri Plan - Growth - Direct Plan",
+    "fmvPerUnit": "24.5979"
+  },
+  {
+    "isin": "INF209K01VT3",
+    "scripName": "Aditya Birla Sun Life MNC Fund - Growth - Direct Plan",
+    "fmvPerUnit": "803.2100"
+  },
+  {
+    "isin": "INF209K01VV9",
+    "scripName": "Aditya Birla Sun Life Tax Plan - Direct Plan - Growth Option",
+    "fmvPerUnit": "42.1200"
+  },
+  {
+    "isin": "INF209K01VY3",
+    "scripName": "Aditya Birla Sun Life Nifty 50 Index Fund - Growth - Direct Plan",
+    "fmvPerUnit": "108.0795"
+  },
+  {
+    "isin": "INF209K01WC7",
+    "scripName": "Aditya Birla Sun Life Consumption Fund - Growth - Direct Plan",
+    "fmvPerUnit": "84.7100"
+  },
+  {
+    "isin": "INF209K01WE3",
+    "scripName": "Aditya Birla Sun Life Focused Fund - Growth - Direct Plan",
+    "fmvPerUnit": "62.7241"
+  },
+  {
+    "isin": "INF209K01WH6",
+    "scripName": "Aditya Birla Sun Life Infrastructure Fund - Growth - Direct Plan",
+    "fmvPerUnit": "39.6900"
+  },
+  {
+    "isin": "INF209K01WN4",
+    "scripName": "Aditya Birla Sun Life Small Cap Fund - Growth - Direct Plan",
+    "fmvPerUnit": "45.3547"
+  },
+  {
+    "isin": "INF209K01WQ7",
+    "scripName": "Aditya Birla Sun Life Value Fund - Growth - Direct Plan",
+    "fmvPerUnit": "69.5120"
+  },
+  {
+    "isin": "INF209K01WS3",
+    "scripName": "Aditya Birla Sun Life International Equity Fund - Growth - Direct Plan",
+    "fmvPerUnit": "19.4788"
+  },
+  {
+    "isin": "INF209K01WU9",
+    "scripName": "Aditya Birla Sun Life International Equity Fund - Plan B - Growth - Direct Plan",
+    "fmvPerUnit": "19.3529"
+  },
+  {
+    "isin": "INF209K01XX1",
+    "scripName": "Aditya Birla Sun Life Flexi Cap Fund - Growth - Direct Plan",
+    "fmvPerUnit": "772.5200"
+  },
+  {
+    "isin": "INF209K01YY7",
+    "scripName": "Aditya Birla Sun Life Large Cap Fund - Growth - Direct Plan",
+    "fmvPerUnit": "237.5700"
+  },
+  {
+    "isin": "INF209KA1YH6",
+    "scripName": "Aditya Birla Sun Life Manufacturing Equity Fund - Regular Plan - Growth",
+    "fmvPerUnit": "14.8800"
+  },
+  {
+    "isin": "INF209KA1YK0",
+    "scripName": "Aditya Birla Sun Life Manufacturing Equity Fund - Direct Plan - Growth",
+    "fmvPerUnit": "15.3300"
+  },
+  {
+    "isin": "INF223J01267",
+    "scripName": "PGIM India Large Cap Fund Wealth Plan - Growth Option",
+    "fmvPerUnit": "35.0600"
+  },
+  {
+    "isin": "INF223J01358",
+    "scripName": "PGIM India Tax Plan-GROWTH",
+    "fmvPerUnit": "31.4900"
+  },
+  {
+    "isin": "INF223J01RA4",
+    "scripName": "PGIM India Tax Plan - Direct Plan - Growth",
+    "fmvPerUnit": "33.6300"
+  },
+  {
+    "isin": "INF247L01155",
+    "scripName": "Motilal Oswal Focused Fund - Regular Plan Growth Option",
+    "fmvPerUnit": "21.8644"
+  },
+  {
+    "isin": "INF247L01189",
+    "scripName": "Motilal Oswal Focused Fund - Direct Plan Growth Option",
+    "fmvPerUnit": "23.3767"
+  },
+  {
+    "isin": "INF247L01411",
+    "scripName": "Motilal Oswal Midcap Fund-Regular Plan-Growth Option",
+    "fmvPerUnit": "25.9580"
+  },
+  {
+    "isin": "INF247L01445",
+    "scripName": "Motilal Oswal Midcap Fund-Direct Plan-Growth Option",
+    "fmvPerUnit": "27.2694"
+  },
+  {
+    "isin": "INF247L01478",
+    "scripName": "Motilal Oswal Flexi Cap Fund Regular Plan-Growth Option",
+    "fmvPerUnit": "27.2911"
+  },
+  {
+    "isin": "INF247L01502",
+    "scripName": "Motilal Oswal Flexi cap Fund Direct Plan-Growth Option",
+    "fmvPerUnit": "28.3096"
+  },
+  {
+    "isin": "INF247L01544",
+    "scripName": "Motilal Oswal ELSS Tax Saver Fund - Regular Plan - Growth Option",
+    "fmvPerUnit": "18.3360"
+  },
+  {
+    "isin": "INF247L01569",
+    "scripName": "Motilal Oswal ELSS Tax Saver Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "19.1349"
+  },
+  {
+    "isin": "INF251K01894",
+    "scripName": "BNP PARIBAS LARGE CAP Fund-Growth Option",
+    "fmvPerUnit": "87.9000"
+  },
+  {
+    "isin": "INF251K01951",
+    "scripName": "BNP PARIBAS MULTI CAP Fund-Growth Option",
+    "fmvPerUnit": "50.1110"
+  },
+  {
+    "isin": "INF251K01985",
+    "scripName": "BNP Paribas Long Term Equity Fund - Growth Option",
+    "fmvPerUnit": "38.9630"
+  },
+  {
+    "isin": "INF251K01AW3",
+    "scripName": "BNP Paribas Mid Cap Fund-Growth Option",
+    "fmvPerUnit": "36.1810"
+  },
+  {
+    "isin": "INF251K01HF3",
+    "scripName": "BNP Paribas Long Term Equity Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "40.1220"
+  },
+  {
+    "isin": "INF251K01HK3",
+    "scripName": "BNP Paribas MULTI CAP Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "53.8920"
+  },
+  {
+    "isin": "INF251K01HN7",
+    "scripName": "BNP Paribas LARGE CAP Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "92.6700"
+  },
+  {
+    "isin": "INF251K01HQ0",
+    "scripName": "BNP Paribas Mid Cap Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "38.5010"
+  },
+  {
+    "isin": "INF251K01PK6",
+    "scripName": "BNP Paribas Focused 25 Equity Fund - Regular Plan-Growth Option",
+    "fmvPerUnit": "10.1370"
+  },
+  {
+    "isin": "INF251K01PN0",
+    "scripName": "BNP Paribas Focused 25 Equity Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "10.1900"
+  },
+  {
+    "isin": "INF277K010A2",
+    "scripName": "Tata India Consumer Fund-Regular Plan-Growth",
+    "fmvPerUnit": "17.7443"
+  },
+  {
+    "isin": "INF277K012B6",
+    "scripName": "Tata Resources & Energy Fund-Regular Plan-Growth",
+    "fmvPerUnit": "15.9759"
+  },
+  {
+    "isin": "INF277K013A6",
+    "scripName": "Tata India Consumer Fund-Direct Plan-Growth",
+    "fmvPerUnit": "18.3941"
+  },
+  {
+    "isin": "INF277K01428",
+    "scripName": "Tata Large & Mid Cap Fund- Regular Plan - Growth Option",
+    "fmvPerUnit": "205.8034"
+  },
+  {
+    "isin": "INF277K01451",
+    "scripName": "Tata Value Fund - Regular Plan -Growth Option",
+    "fmvPerUnit": "142.6059"
+  },
+  {
+    "isin": "INF277K015B9",
+    "scripName": "Tata Resources & Energy Fund-Direct Plan-Growth",
+    "fmvPerUnit": "16.5812"
+  },
+  {
+    "isin": "INF277K01626",
+    "scripName": "Tata Mid Cap Fund Regular Plan- Growth Option",
+    "fmvPerUnit": "145.2587"
+  },
+  {
+    "isin": "INF277K016A9",
+    "scripName": "Tata India Pharma & Healthcare Fund-Regular Plan-Growth",
+    "fmvPerUnit": "8.9762"
+  },
+  {
+    "isin": "INF277K01782",
+    "scripName": "Tata Infrastructure Fund-Regular Plan- Growth Option",
+    "fmvPerUnit": "62.5164"
+  },
+  {
+    "isin": "INF277K01808",
+    "scripName": "Tata Infrastructure Tax Saving Fund - Growth",
+    "fmvPerUnit": "28.0100"
+  },
+  {
+    "isin": "INF277K01931",
+    "scripName": "Tata Large Cap Fund -Regular Plan - Growth Option",
+    "fmvPerUnit": "220.1547"
+  },
+  {
+    "isin": "INF277K01956",
+    "scripName": "Tata Ethical Fund-Regular Plan - Growth Option",
+    "fmvPerUnit": "164.0452"
+  },
+  {
+    "isin": "INF277K019A3",
+    "scripName": "Tata India Pharma & Healthcare Fund-Direct Plan-Growth",
+    "fmvPerUnit": "9.2987"
+  },
+  {
+    "isin": "INF277K01I52",
+    "scripName": "Tata ELSS Fund-Growth-Regular Plan",
+    "fmvPerUnit": "18.2889"
+  },
+  {
+    "isin": "INF277K01I86",
+    "scripName": "Tata ELSS Fund-Growth-Direct Plan",
+    "fmvPerUnit": "19.0575"
+  },
+  {
+    "isin": "INF277K01MK8",
+    "scripName": "Tata Large & MId Cap Fund -Direct Plan- Growth Option",
+    "fmvPerUnit": "218.0361"
+  },
+  {
+    "isin": "INF277K01ND1",
+    "scripName": "Tata Value Fund -Direct Plan Growth Option",
+    "fmvPerUnit": "147.4815"
+  },
+  {
+    "isin": "INF277K01NG4",
+    "scripName": "Tata Ethical Fund -Direct Plan- Growth Option",
+    "fmvPerUnit": "171.3586"
+  },
+  {
+    "isin": "INF277K01PQ8",
+    "scripName": "Tata Infrastructure Fund -Direct Plan -Growth Option",
+    "fmvPerUnit": "64.0361"
+  },
+  {
+    "isin": "INF277K01PY2",
+    "scripName": "Tata Mid Cap Fund - Direct Plan- Growth Option",
+    "fmvPerUnit": "150.9424"
+  },
+  {
+    "isin": "INF277K01QZ7",
+    "scripName": "Tata Large Cap Fund -Direct Plan Growth Option",
+    "fmvPerUnit": "234.4069"
+  },
+  {
+    "isin": "INF277K01Y86",
+    "scripName": "Tata Banking And Financial Services Fund-Regular Plan-Growth",
+    "fmvPerUnit": "17.3024"
+  },
+  {
+    "isin": "INF277K01Z10",
+    "scripName": "Tata Banking And Financial Services Fund-Direct Plan-Growth",
+    "fmvPerUnit": "17.9333"
+  },
+  {
+    "isin": "INF277K01Z44",
+    "scripName": "Tata Digital India Fund-Regular Plan-Growth",
+    "fmvPerUnit": "12.5392"
+  },
+  {
+    "isin": "INF277K01Z77",
+    "scripName": "Tata Digital India Fund-Direct Plan-Growth",
+    "fmvPerUnit": "13.0038"
+  },
+  {
+    "isin": "INF336L01016",
+    "scripName": "HSBC Large Cap Fund - Regular Growth",
+    "fmvPerUnit": "211.3009"
+  },
+  {
+    "isin": "INF336L01AF5",
+    "scripName": "HSBC Flexi Cap Fund - Regular Growth",
+    "fmvPerUnit": "92.5173"
+  },
+  {
+    "isin": "INF336L01BA4",
+    "scripName": "HSBC Tax Saver Equity Fund - Growth",
+    "fmvPerUnit": "39.7176"
+  },
+  {
+    "isin": "INF336L01CM7",
+    "scripName": "HSBC Large Cap Fund - Direct Growth",
+    "fmvPerUnit": "219.3831"
+  },
+  {
+    "isin": "INF336L01DH5",
+    "scripName": "HSBC Flexi Cap Fund - Direct Growth",
+    "fmvPerUnit": "96.0766"
+  },
+  {
+    "isin": "INF336L01EE0",
+    "scripName": "HSBC Tax Saver Equity Fund - Growth Direct",
+    "fmvPerUnit": "41.2115"
+  },
+  {
+    "isin": "INF397L01091",
+    "scripName": "IDBI NIFTY 50 Index Fund Growth",
+    "fmvPerUnit": "20.3293"
+  },
+  {
+    "isin": "INF397L01174",
+    "scripName": "IDBI Nifty Next 50 Index Fund Growth",
+    "fmvPerUnit": "23.0432"
+  },
+  {
+    "isin": "INF397L01869",
+    "scripName": "IDBI India Top 100 Equity Fund Growth",
+    "fmvPerUnit": "24.8000"
+  },
+  {
+    "isin": "INF397L01AP6",
+    "scripName": "IDBI NIFTY 50  Index Fund Growth Direct",
+    "fmvPerUnit": "21.1693"
+  },
+  {
+    "isin": "INF397L01AW2",
+    "scripName": "IDBI Nifty Next 50 Index Fund Growth Direct",
+    "fmvPerUnit": "24.0880"
+  },
+  {
+    "isin": "INF397L01BV2",
+    "scripName": "IDBI India Top 100 Equity Fund Growth Direct",
+    "fmvPerUnit": "25.9500"
+  },
+  {
+    "isin": "INF397L01DY2",
+    "scripName": "IDBI Equity Advantage Fund - Growth Regular",
+    "fmvPerUnit": "26.7900"
+  },
+  {
+    "isin": "INF397L01EC6",
+    "scripName": "IDBI Equity Advantage Fund - Growth Direct",
+    "fmvPerUnit": "28.0000"
+  },
+  {
+    "isin": "INF397L01HF2",
+    "scripName": "IDBI FLEXI CAP FUND Growth Direct",
+    "fmvPerUnit": "22.4500"
+  },
+  {
+    "isin": "INF397L01HJ4",
+    "scripName": "IDBI FLEXI CAP FUND Growth Regular",
+    "fmvPerUnit": "21.5500"
+  },
+  {
+    "isin": "INF397L01JK8",
+    "scripName": "IDBI Midcap Fund Growth Direct",
+    "fmvPerUnit": "12.6000"
+  },
+  {
+    "isin": "INF397L01JO0",
+    "scripName": "IDBI Midcap Fund Growth Regular",
+    "fmvPerUnit": "12.2800"
+  },
+  {
+    "isin": "INF397L01JS1",
+    "scripName": "IDBI Small Cap Fund - Growth Direct",
+    "fmvPerUnit": "11.0800"
+  },
+  {
+    "isin": "INF397L01JW3",
+    "scripName": "IDBI Small Cap Fund Growth Regular",
+    "fmvPerUnit": "10.8900"
+  },
+  {
+    "isin": "INF397L01KA7",
+    "scripName": "IDBI FOCUSED 30 EQUITY FUND - Growth Direct",
+    "fmvPerUnit": "10.2700"
+  },
+  {
+    "isin": "INF397L01KE9",
+    "scripName": "IDBI FOCUSED 30 EQUITY FUND - Growth Regular",
+    "fmvPerUnit": "10.2100"
+  },
+  {
+    "isin": "INF515L01205",
+    "scripName": "SaharaTax Gain-Growth",
+    "fmvPerUnit": "79.7000"
+  },
+  {
+    "isin": "INF515L01809",
+    "scripName": "SaharaTax Gain-Growth- direct",
+    "fmvPerUnit": "82.6664"
+  },
+  {
+    "isin": "INF579M01878",
+    "scripName": "360 ONE Focused Fund -Regular Plan - Growth",
+    "fmvPerUnit": "15.0266"
+  },
+  {
+    "isin": "INF579M01902",
+    "scripName": "360 ONE Focused Fund-Direct Plan-Growth",
+    "fmvPerUnit": "15.5861"
+  },
+  {
+    "isin": "INF582M01104",
+    "scripName": "Union Flexi Cap Fund - Growth Option",
+    "fmvPerUnit": "19.4300"
+  },
+  {
+    "isin": "INF582M01302",
+    "scripName": "Union ELSS Tax Saver Fund - Growth Option",
+    "fmvPerUnit": "24.8300"
+  },
+  {
+    "isin": "INF582M01633",
+    "scripName": "Union Flexi Cap Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "20.1900"
+  },
+  {
+    "isin": "INF582M01765",
+    "scripName": "Union ELSS Tax Saver Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "25.6200"
+  },
+  {
+    "isin": "INF582M01BU9",
+    "scripName": "Union Small Cap Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "17.3600"
+  },
+  {
+    "isin": "INF582M01BY1",
+    "scripName": "Union Small Cap Fund - Regular Plan - Growth Option",
+    "fmvPerUnit": "16.8100"
+  },
+  {
+    "isin": "INF582M01CQ5",
+    "scripName": "Union Largecap Fund - Regular Plan - Growth Option",
+    "fmvPerUnit": "10.8400"
+  },
+  {
+    "isin": "INF582M01CU7",
+    "scripName": "Union Largecap Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "10.9400"
+  },
+  {
+    "isin": "INF663L01DV3",
+    "scripName": "PGIM India Midcap Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "20.8900"
+  },
+  {
+    "isin": "INF663L01DZ4",
+    "scripName": "PGIM India Midcap Fund - Regular Plan - Growth Option",
+    "fmvPerUnit": "20.2700"
+  },
+  {
+    "isin": "INF663L01FF1",
+    "scripName": "PGIM India Flexi Cap Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "14.2400"
+  },
+  {
+    "isin": "INF663L01FJ3",
+    "scripName": "PGIM India Flexi Cap Fund - Regular Plan - Growth Option",
+    "fmvPerUnit": "13.8500"
+  },
+  {
+    "isin": "INF663L01FN5",
+    "scripName": "PGIM India ELSS Tax Saver Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "14.7800"
+  },
+  {
+    "isin": "INF663L01FQ8",
+    "scripName": "PGIM India ELSS Tax Saver Fund - Regular Plan - Growth Option",
+    "fmvPerUnit": "14.4400"
+  },
+  {
+    "isin": "INF663L01GR4",
+    "scripName": "PGIM India Large Cap Fund - Direct Plan - Growth",
+    "fmvPerUnit": "178.4000"
+  },
+  {
+    "isin": "INF663L01GW4",
+    "scripName": "PGIM India Large Cap Fund - Growth",
+    "fmvPerUnit": "167.7300"
+  },
+  {
+    "isin": "INF666M01162",
+    "scripName": "Groww Largecap Fund (formerly known as Indiabulls Blue Chip Fund) - Regular Plan- Growth Option",
+    "fmvPerUnit": "21.0200"
+  },
+  {
+    "isin": "INF666M01600",
+    "scripName": "Groww Largecap Fund (formerly known as Indiabulls Blue Chip Fund) - Direct Plan - Growth Option",
+    "fmvPerUnit": "22.7000"
+  },
+  {
+    "isin": "INF666M01BE4",
+    "scripName": "Groww Value Fund (formerly known as Indiabulls Value Fund) - Direct Plan - Growth Option",
+    "fmvPerUnit": "15.0063"
+  },
+  {
+    "isin": "INF666M01BH7",
+    "scripName": "Groww Value Fund (formerly known as Indiabulls Value Fund) - Regular Plan - Growth Option",
+    "fmvPerUnit": "14.1999"
+  },
+  {
+    "isin": "INF666M01DK7",
+    "scripName": "Groww ELSS Tax Saver Fund (formerly known as Indiabulls Tax Savings Fund)- Direct Plan- Growth Option",
+    "fmvPerUnit": "10.4700"
+  },
+  {
+    "isin": "INF666M01DN1",
+    "scripName": "Groww ELSS Tax Saver Fund (formerly known as Indiabulls Tax Savings Fund)-Regular Plan-Growth Option",
+    "fmvPerUnit": "10.4500"
+  },
+  {
+    "isin": "INF677K01023",
+    "scripName": "L&T India Value Fund-Regular Plan-Growth",
+    "fmvPerUnit": "39.2980"
+  },
+  {
+    "isin": "INF677K01031",
+    "scripName": "L&T Flexicap Fund-Regular Plan-Growth",
+    "fmvPerUnit": "85.8220"
+  },
+  {
+    "isin": "INF677K01064",
+    "scripName": "L&T  Tax Advantage Fund-Regular Plan-Growth",
+    "fmvPerUnit": "58.3370"
+  },
+  {
+    "isin": "INF677K01098",
+    "scripName": "L&T Large and Midcap Fund-Regular Plan-Growth",
+    "fmvPerUnit": "51.6720"
+  },
+  {
+    "isin": "INF677K01155",
+    "scripName": "L&T India Large Cap Fund - Regular Plan - Growth",
+    "fmvPerUnit": "26.8210"
+  },
+  {
+    "isin": "INF740K01037",
+    "scripName": "DSP Flexi Cap Fund - Regular Plan - Growth",
+    "fmvPerUnit": "39.2430"
+  },
+  {
+    "isin": "INF740K01060",
+    "scripName": "DSP Natural Resources And New Energy Fund - Regular - Growth",
+    "fmvPerUnit": "37.3170"
+  },
+  {
+    "isin": "INF740K01094",
+    "scripName": "DSP Large & Mid Cap Fund - Regular Plan - Growth",
+    "fmvPerUnit": "228.6470"
+  },
+  {
+    "isin": "INF740K01128",
+    "scripName": "DSP Midcap Fund - Regular Plan - Growth",
+    "fmvPerUnit": "57.0610"
+  },
+  {
+    "isin": "INF740K01151",
+    "scripName": "DSP India T.I.G.E.R. Fund - Regular Plan - Growth",
+    "fmvPerUnit": "102.9900"
+  },
+  {
+    "isin": "INF740K01185",
+    "scripName": "DSP ELSS Tax Saver Fund - Regular Plan - Growth",
+    "fmvPerUnit": "48.4360"
+  },
+  {
+    "isin": "INF740K01243",
+    "scripName": "DSP Large Cap Fund - Regular Plan - Growth",
+    "fmvPerUnit": "206.8500"
+  },
+  {
+    "isin": "INF740K01532",
+    "scripName": "DSP Focused Fund - Regular Plan - Growth",
+    "fmvPerUnit": "23.5210"
+  },
+  {
+    "isin": "INF740K01797",
+    "scripName": "DSP Small Cap Fund - Regular - Growth",
+    "fmvPerUnit": "67.9500"
+  },
+  {
+    "isin": "INF740K01OB0",
+    "scripName": "DSP Focused Fund - Direct Plan - Growth",
+    "fmvPerUnit": "24.3310"
+  },
+  {
+    "isin": "INF740K01OK1",
+    "scripName": "DSP ELSS Tax Saver Fund - Direct Plan - Growth",
+    "fmvPerUnit": "50.1160"
+  },
+  {
+    "isin": "INF740K01PI2",
+    "scripName": "DSP Flexi Cap Fund - Direct Plan - Growth",
+    "fmvPerUnit": "40.5250"
+  },
+  {
+    "isin": "INF740K01PL6",
+    "scripName": "DSP Large & Mid Cap Fund - Direct Plan - Growth",
+    "fmvPerUnit": "237.5780"
+  },
+  {
+    "isin": "INF740K01PR3",
+    "scripName": "DSP Large Cap Fund - Direct Plan - Growth",
+    "fmvPerUnit": "213.4420"
+  },
+  {
+    "isin": "INF740K01PU7",
+    "scripName": "DSP India T.I.G.E.R. Fund - Direct Plan - Growth",
+    "fmvPerUnit": "105.8170"
+  },
+  {
+    "isin": "INF740K01PX1",
+    "scripName": "DSP Midcap Fund - Direct Plan - Growth",
+    "fmvPerUnit": "59.1750"
+  },
+  {
+    "isin": "INF740K01QA7",
+    "scripName": "DSP Natural Resources and New Energy Fund - Direct Plan - Growth",
+    "fmvPerUnit": "38.4460"
+  },
+  {
+    "isin": "INF740K01QD1",
+    "scripName": "DSP Small Cap Fund - Direct Plan - Growth",
+    "fmvPerUnit": "70.1630"
+  },
+  {
+    "isin": "INF740KA1CO4",
+    "scripName": "DSP Nifty 50 Equal Weight Index Fund - Regular Plan - Growth",
+    "fmvPerUnit": "10.3728"
+  },
+  {
+    "isin": "INF740KA1CR7",
+    "scripName": "DSP Nifty 50 Equal Weight Index Fund - Direct Plan - Growth",
+    "fmvPerUnit": "10.3871"
+  },
+  {
+    "isin": "INF754K01046",
+    "scripName": "Edelweiss Large Cap Fund - Regular Plan - Growth Option",
+    "fmvPerUnit": "34.4700"
+  },
+  {
+    "isin": "INF754K01087",
+    "scripName": "Edelweiss Large Cap Fund -Plan B - Growth option",
+    "fmvPerUnit": "34.6500"
+  },
+  {
+    "isin": "INF754K01129",
+    "scripName": "Edelweiss Large Cap Fund -Plan C - Growth option",
+    "fmvPerUnit": "34.1900"
+  },
+  {
+    "isin": "INF754K01517",
+    "scripName": "Edelweiss ELSS Tax Saver Fund - Regular Plan - Growth Option",
+    "fmvPerUnit": "49.3800"
+  },
+  {
+    "isin": "INF754K01BW4",
+    "scripName": "Edelweiss Large Cap Fund - Direct Plan-Growth option",
+    "fmvPerUnit": "35.5800"
+  },
+  {
+    "isin": "INF754K01CA8",
+    "scripName": "Edelweiss ELSS Tax Saver Fund - Direct Plan-Growth Option",
+    "fmvPerUnit": "51.5900"
+  },
+  {
+    "isin": "INF760K01019",
+    "scripName": "CANARA ROBECO FLEXICAP FUND - REGULAR PLAN - GROWTH OPTION",
+    "fmvPerUnit": "126.8300"
+  },
+  {
+    "isin": "INF760K01100",
+    "scripName": "CANARA ROBECO ELSS TAX SAVER - REGULAR PLAN - GROWTH OPTION",
+    "fmvPerUnit": "60.9800"
+  },
+  {
+    "isin": "INF760K01167",
+    "scripName": "CANARA ROBECO LARGE AND MID CAP FUND - REGULAR PLAN - GROWTH OPTION",
+    "fmvPerUnit": "96.1600"
+  },
+  {
+    "isin": "INF760K01241",
+    "scripName": "CANARA ROBECO CONSUMPTION FUND - REGULAR PLAN - GROWTH OPTION",
+    "fmvPerUnit": "37.2500"
+  },
+  {
+    "isin": "INF760K01274",
+    "scripName": "CANARA ROBECO INFRASTRUCTURE FUND - REGULAR PLAN - GROWTH OPTION",
+    "fmvPerUnit": "52.1400"
+  },
+  {
+    "isin": "INF760K01AR3",
+    "scripName": "CANARA ROBECO LARGE CAP FUND - REGULAR PLAN - GROWTH OPTION",
+    "fmvPerUnit": "23.3400"
+  },
+  {
+    "isin": "INF760K01DU1",
+    "scripName": "CANARA ROBECO CONSUMPTION FUND - DIRECT PLAN - GROWTH OPTION",
+    "fmvPerUnit": "38.9000"
+  },
+  {
+    "isin": "INF760K01EF0",
+    "scripName": "CANARA ROBECO FLEXICAP FUND - DIRECT PLAN - GROWTH OPTION",
+    "fmvPerUnit": "130.5600"
+  },
+  {
+    "isin": "INF760K01EI4",
+    "scripName": "CANARA ROBECO LARGE AND MID CAP FUND - DIRECT PLAN - GROWTH OPTION",
+    "fmvPerUnit": "101.1400"
+  },
+  {
+    "isin": "INF760K01EL8",
+    "scripName": "CANARA ROBECO ELSS TAX SAVER - DIRECT PLAN - GROWTH OPTION",
+    "fmvPerUnit": "62.7000"
+  },
+  {
+    "isin": "INF760K01FO9",
+    "scripName": "CANARA ROBECO INFRASTRUCTURE FUND - DIRECT PLAN - GROWTH OPTION",
+    "fmvPerUnit": "54.0900"
+  },
+  {
+    "isin": "INF760K01FR2",
+    "scripName": "CANARA ROBECO LARGE CAP FUND - DIRECT PLAN - GROWTH OPTION",
+    "fmvPerUnit": "24.4400"
+  },
+  {
+    "isin": "INF761K01041",
+    "scripName": "BANK OF INDIA Large & Mid Cap Fund Eco Plan- Growth",
+    "fmvPerUnit": "40.7800"
+  },
+  {
+    "isin": "INF761K01108",
+    "scripName": "BANK OF INDIA Large & Mid Cap Fund Regular Plan- Growth",
+    "fmvPerUnit": "38.9100"
+  },
+  {
+    "isin": "INF761K01157",
+    "scripName": "BANK OF INDIA ELSS Tax Saver -ECO Plan-Growth",
+    "fmvPerUnit": "59.6500"
+  },
+  {
+    "isin": "INF761K01181",
+    "scripName": "BANK OF INDIA ELSS Tax Saver -Regular Plan- Growth",
+    "fmvPerUnit": "57.0400"
+  },
+  {
+    "isin": "INF761K01199",
+    "scripName": "BANK OF INDIA Manufacturing & Infrastructure Fund-Growth",
+    "fmvPerUnit": "18.9200"
+  },
+  {
+    "isin": "INF761K01652",
+    "scripName": "BANK OF INDIA Large & Mid Cap Fund Direct Plan-Growth",
+    "fmvPerUnit": "41.1500"
+  },
+  {
+    "isin": "INF761K01702",
+    "scripName": "BANK OF INDIA Manufacturing & Infrastructure Fund-Direct Plan-Growth",
+    "fmvPerUnit": "20.0800"
+  },
+  {
+    "isin": "INF761K01884",
+    "scripName": "BANK OF INDIA ELSS Tax Saver -Direct Plan- Growth",
+    "fmvPerUnit": "61.1300"
+  },
+  {
+    "isin": "INF767K01071",
+    "scripName": "LIC MF Flexi Cap Fund-Regular Plan-Growth",
+    "fmvPerUnit": "48.4578"
+  },
+  {
+    "isin": "INF767K01105",
+    "scripName": "LIC MF Large Cap Fund-Regular Plan-Growth",
+    "fmvPerUnit": "25.6661"
+  },
+  {
+    "isin": "INF767K01139",
+    "scripName": "LIC MF BSE Sensex Index Fund-Regular Plan-Growth",
+    "fmvPerUnit": "66.6809"
+  },
+  {
+    "isin": "INF767K01162",
+    "scripName": "LIC MF Nifty 50 Index Fund-Regular Plan-Growth",
+    "fmvPerUnit": "60.8809"
+  },
+  {
+    "isin": "INF767K01501",
+    "scripName": "LIC MF Infrastructure Fund-Regular Plan-Growth",
+    "fmvPerUnit": "15.5659"
+  },
+  {
+    "isin": "INF767K01956",
+    "scripName": "LIC MF ELSS Tax Saver-Regular Plan-Growth",
+    "fmvPerUnit": "65.6669"
+  },
+  {
+    "isin": "INF767K01EG3",
+    "scripName": "LIC MF Flexi Cap Fund-Direct Plan-Growth",
+    "fmvPerUnit": "50.0832"
+  },
+  {
+    "isin": "INF767K01EJ7",
+    "scripName": "LIC MF Large Cap Fund-Direct Plan-Growth",
+    "fmvPerUnit": "26.7892"
+  },
+  {
+    "isin": "INF767K01EM1",
+    "scripName": "LIC MF ELSS Tax Saver-Direct Plan-Growth",
+    "fmvPerUnit": "68.7364"
+  },
+  {
+    "isin": "INF767K01FF2",
+    "scripName": "LIC MF Nifty 50 Index Fund-Direct Plan-Growth",
+    "fmvPerUnit": "62.4788"
+  },
+  {
+    "isin": "INF767K01FJ4",
+    "scripName": "LIC MF BSE Sensex Index Fund-Direct Plan-Growth",
+    "fmvPerUnit": "68.5053"
+  },
+  {
+    "isin": "INF767K01GW5",
+    "scripName": "LIC MF Infrastructure Fund-Direct Plan-Growth",
+    "fmvPerUnit": "16.3336"
+  },
+  {
+    "isin": "INF767K01NB5",
+    "scripName": "LIC MF Large & Mid Cap Fund-Regular Plan-Growth",
+    "fmvPerUnit": "15.0735"
+  },
+  {
+    "isin": "INF767K01NE9",
+    "scripName": "LIC MF Large & Mid Cap Fund-Direct Plan-Growth",
+    "fmvPerUnit": "15.5831"
+  },
+  {
+    "isin": "INF767K01NH2",
+    "scripName": "LIC MF Banking and Financial Services Fund-Regular Plan-Growth",
+    "fmvPerUnit": "12.3459"
+  },
+  {
+    "isin": "INF767K01NK6",
+    "scripName": "LIC MF Banking and Financial Services Fund-Direct Plan-Growth",
+    "fmvPerUnit": "12.6859"
+  },
+  {
+    "isin": "INF769K01010",
+    "scripName": "Mirae Asset Large Cap Fund - Growth Plan",
+    "fmvPerUnit": "49.5900"
+  },
+  {
+    "isin": "INF769K01101",
+    "scripName": "Mirae Asset Large & Midcap Fund - Regular Plan - Growth",
+    "fmvPerUnit": "52.1680"
+  },
+  {
+    "isin": "INF769K01135",
+    "scripName": "Mirae Asset Great Consumer Fund - Regular Plan - Growth option",
+    "fmvPerUnit": "33.9920"
+  },
+  {
+    "isin": "INF769K01AX2",
+    "scripName": "Mirae Asset Large Cap Fund - Direct Plan - Growth",
+    "fmvPerUnit": "51.7990"
+  },
+  {
+    "isin": "INF769K01BI1",
+    "scripName": "Mirae Asset Large & Midcap Fund - Direct Plan - Growth",
+    "fmvPerUnit": "54.6870"
+  },
+  {
+    "isin": "INF769K01BL5",
+    "scripName": "Mirae Asset Great Consumer Fund - Direct Plan - Growth",
+    "fmvPerUnit": "36.1840"
+  },
+  {
+    "isin": "INF769K01DK3",
+    "scripName": "Mirae Asset ELSS Tax Saver Fund - Regular Plan - Growth",
+    "fmvPerUnit": "17.2650"
+  },
+  {
+    "isin": "INF769K01DM9",
+    "scripName": "Mirae Asset ELSS Tax Saver Fund - Direct Plan - Growth",
+    "fmvPerUnit": "17.7870"
+  },
+  {
+    "isin": "INF789F01299",
+    "scripName": "UTI-Transportation and Logistics  Fund-Growth Option",
+    "fmvPerUnit": "124.8012"
+  },
+  {
+    "isin": "INF789F01372",
+    "scripName": "UTI Banking and Financial Services Fund - Regular Plan - Growth Option",
+    "fmvPerUnit": "101.9287"
+  },
+  {
+    "isin": "INF789F01513",
+    "scripName": "UTI - Flexi Cap Fund-Growth Option",
+    "fmvPerUnit": "132.9543"
+  },
+  {
+    "isin": "INF789F01547",
+    "scripName": "UTI ELSS Tax Saver Fund - Regular Plan - Growth Option",
+    "fmvPerUnit": "89.6904"
+  },
+  {
+    "isin": "INF789F01695",
+    "scripName": "UTI Healthcare Fund - Regular Plan - Growth Option",
+    "fmvPerUnit": "89.4935"
+  },
+  {
+    "isin": "INF789F01752",
+    "scripName": "UTI Infrastructure Fund-Growth Option",
+    "fmvPerUnit": "58.5301"
+  },
+  {
+    "isin": "INF789F01810",
+    "scripName": "UTI Mid Cap Fund-Growth Option",
+    "fmvPerUnit": "113.7664"
+  },
+  {
+    "isin": "INF789F01844",
+    "scripName": "UTI - MNC Fund - Regular Plan - Growth Option",
+    "fmvPerUnit": "199.1871"
+  },
+  {
+    "isin": "INF789F01869",
+    "scripName": "UTI Large & Mid Cap Fund - Regular Plan - Growth Option",
+    "fmvPerUnit": "66.5255"
+  },
+  {
+    "isin": "INF789F01976",
+    "scripName": "UTI Large Cap Fund - Regular Plan - Growth Option",
+    "fmvPerUnit": "119.5051"
+  },
+  {
+    "isin": "INF789F01AG5",
+    "scripName": "UTI Value Fund - Regular Plan - Growth Option",
+    "fmvPerUnit": "61.1073"
+  },
+  {
+    "isin": "INF789F01CE6",
+    "scripName": "UTI India Consumer Fund - Regular Plan - Growth Option",
+    "fmvPerUnit": "25.6891"
+  },
+  {
+    "isin": "INF789F01JN2",
+    "scripName": "UTI Nifty 50 Index Fund - Regular Plan - Growth Option",
+    "fmvPerUnit": "70.8353"
+  },
+  {
+    "isin": "INF789F01SH5",
+    "scripName": "UTI-Transportation and Logistics  Fund-Growth Option- Direct",
+    "fmvPerUnit": "131.3056"
+  },
+  {
+    "isin": "INF789F01SN3",
+    "scripName": "UTI Banking and Financial Services Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "107.3808"
+  },
+  {
+    "isin": "INF789F01TC4",
+    "scripName": "UTI - Flexi Cap Fund-Growth Option - Direct",
+    "fmvPerUnit": "135.5151"
+  },
+  {
+    "isin": "INF789F01TF7",
+    "scripName": "UTI ELSS Tax Saver Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "93.4529"
+  },
+  {
+    "isin": "INF789F01TO9",
+    "scripName": "UTI Healthcare Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "93.5222"
+  },
+  {
+    "isin": "INF789F01TU6",
+    "scripName": "UTI Infrastructure Fund-Growth Option- Direct",
+    "fmvPerUnit": "59.8521"
+  },
+  {
+    "isin": "INF789F01UA6",
+    "scripName": "UTI Mid Cap Fund-Growth Option- Direct",
+    "fmvPerUnit": "118.3967"
+  },
+  {
+    "isin": "INF789F01UD0",
+    "scripName": "UTI - MNC Fund - Growth Option - Direct",
+    "fmvPerUnit": "207.7575"
+  },
+  {
+    "isin": "INF789F01UG3",
+    "scripName": "UTI Large & Mid Cap Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "67.9645"
+  },
+  {
+    "isin": "INF789F01US8",
+    "scripName": "UTI Large Cap Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "122.6889"
+  },
+  {
+    "isin": "INF789F01VB2",
+    "scripName": "UTI Value Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "63.4696"
+  },
+  {
+    "isin": "INF789F01VF3",
+    "scripName": "UTI India Consumer Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "26.4452"
+  },
+  {
+    "isin": "INF789F01XA0",
+    "scripName": "UTI Nifty 50 Index Fund - Growth Option- Direct",
+    "fmvPerUnit": "71.3422"
+  },
+  {
+    "isin": "INF789FB17N5",
+    "scripName": "UTI Long Term Advantage Fund Series III - Regular Plan - Growth Option",
+    "fmvPerUnit": "15.4032"
+  },
+  {
+    "isin": "INF789FB19N1",
+    "scripName": "UTI Long Term Advantage Fund Series III - Direct Plan - Growth Option",
+    "fmvPerUnit": "15.9923"
+  },
+  {
+    "isin": "INF789FC1FC9",
+    "scripName": "UTI Long Term Advantage Fund Series IV - Regular Plan - Growth Option",
+    "fmvPerUnit": "12.2686"
+  },
+  {
+    "isin": "INF789FC1FE5",
+    "scripName": "UTI Long Term Advantage Fund Series IV - Direct Plan - Growth Option",
+    "fmvPerUnit": "12.5674"
+  },
+  {
+    "isin": "INF789FC1HR3",
+    "scripName": "UTI Long Term Advantage Fund Series V - Regular Plan - Growth Option",
+    "fmvPerUnit": "11.0848"
+  },
+  {
+    "isin": "INF789FC1HT9",
+    "scripName": "UTI Long Term Advantage Fund Series V - Direct Plan - Growth Option",
+    "fmvPerUnit": "11.3066"
+  },
+  {
+    "isin": "INF789FC1V66",
+    "scripName": "UTI Long Term Advantage Fund Series VI - Regular Plan - Growth Option",
+    "fmvPerUnit": "10.0044"
+  },
+  {
+    "isin": "INF789FC1V82",
+    "scripName": "UTI Long Term Advantage Fund Series VI - Direct Plan - Growth Option",
+    "fmvPerUnit": "10.0124"
+  },
+  {
+    "isin": "INF843K01013",
+    "scripName": "Edelweiss Mid Cap Fund - Regular Plan - Growth Option",
+    "fmvPerUnit": "30.2360"
+  },
+  {
+    "isin": "INF843K01047",
+    "scripName": "Edelweiss Large & Mid Cap Fund - Regular Plan - Growth Option",
+    "fmvPerUnit": "31.4990"
+  },
+  {
+    "isin": "INF843K01104",
+    "scripName": "Edelweiss Tax Advantage Fund - Regular Plan - Growth Option",
+    "fmvPerUnit": "42.3170"
+  },
+  {
+    "isin": "INF843K01AL0",
+    "scripName": "Edelweiss Large & Mid Cap Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "33.1080"
+  },
+  {
+    "isin": "INF843K01AO4",
+    "scripName": "Edelweiss Mid Cap Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "31.6390"
+  },
+  {
+    "isin": "INF843K01AR7",
+    "scripName": "Edelweiss Tax Advantage Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "44.4950"
+  },
+  {
+    "isin": "INF843K01KK1",
+    "scripName": "Edelweiss Flexi Cap Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "15.1260"
+  },
+  {
+    "isin": "INF843K01KN5",
+    "scripName": "Edelweiss Flexi Cap Fund - Regular Plan - Growth Option",
+    "fmvPerUnit": "14.7830"
+  },
+  {
+    "isin": "INF846K01131",
+    "scripName": "Axis ELSS Tax Saver Fund - Regular Plan - Growth",
+    "fmvPerUnit": "42.3003"
+  },
+  {
+    "isin": "INF846K01164",
+    "scripName": "Axis Large Cap Fund - Regular Plan - Growth",
+    "fmvPerUnit": "25.6400"
+  },
+  {
+    "isin": "INF846K01859",
+    "scripName": "Axis Midcap Fund - Regular Plan - Growth",
+    "fmvPerUnit": "33.3100"
+  },
+  {
+    "isin": "INF846K01B28",
+    "scripName": "Axis Flexi Cap Fund - Direct Plan - Growth",
+    "fmvPerUnit": "10.2000"
+  },
+  {
+    "isin": "INF846K01B51",
+    "scripName": "Axis Flexi Cap Fund - Regular Plan - Growth",
+    "fmvPerUnit": "10.1700"
+  },
+  {
+    "isin": "INF846K01CH7",
+    "scripName": "Axis Focused Fund - Regular Plan - Growth Option",
+    "fmvPerUnit": "26.6100"
+  },
+  {
+    "isin": "INF846K01CQ8",
+    "scripName": "Axis Focused Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "28.2900"
+  },
+  {
+    "isin": "INF846K01DP8",
+    "scripName": "Axis Large Cap Fund - Direct Plan - Growth",
+    "fmvPerUnit": "27.1400"
+  },
+  {
+    "isin": "INF846K01EH3",
+    "scripName": "Axis Midcap Fund - Direct Plan - Growth",
+    "fmvPerUnit": "35.4000"
+  },
+  {
+    "isin": "INF846K01EW2",
+    "scripName": "Axis ELSS Tax Saver Fund - Direct Plan - Growth Option",
+    "fmvPerUnit": "44.8938"
+  },
+  {
+    "isin": "INF846K01K01",
+    "scripName": "Axis Small Cap Fund - Regular Plan - Growth",
+    "fmvPerUnit": "28.1700"
+  },
+  {
+    "isin": "INF846K01K35",
+    "scripName": "Axis Small Cap Fund - Direct Plan - Growth",
+    "fmvPerUnit": "29.5100"
+  },
+  {
+    "isin": "INF879O01019",
+    "scripName": "Parag Parikh Flexi Cap Fund - Regular Plan - Growth",
+    "fmvPerUnit": "24.0565"
+  },
+  {
+    "isin": "INF879O01027",
+    "scripName": "Parag Parikh Flexi Cap Fund - Direct Plan - Growth",
+    "fmvPerUnit": "24.6526"
+  },
+  {
+    "isin": "INF903J01116",
+    "scripName": "Sundaram Select Focus Regular Plan - Growth",
+    "fmvPerUnit": "170.3004"
+  },
+  {
+    "isin": "INF903J01140",
+    "scripName": "Sundaram Select Focus Institutional Plan - Growth",
+    "fmvPerUnit": "178.7432"
+  },
+  {
+    "isin": "INF903J01173",
+    "scripName": "Sundaram Mid Cap Fund Regular Plan - Growth",
+    "fmvPerUnit": "526.8245"
+  },
+  {
+    "isin": "INF903J011W9",
+    "scripName": "Sundaram Long Term Tax Advantage Fund Series II Direct Plan - Growth",
+    "fmvPerUnit": "15.0897"
+  },
+  {
+    "isin": "INF903J01207",
+    "scripName": "Sundaram Mid Cap Fund Institutional Plan - Growth",
+    "fmvPerUnit": "552.1382"
+  },
+  {
+    "isin": "INF903J012A3",
+    "scripName": "Sundaram Long Term Tax Advantage Fund Series I Regular Plan - Growth",
+    "fmvPerUnit": "13.9281"
+  },
+  {
+    "isin": "INF903J01470",
+    "scripName": "Sundaram Small Cap Fund Regular Plan - Growth",
+    "fmvPerUnit": "108.9478"
+  },
+  {
+    "isin": "INF903J014A9",
+    "scripName": "Sundaram Long Term Tax Advantage Fund Series I Direct Plan - Growth",
+    "fmvPerUnit": "14.1068"
+  },
+  {
+    "isin": "INF903J01504",
+    "scripName": "Sundaram Small Cap Fund Institutional Plan - Growth",
+    "fmvPerUnit": "114.0915"
+  },
+  {
+    "isin": "INF903J01538",
+    "scripName": "Sundaram Value Fund Regular Plan - Growth",
+    "fmvPerUnit": "107.4754"
+  },
+  {
+    "isin": "INF903J01561",
+    "scripName": "Sundaram Consumption Fund(Formerly Known as Sundaram Rural and Consumption Fund Regular Plan - Growth)",
+    "fmvPerUnit": "43.6061"
+  },
+  {
+    "isin": "INF903J01629",
+    "scripName": "Sundaram Financial Services Opportunities Fund Regular Plan - Growth",
+    "fmvPerUnit": "41.6922"
+  },
+  {
+    "isin": "INF903J01652",
+    "scripName": "Sundaram Financial Services Opportunities Fund Institutional Plan - Growth",
+    "fmvPerUnit": "44.2100"
+  },
+  {
+    "isin": "INF903J019V4",
+    "scripName": "Sundaram Long Term Tax Advantage Fund Series II Regular Plan - Growth",
+    "fmvPerUnit": "14.9616"
+  },
+  {
+    "isin": "INF903J01DT1",
+    "scripName": "Sundaram Large and Midcap Fund Regular Plan - Growth",
+    "fmvPerUnit": "33.6209"
+  },
+  {
+    "isin": "INF903J01F68",
+    "scripName": "Sundaram Infrastructure Advantage Fund Regular Plan - Growth",
+    "fmvPerUnit": "37.9759"
+  },
+  {
+    "isin": "INF903J01F92",
+    "scripName": "Sundaram Infrastructure Advantage Fund Direct Plan - Growth",
+    "fmvPerUnit": "38.9489"
+  },
+  {
+    "isin": "INF903J01MJ3",
+    "scripName": "Sundaram Mid Cap Fund Direct Plan - Growth",
+    "fmvPerUnit": "540.9383"
+  },
+  {
+    "isin": "INF903J01MV8",
+    "scripName": "Sundaram Select Focus Direct Plan - Growth",
+    "fmvPerUnit": "174.8760"
+  },
+  {
+    "isin": "INF903J01NB8",
+    "scripName": "Sundaram Financial Services Opportunities Fund Direct Plan - Growth",
+    "fmvPerUnit": "42.9968"
+  },
+  {
+    "isin": "INF903J01NH5",
+    "scripName": "Sundaram Consumption Fund (Formerly Known as Sundaram Rural and Consumption Fund Direct Plan - Growth)",
+    "fmvPerUnit": "44.9017"
+  },
+  {
+    "isin": "INF903J01NK9",
+    "scripName": "Sundaram Small Cap Fund Direct Plan - Growth",
+    "fmvPerUnit": "111.7431"
+  },
+  {
+    "isin": "INF903J01NN3",
+    "scripName": "Sundaram Value Fund Direct Plan - Growth",
+    "fmvPerUnit": "109.5831"
+  },
+  {
+    "isin": "INF903J01PR9",
+    "scripName": "Sundaram Large and Midcap Fund Direct Plan - Growth",
+    "fmvPerUnit": "34.7216"
+  },
+  {
+    "isin": "INF903JA1427",
+    "scripName": "Sundaram Long Term Micro Cap Tax Advantage Fund Series III Regular Plan - Growth",
+    "fmvPerUnit": "14.1434"
+  },
+  {
+    "isin": "INF903JA1443",
+    "scripName": "Sundaram Long Term Micro Cap Tax Advantage Fund Series III Direct Plan - Growth",
+    "fmvPerUnit": "14.3267"
+  },
+  {
+    "isin": "INF903JA1500",
+    "scripName": "Sundaram Long Term Micro Cap Tax Advantage Fund Series IV Regular Plan - Growth",
+    "fmvPerUnit": "12.0497"
+  },
+  {
+    "isin": "INF903JA1526",
+    "scripName": "Sundaram Long Term Micro Cap Tax Advantage Fund Series IV Direct Plan - Growth",
+    "fmvPerUnit": "12.1237"
+  },
+  {
+    "isin": "INF903JA1633",
+    "scripName": "Sundaram Smart Nifty 100 Equal Weight Fund Regular Plan - Growth",
+    "fmvPerUnit": "12.6977"
+  },
+  {
+    "isin": "INF903JA1666",
+    "scripName": "Sundaram Smart Nifty 100 Equal Weight Fund Direct Plan - Growth",
+    "fmvPerUnit": "12.7909"
+  },
+  {
+    "isin": "INF903JA1930",
+    "scripName": "Sundaram Long Term Micro Cap Tax Advantage Fund Series V Regular Plan - Growth",
+    "fmvPerUnit": "11.3116"
+  },
+  {
+    "isin": "INF903JA1955",
+    "scripName": "Sundaram Long Term Micro Cap Tax Advantage Fund Series V Direct Plan - Growth",
+    "fmvPerUnit": "11.3656"
+  },
+  {
+    "isin": "INF903JA1AX5",
+    "scripName": "Sundaram Long Term Micro Cap Tax Advantage Fund Series VI Regular Plan - Growth",
+    "fmvPerUnit": "10.7927"
+  },
+  {
+    "isin": "INF903JA1AZ0",
+    "scripName": "Sundaram Long Term Micro Cap Tax Advantage Fund Series VI Direct Plan - Growth",
+    "fmvPerUnit": "10.8783"
+  },
+  {
+    "isin": "INF917K01254",
+    "scripName": "L&T Mid Cap Fund-Regular Plan-Growth",
+    "fmvPerUnit": "148.7800"
+  },
+  {
+    "isin": "INF917K01288",
+    "scripName": "L&T Tax Saver Fund-Regular Plan - Growth",
+    "fmvPerUnit": "39.5600"
+  },
+  {
+    "isin": "INF917K01536",
+    "scripName": "L&T Infrastructure Fund - Regular Plan - Growth",
+    "fmvPerUnit": "18.7400"
+  },
+  {
+    "isin": "INF917K01BR7",
+    "scripName": "L&T Long Term Advantage Fund I - Regular Plan - Growth",
+    "fmvPerUnit": "54.1900"
+  },
+  {
+    "isin": "INF917K01FC0",
+    "scripName": "L&T Flexicap Fund-Direct Plan-Growth",
+    "fmvPerUnit": "88.8170"
+  },
+  {
+    "isin": "INF917K01FQ0",
+    "scripName": "L&T India Large Cap Fund - Direct Plan - Growth",
+    "fmvPerUnit": "27.7760"
+  },
+  {
+    "isin": "INF917K01FT4",
+    "scripName": "L&T Large and Midcap Fund-Direct Plan-Growth",
+    "fmvPerUnit": "53.5740"
+  },
+  {
+    "isin": "INF917K01FW8",
+    "scripName": "L&T Infrastructure Fund -Direct Plan-Growth",
+    "fmvPerUnit": "19.4700"
+  },
+  {
+    "isin": "INF917K01FZ1",
+    "scripName": "L&T Mid Cap Fund-Direct Plan-Growth",
+    "fmvPerUnit": "154.9600"
+  },
+  {
+    "isin": "INF917K01GP0",
+    "scripName": "L&T  Tax Advantage Fund-Direct Plan-Growth",
+    "fmvPerUnit": "60.2980"
+  },
+  {
+    "isin": "INF917K01HD4",
+    "scripName": "L&T India Value Fund-Direct Plan-Growth",
+    "fmvPerUnit": "40.8480"
+  },
+  {
+    "isin": "INF917K01QA1",
+    "scripName": "L&T Emerging Businesses Fund - Direct Plan - Growth",
+    "fmvPerUnit": "28.9750"
+  },
+  {
+    "isin": "INF917K01QC7",
+    "scripName": "L&T Emerging Businesses Fund - Regular Plan - Growth",
+    "fmvPerUnit": "28.2070"
+  },
+  {
+    "isin": "INF917K01RF8",
+    "scripName": "L&T Business Cycles Fund - Regular Plan - Growth",
+    "fmvPerUnit": "17.5910"
+  },
+  {
+    "isin": "INF917K01RI2",
+    "scripName": "L&T Business Cycles Fund - Direct Plan - Growth",
+    "fmvPerUnit": "17.9890"
+  },
+  {
+    "isin": "INF955L01609",
+    "scripName": "Baroda Mid-cap Fund- Plan A - Growth Option",
+    "fmvPerUnit": "10.0400"
+  },
+  {
+    "isin": "INF955L01633",
+    "scripName": "Baroda Large cap Fund - Plan A - Growth Option",
+    "fmvPerUnit": "14.4000"
+  },
+  {
+    "isin": "INF955L01674",
+    "scripName": "Baroda BNP Paribas MULTI CAP FUND - Regular Plan - Growth Option",
+    "fmvPerUnit": "103.3900"
+  },
+  {
+    "isin": "INF955L01856",
+    "scripName": "Baroda BNP Paribas Banking and Financial Services Fund - Regular - Growth Option",
+    "fmvPerUnit": "21.8100"
+  },
+  {
+    "isin": "INF955L01971",
+    "scripName": "Baroda BNP Paribas Banking and Financial Services Fund - Direct - Growth Option",
+    "fmvPerUnit": "22.7100"
+  },
+  {
+    "isin": "INF955L01AG0",
+    "scripName": "Baroda BNP Paribas MULTI CAP FUND - Direct Plan - Growth Option",
+    "fmvPerUnit": "108.1300"
+  },
+  {
+    "isin": "INF955L01AJ4",
+    "scripName": "Baroda Large cap Fund - Plan B (Direct) - Growth Option",
+    "fmvPerUnit": "14.9200"
+  },
+  {
+    "isin": "INF955L01AV9",
+    "scripName": "Baroda Mid-cap Fund- Plan B (Direct) - Growth Option",
+    "fmvPerUnit": "10.4500"
+  },
+  {
+    "isin": "INF955L01GD4",
+    "scripName": "Baroda ELSS 96 Plan A -Growth Option",
+    "fmvPerUnit": "48.6900"
+  },
+  {
+    "isin": "INF955L01GE2",
+    "scripName": "Baroda ELSS 96 Plan B(Direct) -Growth Option",
+    "fmvPerUnit": "51.7700"
+  },
+  {
+    "isin": "INF959L01080",
+    "scripName": "Navi Large Cap Equity Fund - Growth Option",
+    "fmvPerUnit": "23.3252"
+  },
+  {
+    "isin": "INF959L01593",
+    "scripName": "Navi Large Cap Equity Fund-Direct Plan-Growth Option",
+    "fmvPerUnit": "24.8651"
+  },
+  {
+    "isin": "INF959L01CD5",
+    "scripName": "Navi ELSS Tax Saver Fund- Direct Plan- Growth Option",
+    "fmvPerUnit": "14.8507"
+  },
+  {
+    "isin": "INF959L01CF0",
+    "scripName": "Navi ELSS Tax Saver Fund- Regular Plan- Growth Option",
+    "fmvPerUnit": "14.3601"
+  },
+  {
+    "isin": "INF959L01CH6",
+    "scripName": "Navi Large & Midcap Fund- Direct Plan- Growth Option",
+    "fmvPerUnit": "15.8507"
+  },
+  {
+    "isin": "INF959L01CK0",
+    "scripName": "Navi Large & Midcap Fund- Regular Plan- Growth Option",
+    "fmvPerUnit": "15.2647"
+  },
+  {
+    "isin": "INF966L01135",
+    "scripName": "quant ELSS Tax Saver Fund - Growth Option - Regular Plan",
+    "fmvPerUnit": "94.9721"
+  },
+  {
+    "isin": "INF966L01176",
+    "scripName": "quant Mid Cap Fund - Growth Option - Regular Plan",
+    "fmvPerUnit": "57.4932"
+  },
+  {
+    "isin": "INF966L01234",
+    "scripName": "quant Multi Cap Fund-GROWTH OPTION - Regular Plan",
+    "fmvPerUnit": "180.4911"
+  },
+  {
+    "isin": "INF966L01341",
+    "scripName": "quant Large & Mid Cap Fund - Growth Option",
+    "fmvPerUnit": "39.1743"
+  },
+  {
+    "isin": "INF966L01374",
+    "scripName": "quant Focused Fund - Growth Option - Regular Plan",
+    "fmvPerUnit": "32.8280"
+  },
+  {
+    "isin": "INF966L01457",
+    "scripName": "quant Flexi Cap Fund - Growth Option - Regular Plan",
+    "fmvPerUnit": "27.8890"
+  },
+  {
+    "isin": "INF966L01523",
+    "scripName": "quant Infrastructure Fund - Growth Option",
+    "fmvPerUnit": "9.7368"
+  },
+  {
+    "isin": "INF966L01614",
+    "scripName": "quant Multi Cap Fund-GROWTH OPTION-Direct Plan",
+    "fmvPerUnit": "181.4442"
+  },
+  {
+    "isin": "INF966L01648",
+    "scripName": "quant Large & Mid Cap Fund - Growth Option-Direct Plan",
+    "fmvPerUnit": "39.5442"
+  },
+  {
+    "isin": "INF966L01689",
+    "scripName": "quant Small Cap Fund - Growth Option - Direct Plan",
+    "fmvPerUnit": "51.2257"
+  },
+  {
+    "isin": "INF966L01721",
+    "scripName": "quant Infrastructure Fund - Growth Option-Direct Plan",
+    "fmvPerUnit": "9.7888"
+  },
+  {
+    "isin": "INF966L01853",
+    "scripName": "quant Focused Fund - Growth Option-Direct Plan",
+    "fmvPerUnit": "32.4990"
+  },
+  {
+    "isin": "INF966L01887",
+    "scripName": "quant Mid Cap Fund - Growth Option - Direct Plan",
+    "fmvPerUnit": "57.8254"
+  },
+  {
+    "isin": "INF966L01911",
+    "scripName": "quant Flexi Cap Fund - Growth Option-Direct Plan",
+    "fmvPerUnit": "28.7737"
+  },
+  {
+    "isin": "INF966L01986",
+    "scripName": "quant ELSS Tax Saver Fund - Growth Option - Direct Plan",
+    "fmvPerUnit": "95.8616"
+  },
+  {
+    "isin": "INF966L01AA0",
+    "scripName": "quant Small Cap Fund - Growth - Regular Plan",
+    "fmvPerUnit": "50.7602"
+  }
+]
