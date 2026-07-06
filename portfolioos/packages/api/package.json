@@ -15,7 +15,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "seed:fmv": "tsx src/scripts/seedFmv.ts"
+    "seed:fmv": "tsx src/scripts/seedFmv.ts",
+    "fmv:coverage": "tsx src/scripts/fmvCoverage.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

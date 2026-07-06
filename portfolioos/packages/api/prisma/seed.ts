@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { SEED_STOCKS } from '../src/priceFeeds/nseSeed.js';
 import { seedVehicleCatalog } from './seeds/vehicleCatalog.js';
 import { seedVehicleCatalogExtended } from './seeds/vehicleCatalogExtended.js';
+import { seedFmv } from '../src/scripts/seedFmv.js';
 
 // Use the direct (superuser) URL so the seed bypasses Row-Level Security policies.
 // The app runtime still uses the restricted portfolioos_app role via DATABASE_URL.
@@ -67,6 +68,11 @@ async function main() {
   const coreCatalog = await seedVehicleCatalog(prisma);
   const extendedCatalog = await seedVehicleCatalogExtended(prisma);
   console.log(`✓ Seeded ${coreCatalog + extendedCatalog} vehicle catalog rows (${coreCatalog} core + ${extendedCatalog} extended)`);
+
+  const fmvResult = await seedFmv(prisma);
+  console.log(
+    `✓ Seeded ${fmvResult.totalRows} FMV records (${fmvResult.stockRows} stocks + ${fmvResult.mfRows} mutual funds) for LTCG grandfathering`,
+  );
 
   console.log('Tip: run `POST /api/admin/amfi-nav/sync` or the scheduled cron to populate MF master data');
 }
