@@ -25,7 +25,7 @@ const PERIOD_OPTIONS: { label: string; value: NetWorthHistoryPeriod }[] = [
 export function NetWorthTrendChart() {
   const [period, setPeriod] = useState<NetWorthHistoryPeriod>('1Y');
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['intelligence', 'net-worth-history', period],
     queryFn: () => intelligenceApi.netWorthHistory(period),
   });
@@ -94,7 +94,11 @@ export function NetWorthTrendChart() {
           </div>
         )}
 
-        {isLoading ? (
+        {isError ? (
+          <div className="h-56 flex items-center justify-center text-sm text-negative">
+            Couldn't load your net worth trend. Try again shortly.
+          </div>
+        ) : isLoading ? (
           <div className="h-56 flex items-center justify-center text-sm text-muted-foreground">
             Loading…
           </div>
