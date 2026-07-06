@@ -32,6 +32,7 @@ import { FamilyScopeBanner } from '@/components/family/FamilyScopeBanner';
 import { GmailScanProgressCard } from '@/components/dashboard/GmailScanProgressCard';
 import { DashboardFxStrip } from '@/pages/forex/DashboardFxStrip';
 import { DashboardTaxStrip } from '@/components/dashboard/DashboardTaxStrip';
+import { NetWorthTrendChart } from '@/components/dashboard/NetWorthTrendChart';
 import { HealthScore } from '@/components/intelligence/HealthScore';
 import { apiErrorMessage } from '@/api/client';
 import { usePrivacyStore } from '@/stores/privacy.store';
@@ -823,6 +824,10 @@ export function DashboardPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Net worth trend — placed right after the headline number, the
+          "look how far you've come" element per the feature spec. */}
+      <NetWorthTrendChart />
 
       {/* Live FX rates strip — quick glance + click-through to /forex */}
       <DashboardFxStrip />
