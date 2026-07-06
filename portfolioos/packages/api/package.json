@@ -16,7 +16,8 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "seed:fmv": "tsx src/scripts/seedFmv.ts",
-    "fmv:coverage": "tsx src/scripts/fmvCoverage.ts"
+    "fmv:coverage": "tsx src/scripts/fmvCoverage.ts",
+    "backfill:net-worth-history": "tsx src/scripts/backfillNetWorthHistory.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
