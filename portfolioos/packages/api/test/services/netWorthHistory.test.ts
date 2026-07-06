@@ -55,8 +55,7 @@ describe('netWorthHistory.service', () => {
   });
 
   it('returns a null changePct (not zero-div) with a single point', async () => {
-    const result = await scope.runAs(() => getNetWorthHistory(scope.userId, '1M'));
-    // 1M window has 2 points here, so force a single-point case with a fresh scope
+    // Force a single-point case with a fresh scope
     const single = await createTestScope('nw-history-single');
     try {
       const daysAgo0 = new Date();
@@ -74,6 +73,37 @@ describe('netWorthHistory.service', () => {
       await runAsSystem(() => prisma.netWorthSnapshot.deleteMany({ where: { userId: single.userId } }));
       await single.cleanup();
     }
-    expect(result.points.length).toBeGreaterThan(0);
+  });
+
+  it('1M includes a snapshot at exactly the 30-day boundary (UTC midnight)', async () => {
+    // Regression test: the period cutoff must be truncated to UTC midnight before
+    // being used in the `gte` filter. A snapshot dated exactly `days` ago (which
+    // NetWorthSnapshot.asOf always stores at 00:00 UTC) must be included regardless
+    // of the wall-clock time the query runs at.
+    const boundary = await createTestScope('nw-history-boundary');
+    try {
+      const now = new Date();
+      const asOf30DaysAgo = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 30),
+      );
+      await runAsSystem(() =>
+        prisma.netWorthSnapshot.create({
+          data: {
+            userId: boundary.userId,
+            asOf: asOf30DaysAgo,
+            totalNetWorth: '700000',
+            totalLiabilities: '0',
+            netWorthAfterLiabilities: '700000',
+            breakdownJson: [],
+          },
+        }),
+      );
+      const r = await boundary.runAs(() => getNetWorthHistory(boundary.userId, '1M'));
+      expect(r.points).toHaveLength(1);
+      expect(r.points[0].asOf).toBe(asOf30DaysAgo.toISOString().slice(0, 10));
+    } finally {
+      await runAsSystem(() => prisma.netWorthSnapshot.deleteMany({ where: { userId: boundary.userId } }));
+      await boundary.cleanup();
+    }
   });
 });

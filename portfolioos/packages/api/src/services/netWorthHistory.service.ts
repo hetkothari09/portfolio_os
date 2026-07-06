@@ -36,8 +36,9 @@ export async function getNetWorthHistory(
   const where: Prisma.NetWorthSnapshotWhereInput = { userId };
   if (period !== 'ALL') {
     const days = PERIOD_DAYS[period];
-    const from = new Date();
-    from.setUTCDate(from.getUTCDate() - days);
+    const now = new Date();
+    now.setUTCDate(now.getUTCDate() - days);
+    const from = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
     where.asOf = { gte: from };
   }
 
