@@ -64,6 +64,8 @@ import {
   downloadDayBook,
   downloadDividendReport,
   downloadBankReconciliation,
+  downloadTallyMasters,
+  downloadTallyVouchers,
 } from '../controllers/reports.controller.js';
 
 export const reportsRouter = Router();
@@ -137,3 +139,5 @@ reportsRouter.get('/download/portfolio-snapshot', asyncHandler(downloadPortfolio
 reportsRouter.get('/download/day-book', asyncHandler(downloadDayBook));
 reportsRouter.get('/download/dividend-report', asyncHandler(downloadDividendReport));
 reportsRouter.get('/download/bank-reconciliation', asyncHandler(downloadBankReconciliation));
+reportsRouter.get('/download/tally-masters', asyncHandler(downloadTallyMasters));
+reportsRouter.get('/download/tally-vouchers', asyncHandler(downloadTallyVouchers));

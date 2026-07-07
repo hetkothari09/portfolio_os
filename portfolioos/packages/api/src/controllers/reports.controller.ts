@@ -776,8 +776,10 @@ import {
 import {
   streamMprofitPdf,
   streamMprofitExcel,
+  streamTallyXml,
   type MprofitLayout,
 } from '../services/reportBuilder/mprofitStyle.js';
+import { buildTallyMastersXml, buildTallyVouchersXml } from '../services/reportBuilder/tally/tallyExport.service.js';
 
 async function emitMprofit(req: Request, res: Response, layout: MprofitLayout) {
   const format = getFormat(req);
@@ -1081,4 +1083,24 @@ export async function downloadBankReconciliation(req: Request, res: Response) {
   const to = (req.query.to as string | undefined)?.trim() || undefined;
   await ensureAccountingProjected(userId);
   await emitMprofit(req, res, await buildBankReconciliationLayout(userId, { from, to }));
+}
+
+// ─── Tally XML export — file download only, no live ODBC/HTTP push ──
+// See services/reportBuilder/tally/. XML-only format: bypasses
+// emitMprofit/MprofitLayout entirely (not a banded report).
+
+export async function downloadTallyMasters(req: Request, res: Response) {
+  const userId = req.user!.id;
+  await ensureAccountingProjected(userId);
+  const { xml, filenameStem } = await buildTallyMastersXml(userId);
+  streamTallyXml(res, xml, filenameStem);
+}
+
+export async function downloadTallyVouchers(req: Request, res: Response) {
+  const userId = req.user!.id;
+  const from = (req.query.from as string | undefined)?.trim() || undefined;
+  const to = (req.query.to as string | undefined)?.trim() || undefined;
+  await ensureAccountingProjected(userId);
+  const { xml, filenameStem } = await buildTallyVouchersXml(userId, { from, to });
+  streamTallyXml(res, xml, filenameStem);
 }
