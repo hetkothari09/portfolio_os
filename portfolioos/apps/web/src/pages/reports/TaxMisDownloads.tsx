@@ -25,6 +25,8 @@ export interface ReportDef {
   endpoint: string; // /api/reports/download/<...>
   params: Param[]; // params this report accepts
   filename: string;
+  /** Which download buttons render for this card. Defaults to ['pdf', 'xlsx']. */
+  formats?: Array<'pdf' | 'xlsx' | 'xml'>;
 }
 
 export interface ReportHighlight {
@@ -402,6 +404,26 @@ export const REPORTS: ReportDef[] = [
     params: ['from', 'to'],
     filename: 'bank-reconciliation',
   },
+  {
+    key: 'tally-masters',
+    title: 'Tally Import — Chart of Accounts (Masters)',
+    description:
+      'Ledgers and groups, ready to import into Tally via Gateway of Tally → Import Data. Import this before Vouchers so opening balances and custom accounts are in place first.',
+    endpoint: 'tally-masters',
+    params: [],
+    filename: 'tally-masters',
+    formats: ['xml'],
+  },
+  {
+    key: 'tally-vouchers',
+    title: 'Tally Import — Vouchers',
+    description:
+      'Purchase, Sales, Payment, Receipt, Contra and Journal vouchers, ready to import into Tally. Self-contained (embeds the ledgers each voucher needs), but import Masters first for complete opening balances. If a same-named ledger already exists in the destination Tally company, Tally applies its own default duplicate-handling (combine/prompt) — built to Tally/TallyPrime’s documented XML import format; do a small trial import in your own Tally company before relying on this for real bookkeeping.',
+    endpoint: 'tally-vouchers',
+    params: ['from', 'to'],
+    filename: 'tally-vouchers',
+    formats: ['xml'],
+  },
 ];
 
 function currentFy(): string {
@@ -449,7 +471,7 @@ export function TaxMisDownloads({
     return () => clearTimeout(t);
   }, [highlight]);
 
-  async function download(report: ReportDef, format: 'pdf' | 'xlsx') {
+  async function download(report: ReportDef, format: 'pdf' | 'xlsx' | 'xml') {
     if (!accessToken) {
       alert('Not signed in');
       return;
@@ -549,32 +571,22 @@ export function TaxMisDownloads({
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={busy === `${r.key}-pdf`}
-                  onClick={() => download(r, 'pdf')}
-                >
-                  {busy === `${r.key}-pdf` ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <FileDown className="h-3.5 w-3.5" />
-                  )}
-                  PDF
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={busy === `${r.key}-xlsx`}
-                  onClick={() => download(r, 'xlsx')}
-                >
-                  {busy === `${r.key}-xlsx` ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <FileDown className="h-3.5 w-3.5" />
-                  )}
-                  Excel
-                </Button>
+                {(r.formats ?? ['pdf', 'xlsx']).map((fmt) => (
+                  <Button
+                    key={fmt}
+                    variant="outline"
+                    size="sm"
+                    disabled={busy === `${r.key}-${fmt}`}
+                    onClick={() => download(r, fmt)}
+                  >
+                    {busy === `${r.key}-${fmt}` ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <FileDown className="h-3.5 w-3.5" />
+                    )}
+                    {fmt === 'xlsx' ? 'Excel' : fmt.toUpperCase()}
+                  </Button>
+                ))}
               </div>
             </CardContent>
           </Card>
