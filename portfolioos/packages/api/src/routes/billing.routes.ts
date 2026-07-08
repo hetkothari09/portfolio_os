@@ -50,6 +50,7 @@ billingRouter.post(
 
     const order = await createOrder({
       amountPaise: price.amountPaise,
+      receiptLabel: tier,
       notes: { userId: req.user.id, tier, billingCycle },
     });
 

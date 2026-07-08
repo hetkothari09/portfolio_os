@@ -138,6 +138,7 @@ model User {
   familyMemberships     FamilyMember[]     @relation("FamilyMembership")
   familyInvitesReceived FamilyMember[]     @relation("FamilyMemberInvitedBy")
   familyInvitationsSent FamilyInvitation[] @relation("FamilyInvitationInviter")
+  pendingFamilyInvitesCreated PendingFamilyInvite[] @relation("PendingFamilyInviteCreator")
 
   // AI Assistant — conversational Q&A over the user's portfolio. History
   // capped at 50 rows per user; daily usage counter drives rate limits.
@@ -2951,9 +2952,10 @@ model Family {
   includedSeats     Int     @default(3)
   extraSeatPriceInr Decimal @default(199) @db.Decimal(8, 2)
 
-  members     FamilyMember[]
-  invitations FamilyInvitation[]
-  portfolios  Portfolio[]
+  members        FamilyMember[]
+  invitations    FamilyInvitation[]
+  pendingInvites PendingFamilyInvite[]
+  portfolios     Portfolio[]
 
   @@index([createdById])
 }
@@ -3009,6 +3011,33 @@ model FamilyInvitation {
   createdAt  DateTime  @default(now())
 
   @@index([invitedEmail])
+  @@index([familyId])
+  @@index([expiresAt])
+}
+
+// Holds an invite's payload while its seat-overage payment is in flight.
+// Created instead of a FamilyInvitation when an invite would exceed
+// Family.includedSeats — the real FamilyInvitation (and the
+// includedSeats bump) is only created once the Razorpay payment for the
+// extra seat verifies. Prevents the revenue-loss case where a user adds
+// a member "on credit" (billed next cycle) and churns before ever
+// paying for it. Not actively swept on expiry in this task — expiresAt
+// exists so a cleanup job can be added later without a schema change.
+model PendingFamilyInvite {
+  id                  String     @id @default(cuid())
+  familyId            String
+  family              Family     @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  invitedEmail        String
+  invitedName         String?
+  role                FamilyRole @default(CONTRIBUTOR)
+  visibleAssetClasses AssetClass[] @default([])
+  visibleCategories   String[]   @default([])
+  createdById         String
+  createdBy           User       @relation("PendingFamilyInviteCreator", fields: [createdById], references: [id])
+  razorpayOrderId     String     @unique
+  createdAt           DateTime   @default(now())
+  expiresAt           DateTime
+
   @@index([familyId])
   @@index([expiresAt])
 }

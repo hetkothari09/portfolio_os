@@ -31,6 +31,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useFamilyScopeStore } from '@/stores/familyScope.store';
 import { FamilyTreeCanvas } from '@/components/family/FamilyTreeCanvas';
 import { LockedFeature } from '@/components/common/LockedFeature';
+import { openRazorpayCheckout } from '@/lib/razorpay';
 import {
   ALL_ASSET_CLASSES,
   ASSET_CLASS_LABEL,
@@ -611,24 +612,44 @@ function InviteDialog({
   const [lastToken, setLastToken] = useState<string | null>(null);
 
   const inviteMutation = useMutation({
-    mutationFn: () =>
-      familiesApi.invite(familyId, {
+    mutationFn: async () => {
+      const outcome = await familiesApi.invite(familyId, {
         invitedEmail: email.trim().toLowerCase(),
         role,
         visibleAssetClasses,
         visibleCategories,
-      }),
+      });
+      if (outcome.status === 'invited') return outcome;
+
+      // Seat-overage: this family is already at its included-seat cap.
+      // Pay for the extra seat now — the invitation itself doesn't exist
+      // until this payment verifies, so a member never gets added "on
+      // credit" against a future bill.
+      toast(outcome.message, { icon: '💳', duration: 6000 });
+      const payment = await openRazorpayCheckout({
+        key: outcome.keyId,
+        amount: outcome.amount,
+        currency: outcome.currency,
+        name: 'PortfolioOS',
+        description: 'Extra family seat',
+        order_id: outcome.orderId,
+      });
+      return familiesApi.verifySeatPayment(familyId, {
+        pendingInviteId: outcome.pendingInviteId,
+        razorpayOrderId: payment.razorpay_order_id,
+        razorpayPaymentId: payment.razorpay_payment_id,
+        razorpaySignature: payment.razorpay_signature,
+      });
+    },
     onSuccess: (res) => {
       toast.success('Invitation created');
-      if (res.seatOverage) {
-        // Overage is paid, not refused — surfaced as an informative note.
-        // Actual billing wiring happens in the payments task that follows.
-        toast(res.seatOverage.message, { icon: '💳', duration: 8000 });
-      }
       setLastToken(res.token);
       queryClient.invalidateQueries({ queryKey: ['families', familyId, 'invitations'] });
     },
-    onError: (err) => toast.error(apiErrorMessage(err, 'Invite failed')),
+    onError: (err) => {
+      if (err instanceof Error && err.message === 'dismissed') return; // Razorpay modal closed
+      toast.error(apiErrorMessage(err, 'Invite failed'));
+    },
   });
 
   const copyLink = (token: string) => {

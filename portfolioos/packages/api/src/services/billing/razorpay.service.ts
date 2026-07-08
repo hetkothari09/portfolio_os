@@ -3,11 +3,7 @@ import Razorpay from 'razorpay';
 import { env } from '../../config/env.js';
 import { BadRequestError } from '../../lib/errors.js';
 
-export interface OrderNotes {
-  userId: string;
-  tier: string;
-  billingCycle: string;
-}
+export type OrderNotes = Record<string, string>;
 
 export function isRazorpayConfigured(): boolean {
   return Boolean(env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET);
@@ -27,20 +23,23 @@ function getClient(): Razorpay {
 
 // Razorpay caps `receipt` at 40 chars. Real identity binding lives in
 // `notes` (re-fetched and trusted at verify time) — this is just a
-// short, merchant-facing reference, so a truncated tier + short random
+// short, merchant-facing reference, so a truncated label + short random
 // suffix is enough; it doesn't need to encode the full userId/timestamp.
-function shortReceipt(tier: string): string {
-  return `${tier.slice(0, 20)}_${crypto.randomBytes(6).toString('hex')}`;
+function shortReceipt(label: string): string {
+  return `${label.slice(0, 20)}_${crypto.randomBytes(6).toString('hex')}`;
 }
 
 /**
  * Creates a Razorpay order for the given amount. `notes` are opaque
  * metadata Razorpay stores alongside the order and returns unmodified on
- * fetch — used here to bind the order to a specific user + plan tier so
- * `verifyAndFetchOrder` never has to trust client-supplied plan data.
+ * fetch — used to bind an order to whatever the caller is charging for
+ * (a plan upgrade, a family seat, ...) so `fetchOrderNotes` never has to
+ * trust client-supplied data at verify time. Callers own validating the
+ * shape of their own notes.
  */
 export async function createOrder(input: {
   amountPaise: number;
+  receiptLabel: string;
   notes: OrderNotes;
 }): Promise<{ orderId: string; amount: number; currency: string }> {
   if (!Number.isInteger(input.amountPaise) || input.amountPaise < 100) {
@@ -49,8 +48,8 @@ export async function createOrder(input: {
   const order = await getClient().orders.create({
     amount: input.amountPaise,
     currency: 'INR',
-    receipt: shortReceipt(input.notes.tier),
-    notes: input.notes as unknown as Record<string, string | number>,
+    receipt: shortReceipt(input.receiptLabel),
+    notes: input.notes,
   });
   return {
     orderId: order.id,
@@ -95,16 +94,14 @@ export function assertValidSignature(input: {
 
 /**
  * Fetches the order back from Razorpay so the caller can read the trusted
- * `notes` (userId/tier/billingCycle) set at creation time, rather than
- * trusting whatever the client posts to the verify endpoint — a client
- * that captured someone else's order/payment/signature triple should not
- * be able to claim a different tier than what was actually paid for.
+ * `notes` set at creation time, rather than trusting whatever the client
+ * posts to a verify endpoint — a client that captured someone else's
+ * order/payment/signature triple should not be able to replay it to
+ * claim something different from what was actually paid for. Callers
+ * are responsible for validating the shape/presence of the fields they
+ * expect in the returned notes.
  */
 export async function fetchOrderNotes(orderId: string): Promise<OrderNotes> {
   const order = await getClient().orders.fetch(orderId);
-  const notes = order.notes as unknown as Partial<OrderNotes> | undefined;
-  if (!notes?.userId || !notes?.tier || !notes?.billingCycle) {
-    throw new BadRequestError('Order is missing plan metadata');
-  }
-  return { userId: notes.userId, tier: notes.tier, billingCycle: notes.billingCycle };
+  return (order.notes as unknown as OrderNotes | undefined) ?? {};
 }
