@@ -484,7 +484,6 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-4 sm:space-y-7">
-      <GmailDashboardCards />
       <FamilyScopeBanner />
       <UpgradeBanner />
       <PageHeader
@@ -610,6 +609,8 @@ export function DashboardPage() {
       )}
 
       <HealthScore />
+
+      <GmailDashboardCards />
 
       {/* Alerts bar — collapsible. In-session only; reload re-expands. */}
       {alerts.length > 0 && (() => {
