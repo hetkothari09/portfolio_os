@@ -47,13 +47,8 @@ export interface PendingInvitation {
   expiresAt: string;
 }
 
-export interface SeatOverage {
-  extraSeats: number;
-  additionalMonthlyCostInr: string;
-  message: string;
-}
-
 export interface InviteResult {
+  status: 'invited';
   id: string;
   token: string;
   expiresAt: string;
@@ -63,8 +58,22 @@ export interface InviteResult {
   familyName: string;
   seatNumber: number;
   includedSeats: number;
-  seatOverage: SeatOverage | null;
 }
+
+export interface SeatPaymentRequiredResult {
+  status: 'seat_payment_required';
+  pendingInviteId: string;
+  orderId: string;
+  amount: number;
+  currency: string;
+  keyId: string;
+  extraSeatPriceInr: string;
+  seatNumber: number;
+  includedSeats: number;
+  message: string;
+}
+
+export type InviteOutcome = InviteResult | SeatPaymentRequiredResult;
 
 export interface FamilyTreeNodePos {
   userId: string;
@@ -156,10 +165,27 @@ export const familiesApi = {
       visibleAssetClasses?: string[];
       visibleCategories?: NonAcCategory[];
     },
-  ): Promise<InviteResult> {
-    const { data } = await api.post<ApiResponse<InviteResult>>(
+  ): Promise<InviteOutcome> {
+    const { data } = await api.post<ApiResponse<InviteOutcome>>(
       `/api/families/${familyId}/members/invite`,
       input,
+    );
+    return unwrap(data);
+  },
+  // Completes an overage invite after its Razorpay payment succeeds —
+  // see verifySeatPaymentAndInvite on the backend for the trust model.
+  async verifySeatPayment(
+    familyId: string,
+    payload: {
+      pendingInviteId: string;
+      razorpayOrderId: string;
+      razorpayPaymentId: string;
+      razorpaySignature: string;
+    },
+  ): Promise<InviteResult> {
+    const { data } = await api.post<ApiResponse<InviteResult>>(
+      `/api/families/${familyId}/members/invite/verify-payment`,
+      payload,
     );
     return unwrap(data);
   },

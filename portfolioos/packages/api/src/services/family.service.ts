@@ -14,6 +14,19 @@ import {
   type NonAcCategory,
 } from './familyScope.service.js';
 import { logger } from '../lib/logger.js';
+import { env } from '../config/env.js';
+import {
+  assertValidSignature,
+  createOrder,
+  fetchOrderNotes,
+  isRazorpayConfigured,
+} from './billing/razorpay.service.js';
+
+// How long a seat's Razorpay order stays valid before the pending invite
+// is considered abandoned. Not actively swept (see PendingFamilyInvite
+// schema comment) — a stale row just blocks nothing since the seat count
+// check re-derives from ACTIVE members + unexpired FamilyInvitations.
+const PENDING_SEAT_INVITE_TTL_MIN = 30;
 
 /**
  * Family CRUD + invitation flow.
@@ -260,17 +273,49 @@ export interface InviteInput {
   visibleCategories?: NonAcCategory[];
 }
 
+export interface InviteResult {
+  status: 'invited';
+  id: string;
+  token: string;
+  expiresAt: string;
+  invitedEmail: string;
+  invitedName: string | null;
+  role: FamilyRole;
+  familyName: string;
+  seatNumber: number;
+  includedSeats: number;
+}
+
+export interface SeatPaymentRequiredResult {
+  status: 'seat_payment_required';
+  pendingInviteId: string;
+  orderId: string;
+  amount: number;
+  currency: string;
+  keyId: string;
+  extraSeatPriceInr: string;
+  seatNumber: number;
+  includedSeats: number;
+  message: string;
+}
+
 /**
- * OWNER-only. Create a signed invitation. Returns the token so the
- * caller (or an outer email-sending shim) can dispatch it to the
- * invitee. Tokens are 32 bytes of urlsafe base64, expire in
- * INVITE_TTL_DAYS days, and are single-use.
+ * OWNER-only. Invites a member if a seat is available within
+ * `includedSeats`. If this invite would exceed included seats, it does
+ * **not** create a FamilyInvitation — instead it creates a
+ * PendingFamilyInvite and a Razorpay order for one extra seat, and the
+ * caller must complete `verifySeatPaymentAndInvite` before the
+ * invitation (and the seat itself) actually exists. This is deliberate:
+ * an earlier version let overage invites through immediately with a
+ * "this will be billed next cycle" note, which meant a user could add a
+ * paid seat, use it, and churn before the deferred charge ever landed —
+ * pay-per-seat upfront closes that gap.
  */
 export async function inviteMember(
   callerId: string,
   familyId: string,
   input: InviteInput,
-) {
+): Promise<InviteResult | SeatPaymentRequiredResult> {
   await assertOwnerOf(callerId, familyId);
   const invitedEmail = input.invitedEmail.trim().toLowerCase();
   if (!invitedEmail || !invitedEmail.includes('@')) {
@@ -290,7 +335,7 @@ export async function inviteMember(
 
   const family = await prisma.family.findUniqueOrThrow({
     where: { id: familyId },
-    select: { includedSeats: true, extraSeatPriceInr: true },
+    select: { name: true, includedSeats: true, extraSeatPriceInr: true },
   });
   // Seats already spoken for: ACTIVE members + still-pending, unexpired
   // invitations. The invite about to be created takes the next seat.
@@ -301,7 +346,49 @@ export async function inviteMember(
     }),
   ]);
   const seatNumber = activeMemberCount + pendingInviteCount + 1;
-  const overageSeats = Math.max(0, seatNumber - family.includedSeats);
+
+  if (seatNumber > family.includedSeats) {
+    if (!isRazorpayConfigured()) {
+      throw new BadRequestError(
+        'Adding another family member exceeds your included seats, and payments are not configured on this server.',
+      );
+    }
+    const amountPaise = toDecimal(family.extraSeatPriceInr).mul(100).toNumber();
+    const order = await createOrder({
+      amountPaise,
+      receiptLabel: 'family_seat',
+      notes: { type: 'family_seat', familyId, callerId },
+    });
+    const pending = await prisma.pendingFamilyInvite.create({
+      data: {
+        familyId,
+        invitedEmail,
+        invitedName: input.invitedName?.trim() || null,
+        role: input.role ?? 'CONTRIBUTOR',
+        visibleAssetClasses: input.visibleAssetClasses ?? [],
+        visibleCategories: input.visibleCategories ?? [],
+        createdById: callerId,
+        razorpayOrderId: order.orderId,
+        expiresAt: new Date(Date.now() + PENDING_SEAT_INVITE_TTL_MIN * 60_000),
+      },
+    });
+    logger.info(
+      { familyId, invitedEmail, pendingInviteId: pending.id, seatNumber },
+      '[family] invite requires seat payment',
+    );
+    return {
+      status: 'seat_payment_required',
+      pendingInviteId: pending.id,
+      orderId: order.orderId,
+      amount: order.amount,
+      currency: order.currency,
+      keyId: env.RAZORPAY_KEY_ID!,
+      extraSeatPriceInr: serializeMoney(toDecimal(family.extraSeatPriceInr)),
+      seatNumber,
+      includedSeats: family.includedSeats,
+      message: `This is your ${ordinal(seatNumber)} family member; it exceeds your included ${family.includedSeats} seats. Pay ₹${toDecimal(family.extraSeatPriceInr).toString()} to add this seat.`,
+    };
+  }
 
   const token = crypto.randomBytes(INVITE_TOKEN_BYTES).toString('base64url');
   const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 86_400_000);
@@ -318,42 +405,111 @@ export async function inviteMember(
       token,
       expiresAt,
     },
-    include: { family: { select: { name: true } } },
   });
   logger.info(
-    { familyId, invitedEmail, invitationId: invitation.id, seatNumber, overageSeats },
+    { familyId, invitedEmail, invitationId: invitation.id, seatNumber },
     '[family] invitation created',
   );
 
-  // Overage is paid, not refused — surface it as an informative note, not a
-  // block. Actual billing wiring (charging the extra seat) happens in the
-  // payments task that follows this one; this only computes and reports it.
-  const seatOverage =
-    overageSeats > 0
-      ? {
-          extraSeats: overageSeats,
-          additionalMonthlyCostInr: serializeMoney(
-            toDecimal(family.extraSeatPriceInr).mul(overageSeats),
-          ),
-          message: `This is your ${ordinal(seatNumber)} family member; it exceeds your included ${family.includedSeats} seats by ${overageSeats}, which will add ₹${toDecimal(
-            family.extraSeatPriceInr,
-          )
-            .mul(overageSeats)
-            .toString()} to your next bill.`,
-        }
-      : null;
-
   return {
+    status: 'invited',
     id: invitation.id,
     token,
     expiresAt: invitation.expiresAt.toISOString(),
     invitedEmail,
     invitedName: invitation.invitedName,
     role: invitation.role,
-    familyName: invitation.family.name,
+    familyName: family.name,
     seatNumber,
     includedSeats: family.includedSeats,
-    seatOverage,
+  };
+}
+
+/**
+ * Completes an overage invite after its Razorpay payment succeeds:
+ * verifies the signature, re-fetches the order's `notes` from Razorpay
+ * (never trusts the client's familyId/callerId at this step), then
+ * atomically bumps `Family.includedSeats` and creates the real
+ * FamilyInvitation from the payload stashed in PendingFamilyInvite.
+ */
+export async function verifySeatPaymentAndInvite(
+  callerId: string,
+  familyId: string,
+  input: {
+    pendingInviteId: string;
+    razorpayOrderId: string;
+    razorpayPaymentId: string;
+    razorpaySignature: string;
+  },
+): Promise<InviteResult> {
+  await assertOwnerOf(callerId, familyId);
+
+  const pending = await prisma.pendingFamilyInvite.findUnique({
+    where: { id: input.pendingInviteId },
+  });
+  if (!pending || pending.familyId !== familyId) {
+    throw new NotFoundError('Pending invite not found.');
+  }
+  if (pending.razorpayOrderId !== input.razorpayOrderId) {
+    throw new BadRequestError('Order does not match this pending invite.');
+  }
+  if (pending.expiresAt < new Date()) {
+    await prisma.pendingFamilyInvite.delete({ where: { id: pending.id } }).catch(() => undefined);
+    throw new BadRequestError('This seat payment request has expired — start the invite again.');
+  }
+
+  assertValidSignature({
+    razorpayOrderId: input.razorpayOrderId,
+    razorpayPaymentId: input.razorpayPaymentId,
+    razorpaySignature: input.razorpaySignature,
+  });
+
+  const notes = await fetchOrderNotes(input.razorpayOrderId);
+  if (notes.type !== 'family_seat' || notes.familyId !== familyId || notes.callerId !== callerId) {
+    throw new ForbiddenError('This payment does not match this seat request.');
+  }
+
+  const token = crypto.randomBytes(INVITE_TOKEN_BYTES).toString('base64url');
+  const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 86_400_000);
+
+  const [family, invitation] = await prisma.$transaction([
+    prisma.family.update({
+      where: { id: familyId },
+      data: { includedSeats: { increment: 1 } },
+      select: { name: true, includedSeats: true },
+    }),
+    prisma.familyInvitation.create({
+      data: {
+        familyId,
+        invitedEmail: pending.invitedEmail,
+        invitedName: pending.invitedName,
+        role: pending.role,
+        visibleAssetClasses: pending.visibleAssetClasses,
+        visibleCategories: pending.visibleCategories,
+        invitedById: pending.createdById,
+        token,
+        expiresAt,
+      },
+    }),
+  ]);
+  await prisma.pendingFamilyInvite.delete({ where: { id: pending.id } });
+
+  logger.info(
+    { familyId, invitationId: invitation.id, pendingInviteId: pending.id },
+    '[family] seat paid, invitation created',
+  );
+
+  return {
+    status: 'invited',
+    id: invitation.id,
+    token,
+    expiresAt: invitation.expiresAt.toISOString(),
+    invitedEmail: invitation.invitedEmail,
+    invitedName: invitation.invitedName,
+    role: invitation.role,
+    familyName: family.name,
+    seatNumber: family.includedSeats,
+    includedSeats: family.includedSeats,
   };
 }
 

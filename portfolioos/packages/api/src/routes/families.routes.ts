@@ -13,6 +13,7 @@ import {
   createFamily,
   createFamilyPortfolio,
   inviteMember,
+  verifySeatPaymentAndInvite,
   leaveFamily,
   listMembers,
   listMyFamilies,
@@ -166,7 +167,24 @@ familiesRouter.post(
   '/:familyId/members/invite',
   asyncHandler(async (req: Request, res: Response) => {
     const data = inviteSchema.parse(req.body);
-    created(res, await inviteMember(callerId(req), req.params.familyId!, data));
+    ok(res, await inviteMember(callerId(req), req.params.familyId!, data));
+  }),
+);
+
+const verifySeatPaymentSchema = z.object({
+  pendingInviteId: z.string().min(1),
+  razorpayOrderId: z.string().min(1),
+  razorpayPaymentId: z.string().min(1),
+  razorpaySignature: z.string().min(1),
+});
+
+// Completes an overage invite once its seat payment has succeeded — see
+// verifySeatPaymentAndInvite for the full trust model.
+familiesRouter.post(
+  '/:familyId/members/invite/verify-payment',
+  asyncHandler(async (req: Request, res: Response) => {
+    const data = verifySeatPaymentSchema.parse(req.body);
+    ok(res, await verifySeatPaymentAndInvite(callerId(req), req.params.familyId!, data));
   }),
 );
 
