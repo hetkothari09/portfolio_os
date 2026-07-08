@@ -12,6 +12,7 @@ import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { authenticate } from '../middleware/authenticate.js';
+import { requireFeature } from '../middleware/requirePlan.js';
 import { asyncHandler } from '../middleware/validate.js';
 import { noContent, ok } from '../lib/response.js';
 import { UnauthorizedError } from '../lib/errors.js';
@@ -47,6 +48,12 @@ aiAssistantRouter.use((req, res, next) => {
 });
 
 aiAssistantRouter.use(authenticate);
+// Paid tiers only — this used to also gate via checkQuota's tier_locked
+// branch in rateLimit.ts, but that path silently stopped firing once
+// FREE's daily quota changed from 0 to 30 (see rateLimit.ts). Gating
+// here matches every other feature in the app instead of relying on a
+// quota side-effect.
+aiAssistantRouter.use(requireFeature('AI_ASSISTANT'));
 
 function callerId(req: Request): string {
   if (!req.user) throw new UnauthorizedError();
