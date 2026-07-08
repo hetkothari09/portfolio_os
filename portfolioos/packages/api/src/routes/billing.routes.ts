@@ -2,7 +2,7 @@ import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { PLAN_TIER_ORDER, planPriceFor } from '@portfolioos/shared';
-import { authenticate } from '../middleware/authenticate.js';
+import { authenticate, requireRole } from '../middleware/authenticate.js';
 import { asyncHandler } from '../middleware/validate.js';
 import { ok } from '../lib/response.js';
 import { env } from '../config/env.js';
@@ -104,6 +104,31 @@ billingRouter.post(
       data: { plan: tier, planExpiresAt },
     });
 
+    ok(res, { user: toAuthUser(updated) });
+  }),
+);
+
+const devSetPlanSchema = z.object({
+  tier: z.enum(PLAN_TIER_ORDER),
+});
+
+// ADMIN-only QA escape hatch: set your own plan directly, no Razorpay
+// involved. Lets a founder/QA account switch between tiers to check
+// billing display, "current plan" badges, and seat-overage math without
+// spending real money on every check. Does NOT change what an ADMIN can
+// see — requireFeature / <LockedFeature> bypass every gate for ADMIN
+// regardless of `plan`, so this doesn't preview locked UI; it only
+// changes the stored plan value.
+billingRouter.post(
+  '/dev-set-plan',
+  requireRole('ADMIN'),
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw new UnauthorizedError();
+    const { tier } = devSetPlanSchema.parse(req.body);
+    const updated = await prisma.user.update({
+      where: { id: req.user.id },
+      data: { plan: tier, planExpiresAt: null },
+    });
     ok(res, { user: toAuthUser(updated) });
   }),
 );

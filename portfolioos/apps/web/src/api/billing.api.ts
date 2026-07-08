@@ -50,4 +50,14 @@ export const billingApi = {
     );
     return unwrap(data);
   },
+
+  // ADMIN-only. Sets your own plan directly, no Razorpay involved — QA
+  // escape hatch for checking billing display across tiers without
+  // spending real money on every check.
+  async devSetPlan(tier: PlanTierValue): Promise<VerifyPaymentResult> {
+    const { data } = await api.post<ApiResponse<VerifyPaymentResult>>('/api/billing/dev-set-plan', {
+      tier,
+    });
+    return unwrap(data);
+  },
 };

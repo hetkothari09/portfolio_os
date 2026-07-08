@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, Sparkles } from 'lucide-react';
+import { Check, Sparkles, FlaskConical } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatPaiseAsRupees, planPriceFor, type BillingCycle, type PlanTierValue } from '@portfolioos/shared';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -94,6 +94,20 @@ export function PricingPage() {
   const setUser = useAuthStore((s) => s.setUser);
   const [pending, setPending] = useState<PlanTierValue | null>(null);
   const [cycle, setCycle] = useState<BillingCycle>('MONTHLY');
+  const isAdmin = user?.role === 'ADMIN';
+
+  const handleDevSetPlan = async (tier: PlanTierValue) => {
+    setPending(tier);
+    try {
+      const { user: updatedUser } = await billingApi.devSetPlan(tier);
+      setUser(updatedUser);
+      toast.success(`Plan set to ${tier} (no payment — ADMIN dev switch)`, { icon: '🧪' });
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Could not switch plan'));
+    } finally {
+      setPending(null);
+    }
+  };
 
   const handleUpgrade = async (tier: PlanTierValue) => {
     setPending(tier);
@@ -205,6 +219,17 @@ export function PricingPage() {
                     ? 'Starting checkout…'
                     : `Upgrade to ${t.name}`}
                 </Button>
+                {isAdmin && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-1.5 w-full text-[11px] text-muted-foreground hover:text-foreground"
+                    disabled={pending === t.tier}
+                    onClick={() => handleDevSetPlan(t.tier)}
+                  >
+                    <FlaskConical className="h-3 w-3" /> Set (no payment — dev)
+                  </Button>
+                )}
               </CardContent>
             </Card>
           );
