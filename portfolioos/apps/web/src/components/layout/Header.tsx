@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { LogOut, User, ChevronDown, Sun, Moon, Bell, Eye, EyeOff, Menu } from 'lucide-react';
+import { LogOut, User, ChevronDown, Sun, Moon, Bell, Eye, EyeOff, Menu, Sparkles } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { useThemeStore } from '@/stores/theme.store';
@@ -67,6 +67,18 @@ export function Header({ onOpenMenu = () => {} }: { onOpenMenu?: () => void }) {
       </div>
 
       <div className="flex items-center gap-1.5">
+        {/* Persistent upgrade nudge — visible on every page for any
+            non-top-tier, non-admin user, not just when a locked
+            feature is hit. */}
+        {user && user.plan !== 'PRO_ADVISOR' && user.role !== 'ADMIN' && (
+          <Link
+            to="/pricing"
+            className="hidden sm:flex items-center gap-1.5 h-9 px-3 rounded-md text-[12px] font-medium text-accent-ink bg-accent/10 hover:bg-accent/15 transition-colors focus-ring"
+          >
+            <Sparkles className="h-3.5 w-3.5" /> Upgrade
+          </Link>
+        )}
+
         {/* Family / HOF "viewing as" switcher */}
         <FamilyScopeSwitcher />
 

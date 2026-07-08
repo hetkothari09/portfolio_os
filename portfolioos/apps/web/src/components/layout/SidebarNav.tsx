@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { BudgetGauge } from './BudgetGauge';
+import { UpgradeSidebarCard } from './UpgradeSidebarCard';
 import { AssetClassSectionList } from './AssetClassSectionList';
 import { NavSection, OVERVIEW_ITEMS, ASSET_CLASS_ITEMS, NAV_SECTIONS } from './navItems';
 
@@ -87,7 +88,8 @@ export function SidebarNav({
         ))}
       </nav>
 
-      <div className="border-t border-sidebar-border/70">
+      <div className="border-t border-sidebar-border/70 pt-2">
+        <UpgradeSidebarCard collapsed={collapsed} />
         <BudgetGauge collapsed={collapsed} />
         {!collapsed && (
           <div className="px-4 py-3 flex items-center justify-between text-[10px] uppercase tracking-kerned text-sidebar-foreground/45">
