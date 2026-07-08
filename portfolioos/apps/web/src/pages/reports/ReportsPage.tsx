@@ -1,17 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
 import {
   FileDown,
   BarChart3,
   Loader2,
-  Mail,
   FileText,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-  ChevronRight,
-  Lock,
   Search,
   X,
 } from 'lucide-react';
@@ -24,17 +17,10 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/cn';
 import { portfoliosApi } from '@/api/portfolios.api';
 import { reportsApi } from '@/api/reports.api';
-import { importsApi } from '@/api/imports.api';
 import { useAuthStore } from '@/stores/auth.store';
 import { InboxImportsTab } from './InboxImportsTab';
 import { TaxMisDownloads, REPORTS as TAX_MIS_REPORTS, type ReportHighlight } from './TaxMisDownloads';
-import {
-  Decimal,
-  toDecimal,
-  IMPORT_STATUS_LABELS,
-  type ImportJobDTO,
-  type ImportStatus,
-} from '@portfolioos/shared';
+import { Decimal, toDecimal } from '@portfolioos/shared';
 
 type Tab =
   | 'summary'
@@ -412,8 +398,6 @@ export function ReportsPage() {
           )}
         </>
       )}
-
-      <RecentEmailImports />
     </div>
   );
 }
@@ -540,108 +524,7 @@ function ReportSearch({ onSelect }: { onSelect: (item: SearchItem) => void }) {
   );
 }
 
-const STATUS_STYLES: Record<ImportStatus, string> = {
-  PENDING: 'bg-muted text-muted-foreground',
-  PROCESSING: 'bg-blue-500/10 text-blue-600',
-  COMPLETED: 'bg-positive/10 text-positive',
-  COMPLETED_WITH_ERRORS: 'bg-amber-500/10 text-amber-700',
-  FAILED: 'bg-negative/10 text-negative',
-  NEEDS_PASSWORD: 'bg-amber-500/10 text-amber-700',
-};
-const STATUS_ICONS: Record<ImportStatus, typeof FileText> = {
-  PENDING: Loader2,
-  PROCESSING: Loader2,
-  COMPLETED: CheckCircle2,
-  COMPLETED_WITH_ERRORS: AlertTriangle,
-  FAILED: XCircle,
-  NEEDS_PASSWORD: Lock,
-};
 
-function RecentEmailImports() {
-  const importsQ = useQuery({
-    queryKey: ['imports'],
-    queryFn: () => importsApi.list(),
-    staleTime: 30_000,
-  });
-  const emailImports = (importsQ.data ?? []).filter(
-    (j: ImportJobDTO) => j.gmailMessageId !== null,
-  );
-  const recent = emailImports.slice(0, 8);
-
-  return (
-    <Card className="mt-6">
-      <CardHeader className="flex-row flex-wrap items-center justify-between gap-2">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Mail className="h-4 w-4 text-accent" /> Recent imports from email
-        </CardTitle>
-        <Button variant="ghost" size="sm" asChild>
-          <Link to="/import">
-            View all <ChevronRight className="h-3 w-3" />
-          </Link>
-        </Button>
-      </CardHeader>
-      <CardContent className="p-0">
-        {importsQ.isLoading ? (
-          <div className="p-6 text-sm text-muted-foreground flex items-center gap-2">
-            <Loader2 className="h-3 w-3 animate-spin" /> Loading…
-          </div>
-        ) : recent.length === 0 ? (
-          <div className="p-6 text-sm text-muted-foreground">
-            Nothing yet. Once you connect Gmail and approve senders, imported statements
-            land here automatically.
-          </div>
-        ) : (
-          <ul className="divide-y">
-            {recent.map((j) => {
-              const status = j.status as ImportStatus;
-              const Icon = STATUS_ICONS[status];
-              const isRunning = status === 'PENDING' || status === 'PROCESSING';
-              return (
-                <li
-                  key={j.id}
-                  className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-muted/30"
-                >
-                  <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <span className="flex-1 truncate font-medium">{j.fileName}</span>
-                  {j.broker && (
-                    <span className="text-xs text-muted-foreground hidden sm:inline">
-                      {j.broker}
-                    </span>
-                  )}
-                  <span
-                    className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium ${STATUS_STYLES[status]}`}
-                  >
-                    <Icon className={`h-3 w-3 ${isRunning ? 'animate-spin' : ''}`} />
-                    {IMPORT_STATUS_LABELS[status]}
-                  </span>
-                  {!isRunning && j.totalRows != null && (
-                    <span className="text-xs text-muted-foreground tabular-nums hidden md:inline">
-                      {j.successRows ?? 0}/{j.totalRows} rows
-                    </span>
-                  )}
-                  {j.gmailMessageId && (
-                    <a
-                      href={`https://mail.google.com/mail/u/0/#inbox/${j.gmailMessageId}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-xs text-accent hover:underline"
-                      title="Open in Gmail"
-                    >
-                      <Mail className="h-3 w-3" />
-                    </a>
-                  )}
-                  <span className="text-xs text-muted-foreground tabular-nums">
-                    {new Date(j.createdAt).toLocaleDateString()}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
 
 function Loading() {
   return (

@@ -2,6 +2,7 @@ import { Decimal } from '@portfolioos/shared';
 import type { Parser, ParserResult, ParsedTransaction } from './types.js';
 import { logger } from '../../../lib/logger.js';
 import { readPdfText, getUserPdfPasswords, isPdfPasswordError } from '../../../lib/pdf.js';
+import { openingHoldingHash } from '../../sourceHash.js';
 
 /**
  * NSDL / CDSL depository CAS & monthly transaction statement parser.
@@ -177,6 +178,26 @@ export const nsdlCdslCasParser: Parser = {
     );
 
     const { transactions, warnings, depository, isTxnOnly } = parseNsdlCdslText(text);
+
+    // Opening-holding-snapshot rows ("cost basis unknown") get a
+    // content-based sourceHash instead of the default file-byte-position
+    // hash — see openingHoldingHash's doc comment. parseNsdlCdslText is a
+    // pure function (no userId), so this is stamped here where ctx is
+    // available, not inside the text-parsing logic itself.
+    for (const tx of transactions) {
+      if (
+        tx.transactionType === 'OPENING_BALANCE' &&
+        tx.isin &&
+        tx.narration?.startsWith('Opening holding from')
+      ) {
+        tx.sourceHash = openingHoldingHash({
+          userId: ctx.userId,
+          isin: tx.isin,
+          snapshotDate: tx.tradeDate,
+          quantity: String(tx.quantity),
+        });
+      }
+    }
 
     // If parser already concluded the file is legitimately empty (no
     // holdings, no activity), it returns warnings=[]. Don't add a fake

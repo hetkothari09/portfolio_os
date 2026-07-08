@@ -1,8 +1,10 @@
 /**
- * AI Assistant — tier gating + daily rate limit.
+ * AI Assistant — daily rate limit (tier *access* is gated upstream by
+ * requireFeature('AI_ASSISTANT') in aiAssistant.routes.ts, PLUS minimum
+ * — FREE users never reach this file for a real request).
  *
  * PlanTier → daily message quota:
- *   FREE         → 30 messages/day
+ *   FREE         → 0 (unreachable in practice; kept as a defensive floor)
  *   PLUS         → 100 messages/day
  *   FAMILY       → 200 messages/day
  *   PRO_ADVISOR  → 500 messages/day
@@ -23,10 +25,6 @@ export interface QuotaCheckResult {
 }
 
 function dailyLimitFor(plan: PlanTier): number {
-  // MVP gating: assistant is open to every authenticated user; tiers
-  // just widen the daily quota. Real "wealth-tier lock" comes back
-  // when subscription billing is live. FREE users would otherwise hit a
-  // 403 immediately, which is the wrong first impression during beta.
   switch (plan) {
     case 'PRO_ADVISOR':
       return 500;
@@ -36,7 +34,7 @@ function dailyLimitFor(plan: PlanTier): number {
       return 100;
     case 'FREE':
     default:
-      return 30;
+      return 0;
   }
 }
 

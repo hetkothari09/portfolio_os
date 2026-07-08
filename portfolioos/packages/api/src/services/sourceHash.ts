@@ -87,3 +87,26 @@ export function pfEventHash(opts: {
     `pf:${opts.userId}:${opts.institution}:${opts.identifier}:${opts.eventDate}:${opts.amount}:${opts.type}:${opts.sequence}`,
   );
 }
+
+/**
+ * Opening-holding-snapshot hash (CAS/CDSL "holdings as on" tables, cost
+ * basis unknown — see nsdlCdslCas.parser.ts). Deliberately content-based
+ * rather than file-byte-based: re-exporting/re-downloading the same
+ * real-world statement from the depository portal produces a file with
+ * different bytes (embedded generation timestamp, etc.) even though the
+ * holding itself is identical, which defeats positionalHash's file-hash
+ * dedup and silently re-creates the same "opening holding" on every
+ * re-import. Scoped by userId so two users' identical (isin, date, qty)
+ * — plausible, since many people independently hold the same stock —
+ * never collide on the global sourceHash @unique index.
+ */
+export function openingHoldingHash(opts: {
+  userId: string;
+  isin: string;
+  snapshotDate: string; // YYYY-MM-DD
+  quantity: string;     // Decimal as string
+}): string {
+  return sha256Hex(
+    `opening-holding:${opts.userId}:${opts.isin}:${opts.snapshotDate}:${opts.quantity}`,
+  );
+}

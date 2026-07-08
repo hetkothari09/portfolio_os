@@ -449,6 +449,12 @@ export const REPORTS: ReportDef[] = [
   },
 ];
 
+// Grouped once by required tier — each group renders under a single
+// lock overlay instead of one lock per card (see renderReportGroup).
+const freeReports = REPORTS.filter((r) => requiredTierFor(r.key) === null);
+const plusReports = REPORTS.filter((r) => requiredTierFor(r.key) === 'PLUS');
+const accountingReports = REPORTS.filter((r) => requiredTierFor(r.key) === 'PRO_ADVISOR');
+
 function currentFy(): string {
   const now = new Date();
   const y = now.getUTCFullYear();
@@ -555,75 +561,85 @@ export function TaxMisDownloads({
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {REPORTS.map((r) => {
-          const requiredTier = requiredTierFor(r.key);
-          const card = (
-            <Card
-              key={r.key}
-              ref={(el) => {
-                cardRefs.current[r.key] = el;
-              }}
-              className={cn(
-                'transition-shadow duration-300',
-                flashKey === r.key && 'ring-2 ring-accent ring-offset-2 ring-offset-background',
-              )}
-            >
-              <CardContent className="px-5 py-4">
-                <div className="flex items-start gap-3 mb-3">
-                  <div className="grid h-9 w-9 place-items-center rounded-md bg-accent/10 text-accent shrink-0">
-                    <FileText className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-semibold text-foreground">{r.title}</h3>
-                    <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{r.description}</p>
-                    {r.params.length > 0 && (
-                      <p className="mt-1 text-[11px] text-muted-foreground">
-                        Uses:{' '}
-                        {r.params
-                          .map((p) =>
-                            p === 'fy'
-                              ? `FY ${fy}`
-                              : p === 'asOf'
-                              ? `As of ${asOf || today}`
-                              : p === 'from'
-                              ? `From ${from || '—'}`
-                              : `To ${to || today}`,
-                          )
-                          .join(' · ')}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {(r.formats ?? ['pdf', 'xlsx']).map((fmt) => (
-                    <Button
-                      key={fmt}
-                      variant="outline"
-                      size="sm"
-                      disabled={busy === `${r.key}-${fmt}`}
-                      onClick={() => download(r, fmt)}
-                    >
-                      {busy === `${r.key}-${fmt}` ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <FileDown className="h-3.5 w-3.5" />
-                      )}
-                      {fmt === 'xlsx' ? 'Excel' : fmt.toUpperCase()}
-                    </Button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          );
-          if (!requiredTier) return card;
-          return (
-            <LockedFeature key={r.key} requiredTier={requiredTier} featureName={r.title}>
-              {card}
-            </LockedFeature>
-          );
-        })}
-      </div>
+      {renderReportGroup(freeReports)}
+      {plusReports.length > 0 && (
+        <LockedFeature requiredTier="PLUS" featureName="Tax & CA Report Catalog">
+          {renderReportGroup(plusReports)}
+        </LockedFeature>
+      )}
+      {accountingReports.length > 0 && (
+        <LockedFeature requiredTier="PRO_ADVISOR" featureName="Accounting Reports">
+          {renderReportGroup(accountingReports)}
+        </LockedFeature>
+      )}
     </div>
   );
+
+  // One lock overlay per tier group instead of one per card — the whole
+  // group behind a given tier is either visible or blurred together,
+  // rather than repeating the same "upgrade" message dozens of times.
+  function renderReportGroup(reports: ReportDef[]) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {reports.map((r) => (
+          <Card
+            key={r.key}
+            ref={(el) => {
+              cardRefs.current[r.key] = el;
+            }}
+            className={cn(
+              'transition-shadow duration-300',
+              flashKey === r.key && 'ring-2 ring-accent ring-offset-2 ring-offset-background',
+            )}
+          >
+            <CardContent className="px-5 py-4">
+              <div className="flex items-start gap-3 mb-3">
+                <div className="grid h-9 w-9 place-items-center rounded-md bg-accent/10 text-accent shrink-0">
+                  <FileText className="h-4 w-4" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-semibold text-foreground">{r.title}</h3>
+                  <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{r.description}</p>
+                  {r.params.length > 0 && (
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      Uses:{' '}
+                      {r.params
+                        .map((p) =>
+                          p === 'fy'
+                            ? `FY ${fy}`
+                            : p === 'asOf'
+                            ? `As of ${asOf || today}`
+                            : p === 'from'
+                            ? `From ${from || '—'}`
+                            : `To ${to || today}`,
+                        )
+                        .join(' · ')}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {(r.formats ?? ['pdf', 'xlsx']).map((fmt) => (
+                  <Button
+                    key={fmt}
+                    variant="outline"
+                    size="sm"
+                    disabled={busy === `${r.key}-${fmt}`}
+                    onClick={() => download(r, fmt)}
+                  >
+                    {busy === `${r.key}-${fmt}` ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <FileDown className="h-3.5 w-3.5" />
+                    )}
+                    {fmt === 'xlsx' ? 'Excel' : fmt.toUpperCase()}
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
 }
