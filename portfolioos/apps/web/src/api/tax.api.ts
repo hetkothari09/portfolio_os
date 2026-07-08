@@ -54,6 +54,9 @@ export interface TaxCapitalGainRow {
   gainLoss: string;
   taxableGain: string;
   financialYear: string;
+  // true when a MUTUAL_FUND row's fund category couldn't be resolved — tax
+  // treatment defaulted to debt-conservative and needs verification.
+  needsReview: boolean;
 }
 
 export interface TaxGainsReport {

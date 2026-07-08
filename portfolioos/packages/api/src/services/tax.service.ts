@@ -64,10 +64,6 @@ function ratesForFy(fy: string): TaxRates {
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
-function isListedEquityClass(ac: AssetClass): boolean {
-  return ac === 'EQUITY' || ac === 'ETF' || ac === 'MUTUAL_FUND';
-}
-
 function pct(amount: Decimal, percentage: number): Decimal {
   return amount.times(percentage).dividedBy(100);
 }
@@ -132,7 +128,7 @@ export async function userIntradayReport(userId: string, fy?: string) {
 export async function userSchedule112AReport(userId: string, fy?: string) {
   const all = await userCgRows(userId, fy);
   const rows = all.filter(
-    (r) => r.capitalGainType === 'LONG_TERM' && isListedEquityClass(r.assetClass),
+    (r) => r.capitalGainType === 'LONG_TERM' && r.isEquityOriented,
   );
   const totalGain = rows.reduce((a, r) => a.plus(r.gainLoss), new Decimal(0));
   const rates = fy ? ratesForFy(fy) : ratesForDate(new Date());
@@ -156,7 +152,7 @@ export async function userSchedule112AReport(userId: string, fy?: string) {
 export async function userSchedule112Report(userId: string, fy?: string) {
   const all = await userCgRows(userId, fy);
   const rows = all.filter(
-    (r) => r.capitalGainType === 'LONG_TERM' && !isListedEquityClass(r.assetClass),
+    (r) => r.capitalGainType === 'LONG_TERM' && !r.isEquityOriented,
   );
   const totalGain = rows.reduce((a, r) => a.plus(r.gainLoss), new Decimal(0));
   const totalTaxable = rows.reduce((a, r) => a.plus(r.taxableGain), new Decimal(0));
@@ -249,14 +245,14 @@ export async function buildTaxSummary(userId: string, fy: string): Promise<TaxSu
 
   // §111A — STCG on listed equity (STT paid)
   const s111ARows = inFy.filter(
-    (r) => r.capitalGainType === 'SHORT_TERM' && isListedEquityClass(r.assetClass),
+    (r) => r.capitalGainType === 'SHORT_TERM' && r.isEquityOriented,
   );
   const s111AGain = s111ARows.reduce((a, r) => a.plus(r.gainLoss), new Decimal(0));
   const s111ATax = pct(Decimal.max(s111AGain, new Decimal(0)), rates.stcgEquityPct);
 
   // §112A — LTCG on listed equity
   const s112ARows = inFy.filter(
-    (r) => r.capitalGainType === 'LONG_TERM' && isListedEquityClass(r.assetClass),
+    (r) => r.capitalGainType === 'LONG_TERM' && r.isEquityOriented,
   );
   const s112AGain = s112ARows.reduce((a, r) => a.plus(r.gainLoss), new Decimal(0));
   const s112ATaxable = Decimal.max(s112AGain.minus(rates.ltcgEquityExemption), new Decimal(0));
@@ -264,7 +260,7 @@ export async function buildTaxSummary(userId: string, fy: string): Promise<TaxSu
 
   // §112 — LTCG on other assets (indexed vs non-indexed mix)
   const s112Rows = inFy.filter(
-    (r) => r.capitalGainType === 'LONG_TERM' && !isListedEquityClass(r.assetClass),
+    (r) => r.capitalGainType === 'LONG_TERM' && !r.isEquityOriented,
   );
   const s112Gain = s112Rows.reduce((a, r) => a.plus(r.gainLoss), new Decimal(0));
   const s112Taxable = s112Rows.reduce((a, r) => a.plus(r.taxableGain), new Decimal(0));
@@ -276,7 +272,7 @@ export async function buildTaxSummary(userId: string, fy: string): Promise<TaxSu
 
   // STCG on non-equity (slab rate)
   const stcgOtherRows = inFy.filter(
-    (r) => r.capitalGainType === 'SHORT_TERM' && !isListedEquityClass(r.assetClass),
+    (r) => r.capitalGainType === 'SHORT_TERM' && !r.isEquityOriented,
   );
   const stcgOtherGain = stcgOtherRows.reduce((a, r) => a.plus(r.gainLoss), new Decimal(0));
   const stcgOtherTax = pct(Decimal.max(stcgOtherGain, new Decimal(0)), rates.slabPct);
@@ -393,7 +389,7 @@ export async function buildTaxSummary(userId: string, fy: string): Promise<TaxSu
 export async function schedule112ACsv(userId: string, fy: string): Promise<string> {
   const all = await userCgRows(userId, fy);
   const rows = all.filter(
-    (r) => r.capitalGainType === 'LONG_TERM' && isListedEquityClass(r.assetClass),
+    (r) => r.capitalGainType === 'LONG_TERM' && r.isEquityOriented,
   );
   const grandfatherCutoff = new Date('2018-02-01T00:00:00Z');
   const fmvByIsin = await getFmvForUser(userId);
@@ -418,6 +414,10 @@ export async function schedule112ACsv(userId: string, fy: string): Promise<strin
     // Extra column, not part of the ITR-portal template — lets a CA see at a
     // glance which FMV values are seeded, user-overridden, or still missing.
     'FMV Source',
+    // Extra column: flags MUTUAL_FUND rows whose equity/debt category could
+    // not be resolved (no fundId, or fund not found in MutualFundMaster) —
+    // tax treatment defaulted to debt-conservative and needs verification.
+    'Needs Review',
   ];
 
   const lines: string[] = [headers.map(csvCell).join(',')];
@@ -470,6 +470,7 @@ export async function schedule112ACsv(userId: string, fy: string): Promise<strin
         totalDeductions.toFixed(2),
         balance.toFixed(2),
         fmvSource,
+        r.needsReview ? 'Y' : 'N',
       ]
         .map(csvCell)
         .join(','),
@@ -652,5 +653,6 @@ function rowToJson(r: CapitalGainRow) {
     gainLoss: r.gainLoss.toString(),
     taxableGain: r.taxableGain.toString(),
     financialYear: r.financialYear,
+    needsReview: r.needsReview,
   };
 }

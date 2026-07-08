@@ -2,6 +2,7 @@ import { Decimal } from 'decimal.js';
 import type {
   AssetClass,
   CapitalGainType,
+  MFCategory,
   Prisma,
   Transaction,
   TransactionType,
@@ -113,24 +114,50 @@ function isForeignEquity(ac: AssetClass): boolean {
   return ac === 'FOREIGN_EQUITY';
 }
 
-function isEquityMF(ac: AssetClass): boolean {
-  // We don't persist equity-vs-debt at the MF level without category data.
-  // Treat MF as equity-style by default; downstream users can reclassify via
-  // category metadata once available.
-  return ac === 'MUTUAL_FUND';
+/**
+ * Whether a MUTUAL_FUND row is equity-oriented for tax purposes. This is the
+ * single source of truth other services must use instead of assuming
+ * `assetClass === 'MUTUAL_FUND'` means equity — see TASK-01 for the bug this
+ * replaces (every MF was silently treated as equity-style regardless of its
+ * real AMFI category).
+ *
+ * Do NOT default missing/unknown category to `true` (equity). An unclassified
+ * fund must fall back to debt-conservative treatment (36-month LT threshold,
+ * date-based indexation eligibility, no 112A grandfathering) and get flagged
+ * via `CapitalGainRow.needsReview` — silently guessing equity treatment is
+ * the exact bug being fixed here.
+ *
+ * HYBRID funds need their own equity-allocation-% rule (not yet implemented);
+ * until that exists, HYBRID is treated as non-equity-oriented (conservative).
+ */
+function isEquityOrientedMF(fundId: string | null, fundCategoryMap?: Map<string, MFCategory>): boolean {
+  if (!fundId || !fundCategoryMap) return false;
+  const cat = fundCategoryMap.get(fundId);
+  return cat === 'EQUITY' || cat === 'ELSS';
 }
 
-function longTermThresholdMonths(ac: AssetClass): number {
-  if (isEquityLike(ac) || isEquityMF(ac)) return 12;
+function longTermThresholdMonths(
+  ac: AssetClass,
+  fundId: string | null,
+  fundCategoryMap?: Map<string, MFCategory>,
+): number {
+  if (isEquityLike(ac)) return 12;
+  if (ac === 'MUTUAL_FUND') return isEquityOrientedMF(fundId, fundCategoryMap) ? 12 : 36;
   if (isForeignEquity(ac)) return 24; // Finance Act 2023
   // Bonds, gold, real estate, PMS, AIF, REIT, others
   return 36;
 }
 
-function qualifiesForIndexation(ac: AssetClass, buyDate: Date): boolean {
+function qualifiesForIndexation(
+  ac: AssetClass,
+  buyDate: Date,
+  fundId: string | null,
+  fundCategoryMap?: Map<string, MFCategory>,
+): boolean {
   // Equity/equity MFs: no indexation
   if (isEquityLike(ac) || ac === 'ETF') return false;
   if (ac === 'MUTUAL_FUND') {
+    if (isEquityOrientedMF(fundId, fundCategoryMap)) return false;
     // Debt MFs bought before 1-Apr-2023 still qualify; post that, no indexation.
     return buyDate < DEBT_MF_INDEXATION_CUTOFF;
   }
@@ -163,13 +190,15 @@ function classify(
   buyDate: Date,
   sellDate: Date,
   txType: TransactionType,
+  fundId: string | null,
+  fundCategoryMap?: Map<string, MFCategory>,
 ): CapitalGainType {
   // Intraday only applies to equity BUY+SELL same day
   if (isEquityLike(ac) && sameDay(buyDate, sellDate) && txType === 'SELL') {
     return 'INTRADAY';
   }
   const holdingDays = daysBetween(buyDate, sellDate);
-  const thresholdDays = longTermThresholdMonths(ac) * 30; // approximate
+  const thresholdDays = longTermThresholdMonths(ac, fundId, fundCategoryMap) * 30; // approximate
   return holdingDays >= thresholdDays ? 'LONG_TERM' : 'SHORT_TERM';
 }
 
@@ -234,6 +263,16 @@ export interface CapitalGainRow {
   gainLoss: Decimal;
   taxableGain: Decimal;
   financialYear: string;
+  // Whether this row's underlying instrument is treated as equity-oriented
+  // for tax-section bucketing (Sec 111A/112A vs Sec 112). Single source of
+  // truth for downstream consumers — do not re-derive from `assetClass`
+  // alone, since MUTUAL_FUND rows split into equity- and debt-oriented.
+  isEquityOriented: boolean;
+  // true when a MUTUAL_FUND row's fund category is unknown (no fundId, or
+  // fundId not found in fundCategoryMap). Tax treatment falls back to
+  // debt-conservative in this case — surface this flag to the user instead
+  // of silently guessing.
+  needsReview: boolean;
 }
 
 export interface CapitalGainsResult {
@@ -268,6 +307,7 @@ function groupByAsset(txs: Transaction[]): Map<string, { key: AssetKey; txs: Tra
 export function computeFIFOGains(
   txs: Transaction[],
   fmvMap?: Map<string, Decimal>, // isin -> fmvPerUnit on 31-Jan-2018
+  fundCategoryMap?: Map<string, MFCategory>, // fundId -> MutualFundMaster.category
 ): CapitalGainRow[] {
   // F&O and forex pairs are §43(5)/§28 business income, not capital gains —
   // strip those rows upstream of the FIFO engine so they can never silently
@@ -324,11 +364,26 @@ export function computeFIFOGains(
           const proceeds = sellPricePerUnit.times(take);
           const gainLoss = proceeds.minus(costBasis);
 
-          const gainType = classify(key.assetClass, lot.buyDate, tx.tradeDate, tx.transactionType);
+          const gainType = classify(
+            key.assetClass,
+            lot.buyDate,
+            tx.tradeDate,
+            tx.transactionType,
+            key.fundId,
+            fundCategoryMap,
+          );
+          const equityOriented =
+            isEquityLike(key.assetClass) ||
+            (key.assetClass === 'MUTUAL_FUND' && isEquityOrientedMF(key.fundId, fundCategoryMap));
+          const needsReview =
+            key.assetClass === 'MUTUAL_FUND' && !fundCategoryMap?.get(key.fundId ?? '');
 
           let indexed: Decimal | null = null;
           let taxableGain = gainLoss;
-          if (gainType === 'LONG_TERM' && qualifiesForIndexation(key.assetClass, lot.buyDate)) {
+          if (
+            gainType === 'LONG_TERM' &&
+            qualifiesForIndexation(key.assetClass, lot.buyDate, key.fundId, fundCategoryMap)
+          ) {
             indexed = indexedCost(costBasis, lot.buyDate, tx.tradeDate);
             if (indexed) taxableGain = proceeds.minus(indexed);
           }
@@ -346,7 +401,7 @@ export function computeFIFOGains(
           // flags those for the user to fill in.
           if (
             gainType === 'LONG_TERM' &&
-            (isEquityLike(key.assetClass) || key.assetClass === 'MUTUAL_FUND') &&
+            equityOriented &&
             lot.buyDate <= GRANDFATHERING_CUTOFF &&
             fmvMap &&
             key.isin &&
@@ -382,6 +437,8 @@ export function computeFIFOGains(
             gainLoss,
             taxableGain,
             financialYear: financialYearOf(tx.tradeDate),
+            isEquityOriented: equityOriented,
+            needsReview,
           });
 
           lot.qty = lot.qty.minus(take);
@@ -421,6 +478,25 @@ async function loadFmvMap(userId: string): Promise<Map<string, Decimal>> {
   return new Map([...byIsin.entries()].map(([isin, r]) => [isin, r.fmvPerUnit]));
 }
 
+/**
+ * Loads the real AMFI/scheme-master category for every distinct fund
+ * referenced by the given transactions, so the FIFO engine never has to
+ * assume MUTUAL_FUND === equity (TASK-01).
+ */
+export async function loadFundCategoryMap(txs: Transaction[]): Promise<Map<string, MFCategory>> {
+  const fundIds = [
+    ...new Set(
+      txs.filter((t) => t.assetClass === 'MUTUAL_FUND' && t.fundId).map((t) => t.fundId as string),
+    ),
+  ];
+  if (fundIds.length === 0) return new Map();
+  const funds = await prisma.mutualFundMaster.findMany({
+    where: { id: { in: fundIds } },
+    select: { id: true, category: true },
+  });
+  return new Map(funds.map((f) => [f.id, f.category]));
+}
+
 export async function computePortfolioCapitalGains(portfolioId: string): Promise<CapitalGainsResult> {
   const portfolio = await prisma.portfolio.findUnique({
     where: { id: portfolioId },
@@ -433,7 +509,8 @@ export async function computePortfolioCapitalGains(portfolioId: string): Promise
     }),
     portfolio ? loadFmvMap(portfolio.userId) : Promise.resolve(new Map<string, Decimal>()),
   ]);
-  const rows = computeFIFOGains(txs, fmvMap);
+  const fundCategoryMap = await loadFundCategoryMap(txs);
+  const rows = computeFIFOGains(txs, fmvMap, fundCategoryMap);
   return { rows, summaryByFy: summarize(rows) };
 }
 
@@ -445,7 +522,8 @@ export async function computeUserCapitalGains(userId: string): Promise<CapitalGa
     }),
     loadFmvMap(userId),
   ]);
-  const rows = computeFIFOGains(txs, fmvMap);
+  const fundCategoryMap = await loadFundCategoryMap(txs);
+  const rows = computeFIFOGains(txs, fmvMap, fundCategoryMap);
   return { rows, summaryByFy: summarize(rows) };
 }
 
@@ -469,6 +547,7 @@ function toCGCreateInput(r: CapitalGainRow): Prisma.CapitalGainCreateManyInput {
     gainLoss: r.gainLoss.toString(),
     taxableGain: r.taxableGain.toString(),
     financialYear: r.financialYear,
+    needsReview: r.needsReview,
   };
 }
 
@@ -508,6 +587,7 @@ export async function persistCapitalGainsForAsset(
     }),
     portfolio ? loadFmvMap(portfolio.userId) : Promise.resolve(new Map<string, Decimal>()),
   ]);
+  const fundCategoryMap = await loadFundCategoryMap(txs);
   const txIds = txs.map((t) => t.id);
 
   // Clear any prior CG rows that touch this asset's transactions (either as
@@ -525,7 +605,7 @@ export async function persistCapitalGainsForAsset(
     });
   }
 
-  const rows = computeFIFOGains(txs, fmvMap);
+  const rows = computeFIFOGains(txs, fmvMap, fundCategoryMap);
   if (rows.length === 0) return 0;
   await prisma.capitalGain.createMany({ data: rows.map(toCGCreateInput) });
   return rows.length;

@@ -621,11 +621,12 @@ function GainsView({
                   {showIndexed && <th className="text-right p-2">Indexed Cost</th>}
                   <th className="text-right p-2">Gain/Loss</th>
                   <th className="text-right p-2">Taxable</th>
+                  <th className="text-left p-2">Category</th>
                 </tr>
               </thead>
               <tbody>
                 {data.rows.map((r, i) => (
-                  <tr key={i} className="border-b">
+                  <tr key={i} className={cn('border-b', r.needsReview && 'bg-amber-50/30')}>
                     <td data-label="Asset" className="p-2">{r.assetName || r.isin || '—'}</td>
                     <td data-label="ISIN" className="p-2 text-xs text-muted-foreground">{r.isin ?? '—'}</td>
                     <td data-label="Buy" className="p-2">{r.buyDate.slice(0, 10)}</td>
@@ -648,11 +649,21 @@ function GainsView({
                       {fmt(r.gainLoss)}
                     </td>
                     <td data-label="Taxable" className="p-2 text-right">{fmt(r.taxableGain)}</td>
+                    <td data-label="Category" className="p-2">
+                      {r.needsReview && (
+                        <span
+                          className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium bg-amber-500/10 text-amber-700"
+                          title="Fund category could not be resolved — taxed as debt (conservative). Verify before filing."
+                        >
+                          <AlertTriangle className="h-3 w-3" /> verify fund category
+                        </span>
+                      )}
+                    </td>
                   </tr>
                 ))}
                 {data.rows.length === 0 && (
                   <tr>
-                    <td colSpan={showIndexed ? 10 : 9} className="p-6 text-center text-muted-foreground">
+                    <td colSpan={showIndexed ? 11 : 10} className="p-6 text-center text-muted-foreground">
                       No records for selected FY.
                     </td>
                   </tr>
