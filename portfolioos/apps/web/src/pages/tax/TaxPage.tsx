@@ -596,6 +596,16 @@ function GainsView({
           )}
         </div>
       )}
+      {data.rowsNeedingReview > 0 && (
+        <div className="flex items-start gap-2 p-3 rounded-md border border-amber-300 bg-amber-50 text-sm text-amber-800">
+          <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+          <span>
+            {data.rowsNeedingReview} row(s) qualify for indexation but the CII table has no
+            entry for that financial year — the gain shown is a non-indexed (possibly
+            overstated) fallback, not a final figure. Hover the row for details.
+          </span>
+        </div>
+      )}
       <Card>
         <CardHeader>
           <CardTitle className="text-sm">
@@ -621,7 +631,7 @@ function GainsView({
                   {showIndexed && <th className="text-right p-2">Indexed Cost</th>}
                   <th className="text-right p-2">Gain/Loss</th>
                   <th className="text-right p-2">Taxable</th>
-                  <th className="text-left p-2">Category</th>
+                  <th className="text-left p-2">Review</th>
                 </tr>
               </thead>
               <tbody>
@@ -649,13 +659,13 @@ function GainsView({
                       {fmt(r.gainLoss)}
                     </td>
                     <td data-label="Taxable" className="p-2 text-right">{fmt(r.taxableGain)}</td>
-                    <td data-label="Category" className="p-2">
+                    <td data-label="Review" className="p-2">
                       {r.needsReview && (
                         <span
                           className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium bg-amber-500/10 text-amber-700"
-                          title="Fund category could not be resolved — taxed as debt (conservative). Verify before filing."
+                          title={r.reviewReason ?? 'Needs manual verification before filing.'}
                         >
-                          <AlertTriangle className="h-3 w-3" /> verify fund category
+                          <AlertTriangle className="h-3 w-3" /> Review
                         </span>
                       )}
                     </td>
