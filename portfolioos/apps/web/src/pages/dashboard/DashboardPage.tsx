@@ -29,6 +29,7 @@ import { reportsApi } from '@/api/reports.api';
 import { mailboxesApi } from '@/api/mailboxes.api';
 import { ConnectGmailCard } from '@/components/dashboard/ConnectGmailCard';
 import { FamilyScopeBanner } from '@/components/family/FamilyScopeBanner';
+import { UpgradeBanner } from '@/components/dashboard/UpgradeBanner';
 import { GmailScanProgressCard } from '@/components/dashboard/GmailScanProgressCard';
 import { DashboardFxStrip } from '@/pages/forex/DashboardFxStrip';
 import { DashboardTaxStrip } from '@/components/dashboard/DashboardTaxStrip';
@@ -457,7 +458,8 @@ export function DashboardPage() {
 
   if (portfolios.length === 0) {
     return (
-      <div>
+      <div className="space-y-4">
+        <UpgradeBanner />
         <PageHeader title="Dashboard" description="Your financial command centre" />
         <EmptyState
           icon={Briefcase}
@@ -484,6 +486,7 @@ export function DashboardPage() {
     <div className="space-y-4 sm:space-y-7">
       <GmailDashboardCards />
       <FamilyScopeBanner />
+      <UpgradeBanner />
       <PageHeader
         eyebrow="Dashboard"
         title="Your financial portrait"
