@@ -22,6 +22,7 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { portfoliosApi } from '@/api/portfolios.api';
 import { transactionsApi } from '@/api/transactions.api';
 import { FDFormDialog } from './FDFormDialog';
+import { useThemeStore } from '@/stores/theme.store';
 
 type FDHolding = HoldingRow & { portfolioName: string; portfolioId: string };
 
@@ -34,7 +35,18 @@ const FREQ_LABELS: Record<string, string> = {
 };
 
 const FD_ACCENT = 'hsl(var(--positive))';
-const RD_ACCENT = 'hsl(var(--accent))';
+// RD used `hsl(var(--accent))` before, which in dark mode is a lime
+// (`70 95% 65%`) sitting right next to --positive's lime-green
+// (`85 75% 58%`) — the two card types read as the same color. Give RD
+// a fixed indigo-violet identity instead, independent of the theme's
+// --accent (which shifts between indigo in light mode and lime in dark
+// mode), so it stays visually distinct from FD in both themes.
+const RD_ACCENT_DARK = 'hsl(235 85% 72%)';
+const RD_ACCENT_LIGHT = 'hsl(235 65% 48%)';
+function useRdAccent(): string {
+  const dark = useThemeStore((s) => s.dark);
+  return dark ? RD_ACCENT_DARK : RD_ACCENT_LIGHT;
+}
 
 function daysUntil(iso: string): number {
   return Math.round((new Date(iso).getTime() - Date.now()) / 86_400_000);
@@ -421,6 +433,7 @@ function RDCard({
   onClick: () => void;
   onEdit: (e: React.MouseEvent) => void;
 }) {
+  const RD_ACCENT = useRdAccent();
   const rate = primaryTxn?.interestRate ?? null;
   const maturity = primaryTxn?.maturityDate ?? null;
   const openDate = primaryTxn?.tradeDate ?? null;
@@ -600,6 +613,7 @@ function RDCard({
 
 export function FixedDepositsPage() {
   const navigate = useNavigate();
+  const RD_ACCENT = useRdAccent();
   const [formOpen, setFormOpen] = useState(false);
   const [editTxn, setEditTxn] = useState<TransactionDTO | null>(null);
   const [activeFormAssetClass, setActiveFormAssetClass] = useState<AssetClass>('FIXED_DEPOSIT');
