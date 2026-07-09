@@ -113,6 +113,7 @@ function MarkReceivedDialog({
       rentalApi.markReceived(receipt.id, input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['rental-property', id] });
+      qc.invalidateQueries({ queryKey: ['rental-properties'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       onOpenChange(false);
     },
@@ -193,6 +194,7 @@ function ReceiptRow({ receipt }: { receipt: RentReceiptDTO }) {
 
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ['rental-property', id] });
+    qc.invalidateQueries({ queryKey: ['rental-properties'] });
     qc.invalidateQueries({ queryKey: ['dashboard'] });
   };
   const skipMutation = useMutation({
