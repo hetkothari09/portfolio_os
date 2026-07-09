@@ -1,14 +1,23 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { aiAssistantApi, type AiCard, type AiMessage, type AiSuggestion, type AiQuota } from '@/api/aiAssistant.api';
+import {
+  aiAssistantApi,
+  type AiCard,
+  type AiMessage,
+  type AiSuggestion,
+  type AiQuota,
+  type AiChatSession,
+} from '@/api/aiAssistant.api';
 
 /**
- * State + actions for the AI Assistant panel.
+ * State + actions for the AI Assistant panel — ChatGPT-style: many
+ * sessions per user, one active at a time.
  *
- * Maintains the message array with optimistic user updates and a
- * streaming assistant placeholder that accumulates tokens as SSE
- * events arrive. Fetches history + suggested questions on mount, and
- * re-fetches suggestions after every completed response so the pills
- * stay contextual.
+ * Maintains the active session's message array with optimistic user
+ * updates and a streaming assistant placeholder that accumulates
+ * tokens as SSE events arrive. Fetches the session list + the most
+ * recent session's history on mount (auto-creating a first session if
+ * the user has none), and re-fetches suggestions/quota after every
+ * completed response so the pills and quota readout stay current.
  */
 export interface UiMessage {
   id: string;
@@ -22,6 +31,8 @@ export interface UiMessage {
 }
 
 interface State {
+  sessions: AiChatSession[];
+  activeSessionId: string | null;
   messages: UiMessage[];
   isStreaming: boolean;
   error: string | null;
@@ -29,8 +40,8 @@ interface State {
   quota: AiQuota | null;
   loadingHistory: boolean;
   /**
-   * Latches true after `loadHistory` completes at least once for the
-   * current open session. Callers (like the teaser pending-prompt
+   * Latches true after the initial load completes at least once for
+   * the current open session. Callers (like the teaser pending-prompt
    * autosend) must wait for this before sending — otherwise the
    * history replace races with the optimistic user message and wipes
    * it. Reset to false whenever `active` flips false.
@@ -53,6 +64,8 @@ function toUiMessage(m: AiMessage): UiMessage {
 
 export function useAIAssistant(active: boolean) {
   const [state, setState] = useState<State>({
+    sessions: [],
+    activeSessionId: null,
     messages: [],
     isStreaming: false,
     error: null,
@@ -70,17 +83,56 @@ export function useAIAssistant(active: boolean) {
   useEffect(() => {
     quotaRef.current = state.quota;
   }, [state.quota]);
+  // Same reasoning for activeSessionId inside removeSession, which needs
+  // to know synchronously (right after its own delete call) whether the
+  // session it just removed was the active one.
+  const activeSessionIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    activeSessionIdRef.current = state.activeSessionId;
+  }, [state.activeSessionId]);
 
-  const loadHistory = useCallback(async () => {
+  const switchSession = useCallback(async (sessionId: string) => {
+    setState((s) => ({ ...s, activeSessionId: sessionId, loadingHistory: true, error: null }));
+    try {
+      const history = await aiAssistantApi.sessionHistory(sessionId);
+      setState((s) => ({
+        ...s,
+        messages: history.map(toUiMessage),
+        loadingHistory: false,
+        historyLoaded: true,
+      }));
+    } catch (err) {
+      setState((s) => ({
+        ...s,
+        loadingHistory: false,
+        historyLoaded: true,
+        error: err instanceof Error ? err.message : 'Failed to load conversation.',
+      }));
+    }
+  }, []);
+
+  const loadAll = useCallback(async () => {
     setState((s) => ({ ...s, loadingHistory: true, error: null }));
     try {
-      const [history, suggested, quota] = await Promise.all([
-        aiAssistantApi.history(),
+      const [sessions, suggested, quota] = await Promise.all([
+        aiAssistantApi.listSessions(),
         aiAssistantApi.suggested().catch(() => [] as AiSuggestion[]),
         aiAssistantApi.quota().catch(() => null),
       ]);
+      let sessionList = sessions;
+      let activeId = sessions[0]?.id ?? null;
+      if (!activeId) {
+        // First time this user has opened the assistant — give them a
+        // session to land in rather than an empty session-list state.
+        const created = await aiAssistantApi.createSession();
+        sessionList = [created];
+        activeId = created.id;
+      }
+      const history = await aiAssistantApi.sessionHistory(activeId);
       setState((s) => ({
         ...s,
+        sessions: sessionList,
+        activeSessionId: activeId,
         messages: history.map(toUiMessage),
         suggestedQuestions: suggested,
         quota,
@@ -103,11 +155,11 @@ export function useAIAssistant(active: boolean) {
       setState((s) => (s.historyLoaded ? { ...s, historyLoaded: false } : s));
       return;
     }
-    void loadHistory();
+    void loadAll();
     return () => {
       abortRef.current?.abort();
     };
-  }, [active, loadHistory]);
+  }, [active, loadAll]);
 
   const refreshSuggested = useCallback(async () => {
     try {
@@ -127,10 +179,68 @@ export function useAIAssistant(active: boolean) {
     }
   }, []);
 
+  // Re-syncs the session list from the server — used after a real send
+  // completes, since the backend may have just renamed "New chat" to the
+  // first message's text (see chatSessions.ts's touchSession).
+  const refreshSessions = useCallback(async () => {
+    try {
+      const sessions = await aiAssistantApi.listSessions();
+      setState((s) => ({ ...s, sessions }));
+      // eslint-disable-next-line portfolioos/no-silent-catch -- best-effort title/order sync after a send; a failure here just means the sidebar title updates on the next refresh instead of immediately, not worth a user-facing error
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const newChat = useCallback(async () => {
+    try {
+      const created = await aiAssistantApi.createSession();
+      setState((s) => ({
+        ...s,
+        sessions: [created, ...s.sessions],
+        activeSessionId: created.id,
+        messages: [],
+        error: null,
+      }));
+    } catch (err) {
+      setState((s) => ({
+        ...s,
+        error: err instanceof Error ? err.message : 'Failed to start a new chat.',
+      }));
+    }
+  }, []);
+
+  const removeSession = useCallback(
+    async (sessionId: string) => {
+      try {
+        await aiAssistantApi.deleteSession(sessionId);
+        let remaining: AiChatSession[] = [];
+        setState((s) => {
+          remaining = s.sessions.filter((x) => x.id !== sessionId);
+          return { ...s, sessions: remaining };
+        });
+        if (activeSessionIdRef.current === sessionId) {
+          if (remaining.length > 0) {
+            await switchSession(remaining[0]!.id);
+          } else {
+            await newChat();
+          }
+        }
+      } catch (err) {
+        setState((s) => ({
+          ...s,
+          error: err instanceof Error ? err.message : 'Failed to delete chat.',
+        }));
+      }
+    },
+    [switchSession, newChat],
+  );
+
   const sendMessage = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
-      if (!trimmed) return;
+      const sessionId = activeSessionIdRef.current;
+      if (!trimmed || !sessionId) return;
       const userMsg: UiMessage = {
         id: genId(),
         role: 'user',
@@ -175,6 +285,7 @@ export function useAIAssistant(active: boolean) {
       abortRef.current = controller;
       await aiAssistantApi.streamChat(
         trimmed,
+        sessionId,
         (event) => {
           if (event.type === 'token') {
             setState((s) => ({
@@ -219,22 +330,10 @@ export function useAIAssistant(active: boolean) {
       );
       void refreshSuggested();
       void refreshQuota();
+      void refreshSessions();
     },
-    [refreshSuggested, refreshQuota],
+    [refreshSuggested, refreshQuota, refreshSessions],
   );
-
-  const clearConversation = useCallback(async () => {
-    try {
-      await aiAssistantApi.clearHistory();
-      setState((s) => ({ ...s, messages: [], error: null }));
-      await refreshSuggested();
-    } catch (err) {
-      setState((s) => ({
-        ...s,
-        error: err instanceof Error ? err.message : 'Failed to clear conversation.',
-      }));
-    }
-  }, [refreshSuggested]);
 
   const cancelStream = useCallback(() => {
     abortRef.current?.abort();
@@ -243,8 +342,10 @@ export function useAIAssistant(active: boolean) {
   return {
     ...state,
     sendMessage,
-    clearConversation,
+    switchSession,
+    newChat,
+    removeSession,
     cancelStream,
-    reload: loadHistory,
+    reload: loadAll,
   };
 }

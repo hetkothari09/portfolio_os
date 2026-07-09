@@ -32,6 +32,13 @@ export interface AiQuota {
   resetsAt: string;
 }
 
+export interface AiChatSession {
+  id: string;
+  title: string;
+  createdAt: string;
+  lastMessageAt: string;
+}
+
 export type StreamEvent =
   | { type: 'token'; content: string }
   | { type: 'card'; data: AiCard }
@@ -39,12 +46,22 @@ export type StreamEvent =
   | { type: 'error'; message: string };
 
 export const aiAssistantApi = {
-  async history(): Promise<AiMessage[]> {
-    const { data } = await api.get<ApiResponse<AiMessage[]>>('/api/assistant/history');
+  async listSessions(): Promise<AiChatSession[]> {
+    const { data } = await api.get<ApiResponse<AiChatSession[]>>('/api/assistant/sessions');
     return unwrap(data);
   },
-  async clearHistory(): Promise<void> {
-    await api.delete('/api/assistant/history');
+  async createSession(): Promise<AiChatSession> {
+    const { data } = await api.post<ApiResponse<AiChatSession>>('/api/assistant/sessions');
+    return unwrap(data);
+  },
+  async deleteSession(sessionId: string): Promise<void> {
+    await api.delete(`/api/assistant/sessions/${sessionId}`);
+  },
+  async sessionHistory(sessionId: string): Promise<AiMessage[]> {
+    const { data } = await api.get<ApiResponse<AiMessage[]>>(
+      `/api/assistant/sessions/${sessionId}/history`,
+    );
+    return unwrap(data);
   },
   async suggested(): Promise<AiSuggestion[]> {
     const { data } = await api.get<ApiResponse<AiSuggestion[]>>('/api/assistant/suggested');
@@ -63,6 +80,7 @@ export const aiAssistantApi = {
    */
   async streamChat(
     message: string,
+    sessionId: string,
     onEvent: (e: StreamEvent) => void,
     signal?: AbortSignal,
   ): Promise<void> {
@@ -78,7 +96,7 @@ export const aiAssistantApi = {
     const response = await fetch(`${getApiBaseUrl()}/api/assistant/chat`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ message, sessionId }),
       signal,
     });
 
