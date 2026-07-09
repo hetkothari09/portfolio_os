@@ -10,6 +10,7 @@ import {
 } from '../services/transaction.service.js';
 import { created, noContent, ok } from '../lib/response.js';
 import { UnauthorizedError } from '../lib/errors.js';
+import { parseFamilyId } from '../lib/familyHeader.js';
 
 const isoDate = z
   .string()
@@ -96,5 +97,5 @@ export async function detail(req: Request, res: Response) {
 
 export async function list(req: Request, res: Response) {
   const q = listQuerySchema.parse(req.query);
-  ok(res, await listTransactions(userId(req), q));
+  ok(res, await listTransactions(userId(req), q, parseFamilyId(req)));
 }

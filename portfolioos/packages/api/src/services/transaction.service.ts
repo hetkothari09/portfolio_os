@@ -11,6 +11,8 @@ import { naturalKeyHash } from './sourceHash.js';
 import { persistCapitalGainsForAsset } from './capitalGains.service.js';
 import { updateStockPricesFromYahoo } from '../priceFeeds/yahoo.service.js';
 import { refreshAllHoldingPrices } from './holdings.service.js';
+import { getEffectiveScope, portfolioChildReadableWhere, assetClassWhere } from './familyScope.service.js';
+import { runAsUser } from '../lib/requestContext.js';
 
 export interface CreateTransactionInput {
   portfolioId: string;
@@ -485,12 +487,29 @@ export interface ListTransactionsQuery {
   pageSize?: number;
 }
 
-export async function listTransactions(userId: string, q: ListTransactionsQuery) {
-  const where: Prisma.TransactionWhereInput = {
-    portfolio: { userId },
-  };
+export async function listTransactions(
+  userId: string,
+  q: ListTransactionsQuery,
+  familyId?: string,
+) {
+  const scope = await getEffectiveScope(userId, familyId ? { familyId } : {});
+
+  // A CONTRIBUTOR/VIEWER whose visibility excludes the requested asset
+  // class outright sees nothing, rather than silently falling back to
+  // an unfiltered (and thus over-broad) query.
+  if (
+    q.assetClass &&
+    scope.allowedAssetClasses !== null &&
+    !scope.allowedAssetClasses.includes(q.assetClass)
+  ) {
+    const pageSize = q.pageSize && q.pageSize > 0 ? Math.min(q.pageSize, 200) : 50;
+    return { items: [], pagination: { page: 1, pageSize, total: 0, totalPages: 1 } };
+  }
+
+  const where: Prisma.TransactionWhereInput = {};
   if (q.portfolioId) where.portfolioId = q.portfolioId;
   if (q.assetClass) where.assetClass = q.assetClass;
+  else Object.assign(where, assetClassWhere(scope));
   if (q.transactionType) where.transactionType = q.transactionType;
   if (q.from || q.to) {
     where.tradeDate = {};
@@ -498,32 +517,52 @@ export async function listTransactions(userId: string, q: ListTransactionsQuery)
     if (q.to) (where.tradeDate as any).lte = toDateOnly(q.to);
   }
 
+  const include = {
+    stock: { select: { symbol: true, name: true, isin: true, exchange: true } },
+    fund: { select: { schemeCode: true, schemeName: true, amcName: true, isin: true } },
+    photos: { select: { id: true, fileName: true, mimeType: true, sizeBytes: true }, orderBy: { createdAt: 'asc' as const } },
+  };
+
+  // Own personal transactions + any family-shared portfolio's transactions
+  // are readable in the caller's own RLS context (membership-based policy).
+  // Other members' *personal* portfolios need a per-member `runAsUser` fan-
+  // out, same as `listPortfoliosWithScope` — the single-owner RLS branch on
+  // Transaction only opens for `portfolio.userId = current`.
+  const otherUserIds = scope.readableUserIds.filter((u) => u !== scope.callerId);
+
+  const [ownRows, ...perMemberRows] = await Promise.all([
+    prisma.transaction.findMany({
+      where: { ...where, ...portfolioChildReadableWhere(scope) },
+      include,
+    }),
+    ...otherUserIds.map((uid) =>
+      runAsUser(uid, () =>
+        prisma.transaction.findMany({
+          where: { ...where, portfolio: { userId: uid, familyId: null } },
+          include,
+        }),
+      ),
+    ),
+  ]);
+
+  const allRows = [...ownRows, ...perMemberRows.flat()].sort(
+    (a, b) =>
+      b.tradeDate.getTime() - a.tradeDate.getTime() ||
+      b.createdAt.getTime() - a.createdAt.getTime(),
+  );
+
   const page = q.page && q.page > 0 ? q.page : 1;
   const pageSize = q.pageSize && q.pageSize > 0 ? Math.min(q.pageSize, 200) : 50;
   const skip = (page - 1) * pageSize;
-
-  const [rows, total] = await Promise.all([
-    prisma.transaction.findMany({
-      where,
-      orderBy: [{ tradeDate: 'desc' }, { createdAt: 'desc' }],
-      skip,
-      take: pageSize,
-      include: {
-        stock: { select: { symbol: true, name: true, isin: true, exchange: true } },
-        fund: { select: { schemeCode: true, schemeName: true, amcName: true, isin: true } },
-        photos: { select: { id: true, fileName: true, mimeType: true, sizeBytes: true }, orderBy: { createdAt: 'asc' } },
-      },
-    }),
-    prisma.transaction.count({ where }),
-  ]);
+  const rows = allRows.slice(skip, skip + pageSize);
 
   return {
     items: rows.map(toTransactionDTO),
     pagination: {
       page,
       pageSize,
-      total,
-      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      total: allRows.length,
+      totalPages: Math.max(1, Math.ceil(allRows.length / pageSize)),
     },
   };
 }
