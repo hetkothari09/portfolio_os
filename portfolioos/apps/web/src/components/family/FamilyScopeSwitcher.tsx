@@ -80,19 +80,19 @@ export function FamilyScopeSwitcher() {
         type="button"
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          'flex items-center gap-1.5 h-8 px-2.5 rounded-md text-[12px] font-medium',
+          'flex items-center gap-1 sm:gap-1.5 h-8 px-2 sm:px-2.5 rounded-md text-[12px] font-medium shrink-0',
           'text-foreground/80 hover:text-foreground border border-border/70 bg-card/60',
           'hover:border-accent/50 transition-colors focus-ring',
         )}
         title="Switch view"
       >
         {viewingAsFamilyId ? (
-          <Users className="h-3.5 w-3.5 text-accent-ink" strokeWidth={1.9} />
+          <Users className="h-3.5 w-3.5 text-accent-ink shrink-0" strokeWidth={1.9} />
         ) : (
-          <User className="h-3.5 w-3.5" strokeWidth={1.7} />
+          <User className="h-3.5 w-3.5 shrink-0" strokeWidth={1.7} />
         )}
-        <span className="max-w-[140px] truncate">{currentLabel}</span>
-        <ChevronDown className="h-3 w-3 opacity-60" strokeWidth={2} />
+        <span className="max-w-[70px] sm:max-w-[140px] truncate">{currentLabel}</span>
+        <ChevronDown className="h-3 w-3 opacity-60 shrink-0" strokeWidth={2} />
       </button>
 
       {open && (

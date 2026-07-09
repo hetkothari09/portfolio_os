@@ -43,21 +43,27 @@ export function Header({ onOpenMenu = () => {} }: { onOpenMenu?: () => void }) {
     month: 'long',
     year: 'numeric',
   });
+  const todayShort = new Date().toLocaleDateString('en-IN', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
 
   return (
-    <header className="relative z-30 h-16 shrink-0 border-b border-border/70 bg-card/70 backdrop-blur-md flex items-center justify-between px-6 lg:px-10">
-      <div className="flex items-center gap-3 min-w-0">
+    <header className="relative z-30 h-16 shrink-0 border-b border-border/70 bg-card/70 backdrop-blur-md flex items-center justify-between gap-2 px-3 sm:px-6 lg:px-10">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
         <button
           type="button"
           onClick={onOpenMenu}
           aria-label="Open navigation menu"
-          className="md:hidden h-9 w-9 -ml-1 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors focus-ring"
+          className="md:hidden h-9 w-9 -ml-1 shrink-0 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors focus-ring"
         >
           <Menu className="h-5 w-5" strokeWidth={1.7} />
         </button>
         <div className="leading-tight min-w-0">
-          <p className="text-[10px] uppercase tracking-kerned text-muted-foreground/80">
-            {today}
+          <p className="text-[10px] uppercase tracking-kerned text-muted-foreground/80 truncate">
+            <span className="sm:hidden">{todayShort}</span>
+            <span className="hidden sm:inline">{today}</span>
           </p>
           <p className="text-[14px] font-medium tracking-tight text-foreground truncate">
             Welcome back,{' '}
@@ -66,16 +72,19 @@ export function Header({ onOpenMenu = () => {} }: { onOpenMenu?: () => void }) {
         </div>
       </div>
 
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
         {/* Persistent upgrade nudge — visible on every page for any
             non-top-tier user (including ADMIN, keyed off `plan`), not
-            just when a locked feature is hit. */}
+            just when a locked feature is hit. Icon-only on mobile so it
+            never disappears, full label from sm up. */}
         {user && user.plan !== 'PRO_ADVISOR' && (
           <Link
             to="/pricing"
-            className="hidden sm:flex items-center gap-1.5 h-9 px-3 rounded-md text-[12px] font-medium text-accent-ink bg-accent/10 hover:bg-accent/15 transition-colors focus-ring"
+            title="Upgrade"
+            className="flex items-center gap-1.5 h-9 px-2 sm:px-3 rounded-md text-[12px] font-medium text-accent-ink bg-accent/10 hover:bg-accent/15 transition-colors focus-ring shrink-0"
           >
-            <Sparkles className="h-3.5 w-3.5" /> Upgrade
+            <Sparkles className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Upgrade</span>
           </Link>
         )}
 
