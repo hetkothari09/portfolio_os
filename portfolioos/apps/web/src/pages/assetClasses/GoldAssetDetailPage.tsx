@@ -9,8 +9,6 @@ import {
   Calendar,
   Pencil,
   ImageIcon,
-  TrendingUp,
-  TrendingDown,
   Hash,
   Coins,
   Scale,
@@ -242,6 +240,15 @@ function CostBar({ invested, current, sinceDate }: { invested: Decimal; current:
     { label: sinceDate ? formatDate(sinceDate) : 'Purchase', invested: investedNum, value: investedNum },
     { label: 'Today', invested: investedNum, value: currentNum },
   ];
+  // Gold/silver often moves a fraction of a percent day to day — a 0-based
+  // axis would render both lines as one indistinguishable stroke. Zoom the
+  // domain to the pair's actual spread (standard practice for trend/price
+  // lines, unlike bar length which must stay 0-based) so the gap is always
+  // legible, with a floor so a ~0 spread still gets visible padding.
+  const lo = Math.min(investedNum, currentNum);
+  const hi = Math.max(investedNum, currentNum);
+  const pad = Math.max((hi - lo) * 0.8, hi * 0.015, 1);
+  const yDomain: [number, number] = [Math.max(0, lo - pad), hi + pad];
 
   return (
     <div className="space-y-3">
@@ -261,18 +268,20 @@ function CostBar({ invested, current, sinceDate }: { invested: Decimal; current:
           <LineChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 4 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
             <XAxis dataKey="label" fontSize={10} tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" />
-            <YAxis fontSize={10} tickLine={false} axisLine={false} width={52} stroke="hsl(var(--muted-foreground))" tickFormatter={INR_COMPACT} />
+            <YAxis domain={yDomain} fontSize={10} tickLine={false} axisLine={false} width={52} stroke="hsl(var(--muted-foreground))" tickFormatter={INR_COMPACT} />
             <Tooltip
               contentStyle={TOOLTIP_STYLE}
               labelStyle={TOOLTIP_LABEL_STYLE}
               formatter={(v: number, name: string) => [formatINR(String(v)), name === 'value' ? 'Current value' : 'Invested']}
             />
-            <Line type="monotone" dataKey="invested" stroke={NEUTRAL_COLOR} strokeWidth={1.5} strokeDasharray="4 4" dot={{ r: 3 }} />
             <Line
               type="monotone" dataKey="value" stroke={valueColor} strokeWidth={2.5}
               dot={{ r: 3, fill: valueColor, strokeWidth: 0 }}
               activeDot={{ r: 5, fill: 'hsl(var(--foreground))', stroke: 'hsl(var(--card))', strokeWidth: 2 }}
             />
+            {/* Drawn last so the dash pattern stays visible where the two
+                lines nearly coincide (e.g. a fresh purchase near cost). */}
+            <Line type="monotone" dataKey="invested" stroke={NEUTRAL_COLOR} strokeWidth={1.5} strokeDasharray="4 4" dot={{ r: 3 }} />
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -558,21 +567,12 @@ export function GoldAssetDetailPage() {
               )}
             </div>
 
-            {/* P&L pill — refined */}
+            {/* Unrealised — editorial marginalia, not a dashboard badge */}
             {pnl && (
-              <div className={`mt-6 inline-flex items-center gap-3 rounded-full pl-1 pr-5 py-1 self-start border
-                ${isGain
-                  ? 'bg-emerald-50/60 border-emerald-200/80 dark:bg-emerald-950/20 dark:border-emerald-800/60'
-                  : 'bg-rose-50/60 border-rose-200/80 dark:bg-rose-950/20 dark:border-rose-800/60'
-                }`}>
-                <span className={`h-7 w-7 rounded-full flex items-center justify-center
-                  ${isGain ? 'bg-emerald-100 dark:bg-emerald-900/50' : 'bg-rose-100 dark:bg-rose-900/50'}`}>
-                  {isGain
-                    ? <TrendingUp className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-300" />
-                    : <TrendingDown className="h-3.5 w-3.5 text-rose-700 dark:text-rose-300" />}
-                </span>
-                <span className="text-[10px] tracking-[0.22em] uppercase text-muted-foreground font-medium">Unrealised</span>
-                <span className={`text-lg font-semibold tabular-nums ${isGain ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'}`}>
+              <div className={`mt-5 flex items-baseline gap-2.5 border-l-2 pl-3
+                ${isGain ? 'border-emerald-500/60' : 'border-rose-500/60'}`}>
+                <span className="text-[10px] tracking-[0.22em] uppercase text-muted-foreground/80 font-medium self-center">Unrealised</span>
+                <span className={`text-xl font-semibold tabular-nums ${isGain ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'}`}>
                   {isGain ? '+' : ''}{formatINR(pnl.toString())}
                 </span>
                 {pnlPct != null && (
