@@ -61,18 +61,18 @@ export function Header({ onOpenMenu = () => {} }: { onOpenMenu?: () => void }) {
           <Menu className="h-5 w-5" strokeWidth={1.7} />
         </button>
         <div className="leading-tight min-w-0">
-          <p className="text-[10px] uppercase tracking-kerned text-muted-foreground/80 truncate">
+          <p className="text-[9.5px] sm:text-[10px] uppercase tracking-kerned text-muted-foreground/80 whitespace-nowrap">
             <span className="sm:hidden">{todayShort}</span>
             <span className="hidden sm:inline">{today}</span>
           </p>
-          <p className="text-[14px] font-medium tracking-tight text-foreground truncate">
+          <p className="hidden sm:block text-[14px] font-medium tracking-tight text-foreground truncate">
             Welcome back,{' '}
             <span className="text-accent-ink">{user?.name ?? 'Investor'}</span>
           </p>
         </div>
       </div>
 
-      <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+      <div className="flex items-center gap-0.5 sm:gap-1.5 shrink-0">
         {/* Persistent upgrade nudge — visible on every page for any
             non-top-tier user (including ADMIN, keyed off `plan`), not
             just when a locked feature is hit. Icon-only on mobile so it
@@ -91,11 +91,13 @@ export function Header({ onOpenMenu = () => {} }: { onOpenMenu?: () => void }) {
         {/* Family / HOF "viewing as" switcher */}
         <FamilyScopeSwitcher />
 
+        <span className="mx-0.5 sm:mx-1 h-5 sm:h-6 w-px bg-border shrink-0" />
+
         {/* Alerts bell */}
         <Link
           to="/alerts"
           title="Alerts & Reminders"
-          className="relative h-9 w-9 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors focus-ring"
+          className="relative h-9 w-9 shrink-0 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors focus-ring"
         >
           <Bell className="h-4 w-4" strokeWidth={1.7} />
           {unreadCount > 0 && (
@@ -110,7 +112,7 @@ export function Header({ onOpenMenu = () => {} }: { onOpenMenu?: () => void }) {
           type="button"
           onClick={toggle}
           title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-          className="relative h-9 w-9 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors focus-ring overflow-hidden"
+          className="relative h-9 w-9 shrink-0 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors focus-ring overflow-hidden"
         >
           <Sun className={cn('absolute h-4 w-4 transition-all', dark ? 'rotate-0 scale-100 opacity-100' : 'rotate-90 scale-0 opacity-0')} strokeWidth={1.7} />
           <Moon className={cn('absolute h-4 w-4 transition-all', dark ? '-rotate-90 scale-0 opacity-0' : 'rotate-0 scale-100 opacity-100')} strokeWidth={1.7} />
@@ -123,7 +125,7 @@ export function Header({ onOpenMenu = () => {} }: { onOpenMenu?: () => void }) {
           title={hideSensitive ? 'Show values' : 'Hide values'}
           aria-label={hideSensitive ? 'Show values' : 'Hide values'}
           className={cn(
-            'relative h-9 w-9 rounded-md flex items-center justify-center transition-colors focus-ring overflow-hidden',
+            'relative h-9 w-9 shrink-0 rounded-md flex items-center justify-center transition-colors focus-ring overflow-hidden',
             hideSensitive
               ? 'text-accent-ink bg-accent/10 hover:bg-accent/15'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted/70',
@@ -132,18 +134,18 @@ export function Header({ onOpenMenu = () => {} }: { onOpenMenu?: () => void }) {
           {hideSensitive ? <EyeOff className="h-4 w-4" strokeWidth={1.7} /> : <Eye className="h-4 w-4" strokeWidth={1.7} />}
         </button>
 
-        <span className="mx-1 h-6 w-px bg-border" />
+        <span className="hidden sm:block mx-1 h-6 w-px bg-border shrink-0" />
 
         {/* User dropdown */}
-        <div className="relative">
+        <div className="relative shrink-0">
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
             className={cn(
-              'group flex items-center gap-2.5 rounded-md pl-1.5 pr-2 py-1 hover:bg-muted/60 transition-colors focus-ring',
+              'group flex items-center gap-1.5 sm:gap-2.5 rounded-md pl-0.5 sm:pl-1.5 pr-1 sm:pr-2 py-1 hover:bg-muted/60 transition-colors focus-ring',
             )}
           >
-            <div className="relative h-8 w-8 rounded-full grid place-items-center bg-gradient-to-br from-primary to-primary/85 text-primary-foreground text-[11px] font-semibold tracking-wide shadow-sm">
+            <div className="relative h-8 w-8 shrink-0 rounded-full grid place-items-center bg-gradient-to-br from-primary to-primary/85 text-primary-foreground text-[11px] font-semibold tracking-wide shadow-sm">
               {initials}
               <span className="absolute -inset-px rounded-full ring-1 ring-inset ring-foreground/5" />
             </div>
@@ -151,7 +153,7 @@ export function Header({ onOpenMenu = () => {} }: { onOpenMenu?: () => void }) {
               <span className="text-[12.5px] font-medium text-foreground">{user?.name}</span>
               <span className="text-[10.5px] text-muted-foreground truncate max-w-[160px]">{user?.email}</span>
             </div>
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground transition-transform group-hover:translate-y-[1px]" strokeWidth={2} />
+            <ChevronDown className="hidden sm:block h-3.5 w-3.5 text-muted-foreground transition-transform group-hover:translate-y-[1px]" strokeWidth={2} />
           </button>
 
           {open && (

@@ -44,47 +44,47 @@ export function GoldSilverTopBar() {
   const secs = useSecondsAgo(data?.fetchedAt);
 
   return (
-    <div className="sticky top-0 z-30 mb-5 px-4 sm:px-5 py-3 rounded-lg border border-border/60 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70 shadow-sm">
-      <div className="flex items-center justify-between gap-6 flex-wrap">
-        <div className="flex items-center gap-8 flex-wrap">
+    <div className="sticky top-0 z-30 mb-5 px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-lg border border-border/60 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-6">
+        <div className="flex flex-col sm:flex-row sm:items-center divide-y divide-border/60 sm:divide-y-0 gap-0 sm:gap-8">
           {/* Gold */}
-          <div className="flex items-center gap-3">
-            <span className="text-xl leading-none">🪙</span>
-            <div>
+          <div className="flex items-center justify-between sm:justify-start gap-3 py-1.5 sm:py-0">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <span className="text-base sm:text-xl leading-none">🪙</span>
               <p className="text-[10px] font-medium uppercase tracking-kerned text-muted-foreground">
                 Gold · 24K
               </p>
-              <p className="text-xl font-semibold tabular-nums text-amber-600 dark:text-amber-400 leading-tight">
-                {data?.GOLD ? formatPrice(data.GOLD) : '—'}
-                <span className="text-xs font-normal text-muted-foreground ml-1">/g</span>
-              </p>
             </div>
+            <p className="text-[15px] sm:text-xl font-semibold tabular-nums text-amber-600 dark:text-amber-400 leading-tight">
+              {data?.GOLD ? formatPrice(data.GOLD) : '—'}
+              <span className="text-xs font-normal text-muted-foreground ml-1">/g</span>
+            </p>
           </div>
 
-          <div className="h-8 w-px bg-border/60" />
+          <div className="hidden sm:block h-8 w-px bg-border/60" />
 
           {/* Silver */}
-          <div className="flex items-center gap-3">
-            <span className="text-xl leading-none">🥈</span>
-            <div>
+          <div className="flex items-center justify-between sm:justify-start gap-3 py-1.5 sm:py-0">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <span className="text-base sm:text-xl leading-none">🥈</span>
               <p className="text-[10px] font-medium uppercase tracking-kerned text-muted-foreground">
                 Silver · 999
               </p>
-              <p className="text-xl font-semibold tabular-nums text-slate-600 dark:text-slate-300 leading-tight">
-                {data?.SILVER ? formatPrice(data.SILVER) : '—'}
-                <span className="text-xs font-normal text-muted-foreground ml-1">/g</span>
-              </p>
             </div>
+            <p className="text-[15px] sm:text-xl font-semibold tabular-nums text-slate-600 dark:text-slate-300 leading-tight">
+              {data?.SILVER ? formatPrice(data.SILVER) : '—'}
+              <span className="text-xs font-normal text-muted-foreground ml-1">/g</span>
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+        <div className="flex items-center gap-2 text-[11px] text-muted-foreground pt-1.5 sm:pt-0 border-t border-border/40 sm:border-t-0">
           {error && !data ? (
             <span className="text-destructive">Live feed unavailable</span>
           ) : (
             <>
               <span
-                className={`h-1.5 w-1.5 rounded-full ${
+                className={`h-1.5 w-1.5 rounded-full shrink-0 ${
                   isFetching ? 'bg-amber-500 animate-pulse' : 'bg-green-500 animate-pulse'
                 }`}
               />

@@ -515,6 +515,15 @@
     overflow-wrap: anywhere;
   }
 
+  table.rtable td::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: hsl(var(--muted-foreground));
+  }
+
   /* Cells with no label (data-label="") drop the label column. */
   table.rtable td[data-label='']::before {
     content: '';

@@ -250,10 +250,10 @@ export function TaxPage() {
       />
 
       <Card className="mb-4">
-        <CardContent className="pt-4 flex flex-wrap items-end gap-3">
-          <div>
+        <CardContent className="pt-4 flex flex-col sm:flex-row sm:items-end gap-3">
+          <div className="w-full sm:w-auto">
             <Label>Financial Year</Label>
-            <Select className="mt-1" value={fy} onChange={(e) => setFy(e.target.value)}>
+            <Select className="mt-1 w-full sm:w-auto" value={fy} onChange={(e) => setFy(e.target.value)}>
               {fyOptions.map((y) => (
                 <option key={y} value={y}>
                   {y}
@@ -262,17 +262,17 @@ export function TaxPage() {
             </Select>
           </div>
           {tab === 'schedule-112a' && (
-            <Button variant="outline" className="ml-auto" onClick={downloadCsv}>
+            <Button variant="outline" className="w-full sm:w-auto sm:ml-auto" onClick={downloadCsv}>
               <FileDown className="h-4 w-4" /> ITR-portal CSV
             </Button>
           )}
           {tab === 'grandfathering' && (
-            <Button variant="outline" className="ml-auto" onClick={downloadGrandfatheringCsv}>
+            <Button variant="outline" className="w-full sm:w-auto sm:ml-auto" onClick={downloadGrandfatheringCsv}>
               <FileDown className="h-4 w-4" /> Schedule 112A CSV (with FMV)
             </Button>
           )}
           {tab === 'summary' && (
-            <Button variant="outline" className="ml-auto gap-1" onClick={downloadTaxReport}>
+            <Button variant="outline" className="w-full sm:w-auto sm:ml-auto gap-1" onClick={downloadTaxReport}>
               <FileDown className="h-4 w-4" />
               CA Tax Report (PDF)
             </Button>
@@ -280,13 +280,13 @@ export function TaxPage() {
         </CardContent>
       </Card>
 
-      <div className="flex flex-wrap gap-1 mb-4 border-b">
+      <div className="flex gap-1 mb-4 border-b overflow-x-auto scrollbar-none -mx-3 px-3 sm:mx-0 sm:px-0">
         {TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
             className={cn(
-              'px-3 py-2 text-sm border-b-2 transition-colors',
+              'px-3 py-2 text-sm border-b-2 transition-colors shrink-0 whitespace-nowrap',
               tab === t.key
                 ? 'border-accent text-accent font-medium'
                 : 'border-transparent text-muted-foreground hover:text-foreground',
@@ -1138,16 +1138,16 @@ function GrandfatheringView({
               <tbody>
                 {data.rows.map((r, i) => (
                   <tr key={i} className={cn('border-b', r.needsUserInput && 'bg-amber-50/30')}>
-                    <td className="p-2">{r.assetName || '—'}</td>
-                    <td className="p-2 text-xs text-muted-foreground">{r.isin ?? '—'}</td>
-                    <td className="p-2">{r.buyDate.slice(0, 10)}</td>
-                    <td className="p-2">{r.sellDate.slice(0, 10)}</td>
-                    <td className="p-2 text-right">{fmt(r.quantity, 4)}</td>
-                    <td className="p-2 text-right">{fmt(r.buyAmount)}</td>
-                    <td className="p-2 text-right">{fmt(r.sellAmount)}</td>
+                    <td data-label="Asset" className="p-2">{r.assetName || '—'}</td>
+                    <td data-label="ISIN" className="p-2 text-xs text-muted-foreground">{r.isin ?? '—'}</td>
+                    <td data-label="Buy Date" className="p-2">{r.buyDate.slice(0, 10)}</td>
+                    <td data-label="Sell Date" className="p-2">{r.sellDate.slice(0, 10)}</td>
+                    <td data-label="Qty" className="p-2 text-right">{fmt(r.quantity, 4)}</td>
+                    <td data-label="Cost" className="p-2 text-right">{fmt(r.buyAmount)}</td>
+                    <td data-label="Proceeds" className="p-2 text-right">{fmt(r.sellAmount)}</td>
 
                     {/* Inline FMV edit cell */}
-                    <td className="p-2 text-right">
+                    <td data-label="FMV / unit" className="p-2 text-right">
                       {!r.isin ? (
                         // No ISIN on this row — nothing to key the override on.
                         <span className="text-muted-foreground text-xs">no ISIN</span>
@@ -1227,10 +1227,11 @@ function GrandfatheringView({
                       )}
                     </td>
 
-                    <td className="p-2 text-right">
+                    <td data-label="Adjusted basis" className="p-2 text-right">
                       {r.adjustedCostBasis ? `₹${fmt(r.adjustedCostBasis)}` : '—'}
                     </td>
                     <td
+                      data-label="Corrected gain"
                       className={cn(
                         'p-2 text-right',
                         r.correctedGain
@@ -1242,7 +1243,7 @@ function GrandfatheringView({
                     >
                       {r.correctedGain ? `₹${fmt(r.correctedGain)}` : '—'}
                     </td>
-                    <td className="p-2 text-right text-positive text-xs">
+                    <td data-label="Tax saving" className="p-2 text-right text-positive text-xs">
                       {(() => {
                         if (!r.gainDifference) return '—';
                         const diff = toDecimal(r.gainDifference);

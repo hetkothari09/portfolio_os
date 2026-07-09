@@ -80,24 +80,24 @@ export function FamilyScopeSwitcher() {
         type="button"
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          'flex items-center gap-1 sm:gap-1.5 h-8 px-2 sm:px-2.5 rounded-md text-[12px] font-medium shrink-0',
-          'text-foreground/80 hover:text-foreground border border-border/70 bg-card/60',
-          'hover:border-accent/50 transition-colors focus-ring',
+          'flex items-center gap-1.5 h-9 w-9 sm:h-8 sm:w-auto justify-center sm:px-2.5 rounded-md text-[12px] font-medium shrink-0',
+          'text-foreground/80 hover:text-foreground sm:border sm:border-border/70 sm:bg-card/60',
+          'hover:bg-muted/70 sm:hover:bg-card/60 sm:hover:border-accent/50 transition-colors focus-ring',
         )}
         title="Switch view"
       >
         {viewingAsFamilyId ? (
-          <Users className="h-3.5 w-3.5 text-accent-ink shrink-0" strokeWidth={1.9} />
+          <Users className="h-4 w-4 sm:h-3.5 sm:w-3.5 text-accent-ink shrink-0" strokeWidth={1.9} />
         ) : (
-          <User className="h-3.5 w-3.5 shrink-0" strokeWidth={1.7} />
+          <User className="h-4 w-4 sm:h-3.5 sm:w-3.5 shrink-0" strokeWidth={1.7} />
         )}
-        <span className="max-w-[70px] sm:max-w-[140px] truncate">{currentLabel}</span>
-        <ChevronDown className="h-3 w-3 opacity-60 shrink-0" strokeWidth={2} />
+        <span className="hidden sm:inline max-w-[140px] truncate">{currentLabel}</span>
+        <ChevronDown className="hidden sm:block h-3 w-3 opacity-60 shrink-0" strokeWidth={2} />
       </button>
 
       {open && (
         <div
-          className="absolute right-0 top-full mt-1.5 w-64 rounded-md border border-border bg-popover shadow-lg z-50 py-1"
+          className="fixed left-3 right-3 top-16 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-1.5 sm:w-64 rounded-md border border-border bg-popover shadow-lg z-50 py-1"
           role="menu"
         >
           <button
