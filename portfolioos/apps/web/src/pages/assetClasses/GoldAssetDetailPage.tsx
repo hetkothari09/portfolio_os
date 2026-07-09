@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import {
   ArrowLeft,
   ChevronLeft,
@@ -14,13 +15,16 @@ import {
   Coins,
   Scale,
   Activity,
+  Upload,
+  Trash2,
+  Loader2,
 } from 'lucide-react';
 import { Decimal, formatINR, type HoldingRow, type AssetClass } from '@portfolioos/shared';
 import type { TransactionDTO } from '@portfolioos/shared';
 import { Button } from '@/components/ui/button';
 import { transactionsApi } from '@/api/transactions.api';
 import { assetsApi } from '@/api/assets.api';
-import { api } from '@/api/client';
+import { api, apiErrorMessage } from '@/api/client';
 import { GoldFormDialog } from './GoldFormDialog';
 
 const ASSET_CLASS_LABELS: Partial<Record<AssetClass, string>> = {
@@ -55,9 +59,23 @@ function detectSilverPurityMultiplier(name: string): string {
 // ── Photo carousel (refined) ─────────────────────────────────────
 interface PhotoEntry { id: string; txnId: string; fileName: string }
 
-function PhotoCarousel({ photos, accent }: { photos: PhotoEntry[]; accent: 'gold' | 'silver' }) {
+function PhotoCarousel({
+  photos,
+  accent,
+  onDelete,
+  deletingId,
+}: {
+  photos: PhotoEntry[];
+  accent: 'gold' | 'silver';
+  onDelete: (photo: PhotoEntry) => void;
+  deletingId: string | null;
+}) {
   const [idx, setIdx] = useState(0);
   const [srcs, setSrcs] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (idx >= photos.length) setIdx(0);
+  }, [photos.length, idx]);
 
   useEffect(() => {
     const loaded: Record<string, string> = {};
@@ -91,6 +109,19 @@ function PhotoCarousel({ photos, accent }: { photos: PhotoEntry[]; accent: 'gold
               <ImageIcon className="h-10 w-10 opacity-30" />
               <span className="text-xs tracking-widest uppercase">Loading</span>
             </div>
+          )}
+
+          {current && (
+            <button
+              onClick={() => onDelete(current)}
+              disabled={deletingId === current.id}
+              className="absolute top-3 left-3 h-8 w-8 rounded-full bg-black/45 hover:bg-red-600/80 backdrop-blur flex items-center justify-center text-white transition disabled:opacity-60"
+              aria-label="Delete photo"
+            >
+              {deletingId === current.id
+                ? <Loader2 className="h-4 w-4 animate-spin" />
+                : <Trash2 className="h-4 w-4" />}
+            </button>
           )}
 
           {photos.length > 1 && (
@@ -135,24 +166,56 @@ function PhotoCarousel({ photos, accent }: { photos: PhotoEntry[]; accent: 'gold
   );
 }
 
-function NoPhotoPlaceholder({ assetClass }: { assetClass: string }) {
+function UploadPhotoCard({
+  assetClass,
+  onUpload,
+  uploading,
+  disabled,
+}: {
+  assetClass: string;
+  onUpload: (file: File) => void;
+  uploading: boolean;
+  disabled?: boolean;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
   const isGold = assetClass !== 'PHYSICAL_SILVER';
   return (
     <div className="relative">
-      <div className={`relative rounded-[28px] p-3 bg-gradient-to-br ${
-        isGold
-          ? 'from-amber-100/80 via-amber-50/40 to-yellow-50/30 dark:from-amber-900/30 dark:via-amber-950/20 dark:to-yellow-950/10'
-          : 'from-slate-100/80 via-slate-50/40 to-zinc-50/30 dark:from-slate-800/40 dark:via-slate-900/20 dark:to-zinc-950/10'
-      } shadow-[0_30px_60px_-25px_rgba(0,0,0,0.25)] ring-1 ring-black/5 dark:ring-white/5`}>
-        <div className={`aspect-square rounded-[20px] flex flex-col items-center justify-center gap-4 ${
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) onUpload(file);
+          e.target.value = '';
+        }}
+      />
+      <button
+        type="button"
+        disabled={uploading || disabled}
+        onClick={() => inputRef.current?.click()}
+        className={`group w-full text-left rounded-[28px] p-3 bg-gradient-to-br ${
           isGold
-            ? 'bg-gradient-to-br from-amber-50 to-yellow-100 dark:from-amber-950/40 dark:to-yellow-900/20'
-            : 'bg-gradient-to-br from-slate-50 to-gray-100 dark:from-slate-900/40 dark:to-gray-800/20'
-        }`}>
-          <span className="text-7xl drop-shadow-sm">{isGold ? '🪙' : '🥈'}</span>
-          <p className="text-xs tracking-[0.18em] uppercase text-muted-foreground/80">No imagery added</p>
+            ? 'from-amber-100/80 via-amber-50/40 to-yellow-50/30 dark:from-amber-900/30 dark:via-amber-950/20 dark:to-yellow-950/10'
+            : 'from-slate-100/80 via-slate-50/40 to-zinc-50/30 dark:from-slate-800/40 dark:via-slate-900/20 dark:to-zinc-950/10'
+        } shadow-[0_30px_60px_-25px_rgba(0,0,0,0.25)] ring-1 ring-black/5 dark:ring-white/5 disabled:opacity-70 disabled:cursor-not-allowed`}
+      >
+        <div className="aspect-square rounded-[20px] flex flex-col items-center justify-center gap-3 border-2 border-dashed border-black/10 dark:border-white/15 group-hover:border-[hsl(var(--accent))] transition-colors">
+          {uploading ? (
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          ) : (
+            <>
+              <span className="h-14 w-14 rounded-full bg-background/70 flex items-center justify-center ring-1 ring-black/5 dark:ring-white/10 group-hover:scale-105 transition-transform">
+                <Upload className="h-6 w-6 text-muted-foreground group-hover:text-[hsl(var(--accent))] transition-colors" />
+              </span>
+              <p className="text-xs tracking-[0.18em] uppercase text-muted-foreground/80 group-hover:text-foreground transition-colors">Upload Photo</p>
+              <p className="text-[10px] text-muted-foreground/60">JPG, PNG, WEBP, HEIC</p>
+            </>
+          )}
         </div>
-      </div>
+      </button>
     </div>
   );
 }
@@ -256,6 +319,33 @@ export function GoldAssetDetailPage() {
       .sort((a, b) => b.tradeDate.localeCompare(a.tradeDate)),
     [txnData, assetName],
   );
+
+  const queryClient = useQueryClient();
+  const [deletingPhotoId, setDeletingPhotoId] = useState<string | null>(null);
+
+  const uploadPhotoMutation = useMutation({
+    mutationFn: (file: File) => {
+      const target = transactions[0];
+      if (!target) throw new Error('Add a transaction before uploading a photo');
+      return transactionsApi.uploadPhoto(target.id, file);
+    },
+    onSuccess: () => {
+      toast.success('Photo uploaded');
+      queryClient.invalidateQueries({ queryKey: ['transactions', holding?.assetClass, holding?.assetName] });
+    },
+    onError: (err) => toast.error(apiErrorMessage(err, 'Failed to upload photo')),
+  });
+
+  const deletePhotoMutation = useMutation({
+    mutationFn: (photo: PhotoEntry) => transactionsApi.deletePhoto(photo.txnId, photo.id),
+    onMutate: (photo) => setDeletingPhotoId(photo.id),
+    onSuccess: () => {
+      toast.success('Photo deleted');
+      queryClient.invalidateQueries({ queryKey: ['transactions', holding?.assetClass, holding?.assetName] });
+    },
+    onError: (err) => toast.error(apiErrorMessage(err, 'Failed to delete photo')),
+    onSettled: () => setDeletingPhotoId(null),
+  });
 
   if (!holding) return null;
 
@@ -361,8 +451,22 @@ export function GoldAssetDetailPage() {
           {/* Left — imagery */}
           <div className="w-full max-w-md mx-auto lg:mx-0">
             {allPhotos.length > 0
-              ? <PhotoCarousel photos={allPhotos} accent={accent} />
-              : <NoPhotoPlaceholder assetClass={holding.assetClass} />
+              ? (
+                <PhotoCarousel
+                  photos={allPhotos}
+                  accent={accent}
+                  onDelete={(photo) => deletePhotoMutation.mutate(photo)}
+                  deletingId={deletingPhotoId}
+                />
+              )
+              : (
+                <UploadPhotoCard
+                  assetClass={holding.assetClass}
+                  onUpload={(file) => uploadPhotoMutation.mutate(file)}
+                  uploading={uploadPhotoMutation.isPending}
+                  disabled={!transactions.length}
+                />
+              )
             }
           </div>
 
