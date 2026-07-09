@@ -166,21 +166,10 @@ function PhotoCarousel({
   );
 }
 
-function UploadPhotoCard({
-  assetClass,
-  onUpload,
-  uploading,
-  disabled,
-}: {
-  assetClass: string;
-  onUpload: (file: File) => void;
-  uploading: boolean;
-  disabled?: boolean;
-}) {
+function AddPhotoButton({ onUpload, uploading }: { onUpload: (file: File) => void; uploading: boolean }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const isGold = assetClass !== 'PHYSICAL_SILVER';
   return (
-    <div className="relative">
+    <div className="shrink-0">
       <input
         ref={inputRef}
         type="file"
@@ -194,27 +183,16 @@ function UploadPhotoCard({
       />
       <button
         type="button"
-        disabled={uploading || disabled}
+        disabled={uploading}
         onClick={() => inputRef.current?.click()}
-        className={`group w-full text-left rounded-[28px] p-3 bg-gradient-to-br ${
-          isGold
-            ? 'from-amber-100/80 via-amber-50/40 to-yellow-50/30 dark:from-amber-900/30 dark:via-amber-950/20 dark:to-yellow-950/10'
-            : 'from-slate-100/80 via-slate-50/40 to-zinc-50/30 dark:from-slate-800/40 dark:via-slate-900/20 dark:to-zinc-950/10'
-        } shadow-[0_30px_60px_-25px_rgba(0,0,0,0.25)] ring-1 ring-black/5 dark:ring-white/5 disabled:opacity-70 disabled:cursor-not-allowed`}
+        className="group inline-flex items-center gap-2 rounded-full border border-dashed border-border hover:border-[hsl(var(--accent))] bg-[hsl(var(--card))]/60 hover:bg-[hsl(var(--card))] pl-2 pr-3.5 py-1.5 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        <div className="aspect-square rounded-[20px] flex flex-col items-center justify-center gap-3 border-2 border-dashed border-black/10 dark:border-white/15 group-hover:border-[hsl(var(--accent))] transition-colors">
-          {uploading ? (
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          ) : (
-            <>
-              <span className="h-14 w-14 rounded-full bg-background/70 flex items-center justify-center ring-1 ring-black/5 dark:ring-white/10 group-hover:scale-105 transition-transform">
-                <Upload className="h-6 w-6 text-muted-foreground group-hover:text-[hsl(var(--accent))] transition-colors" />
-              </span>
-              <p className="text-xs tracking-[0.18em] uppercase text-muted-foreground/80 group-hover:text-foreground transition-colors">Upload Photo</p>
-              <p className="text-[10px] text-muted-foreground/60">JPG, PNG, WEBP, HEIC</p>
-            </>
-          )}
-        </div>
+        <span className="h-6 w-6 rounded-full bg-background flex items-center justify-center ring-1 ring-black/5 dark:ring-white/10">
+          {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+        </span>
+        <span className="text-[10px] tracking-[0.18em] uppercase font-medium">
+          {uploading ? 'Uploading…' : 'Add Photo'}
+        </span>
       </button>
     </div>
   );
@@ -448,36 +426,34 @@ export function GoldAssetDetailPage() {
         {/* ────────────── HERO ────────────── */}
         <div className={`grid gap-8 sm:gap-10 lg:gap-16 mb-8 sm:mb-12 sm:mb-16 ${allPhotos.length > 0 ? 'lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]' : 'lg:grid-cols-1'}`}>
 
-          {/* Left — imagery */}
-          <div className="w-full max-w-md mx-auto lg:mx-0">
-            {allPhotos.length > 0
-              ? (
-                <PhotoCarousel
-                  photos={allPhotos}
-                  accent={accent}
-                  onDelete={(photo) => deletePhotoMutation.mutate(photo)}
-                  deletingId={deletingPhotoId}
-                />
-              )
-              : (
-                <UploadPhotoCard
-                  assetClass={holding.assetClass}
-                  onUpload={(file) => uploadPhotoMutation.mutate(file)}
-                  uploading={uploadPhotoMutation.isPending}
-                  disabled={!transactions.length}
-                />
-              )
-            }
-          </div>
+          {/* Left — imagery (only once a photo exists) */}
+          {allPhotos.length > 0 && (
+            <div className="w-full max-w-md mx-auto lg:mx-0">
+              <PhotoCarousel
+                photos={allPhotos}
+                accent={accent}
+                onDelete={(photo) => deletePhotoMutation.mutate(photo)}
+                deletingId={deletingPhotoId}
+              />
+            </div>
+          )}
 
           {/* Right — editorial info column */}
           <div className="flex flex-col">
 
-            {/* Eyebrow line */}
-            <div className="flex items-center gap-3 text-[10px] tracking-[0.28em] uppercase text-muted-foreground/80">
-              <span>{ASSET_CLASS_LABELS[holding.assetClass as AssetClass] ?? holding.assetClass}</span>
-              <span className="h-px w-8 bg-border" />
-              <span className="text-[hsl(var(--accent))] font-medium">{holding.portfolioName}</span>
+            {/* Eyebrow line + add-photo button */}
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-3 text-[10px] tracking-[0.28em] uppercase text-muted-foreground/80">
+                <span>{ASSET_CLASS_LABELS[holding.assetClass as AssetClass] ?? holding.assetClass}</span>
+                <span className="h-px w-8 bg-border" />
+                <span className="text-[hsl(var(--accent))] font-medium">{holding.portfolioName}</span>
+              </div>
+              {allPhotos.length === 0 && (
+                <AddPhotoButton
+                  onUpload={(file) => uploadPhotoMutation.mutate(file)}
+                  uploading={uploadPhotoMutation.isPending}
+                />
+              )}
             </div>
 
             {/* Purity badge + name */}
