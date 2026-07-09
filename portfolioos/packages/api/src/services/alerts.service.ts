@@ -165,7 +165,42 @@ export async function generateVehicleExpiryAlerts(userId?: string): Promise<numb
 
 // ─── Rent overdue scanner ─────────────────────────────────────────────────────
 
+/**
+ * Self-healing sweep: `markReceiptReceived`/`applyAutoMatch`/`skipReceipt`
+ * delete a receipt's `rent_overdue:<id>` alert going forward, but any alert
+ * created *before* that fix (or by a path that predates it) is orphaned —
+ * the receipt moved on but the alert never did. Runs before every scan so
+ * one click on "Scan now" (or the daily cron) also drains the backlog.
+ */
+async function resolveSettledRentAlerts(userId?: string): Promise<number> {
+  const candidates = await prisma.alert.findMany({
+    where: { type: 'CUSTOM', isActive: true, ...(userId ? { userId } : {}) },
+    select: { id: true, metadata: true },
+  });
+  const withReceipt = candidates
+    .map((a) => ({ alertId: a.id, receiptId: (a.metadata as { receiptId?: string } | null)?.receiptId }))
+    .filter((x): x is { alertId: string; receiptId: string } => !!x.receiptId);
+  if (withReceipt.length === 0) return 0;
+
+  const receipts = await prisma.rentReceipt.findMany({
+    where: { id: { in: withReceipt.map((r) => r.receiptId) } },
+    select: { id: true, status: true },
+  });
+  const stillOverdueIds = new Set(receipts.filter((r) => r.status === 'OVERDUE').map((r) => r.id));
+  // A receiptId with no matching row anymore (deleted tenancy/property) is
+  // just as settled as one that flipped status — resolve it too.
+  const toDelete = withReceipt
+    .filter((r) => !stillOverdueIds.has(r.receiptId))
+    .map((r) => r.alertId);
+  if (toDelete.length === 0) return 0;
+
+  await prisma.alert.deleteMany({ where: { id: { in: toDelete } } });
+  return toDelete.length;
+}
+
 export async function generateRentOverdueAlerts(userId?: string): Promise<number> {
+  await resolveSettledRentAlerts(userId);
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const overdueThreshold = new Date(today);
