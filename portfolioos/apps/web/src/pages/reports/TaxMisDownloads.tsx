@@ -7,7 +7,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, FileDown, FileText, Lock } from 'lucide-react';
+import { Loader2, FileDown, FileText, Sparkles, ArrowRight } from 'lucide-react';
 import { meetsMinTier, type PlanTierValue } from '@portfolioos/shared';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -477,23 +477,51 @@ function fyOptions(): string[] {
 // Shown once, in place of both the PLUS and PRO_ADVISOR lock cards, when
 // the user meets neither tier (FREE/unauthenticated) — two near-identical
 // "upgrade" cards stacked back to back read as broken, not as two
-// distinct features.
-function CombinedReportsLockCard() {
+// distinct features. Matches the accent-gradient banner used elsewhere
+// for upsells (see UpgradeBanner) instead of a muted, generic lock icon —
+// and names concrete report counts rather than vague "more reports".
+function CombinedReportsLockCard({
+  plusCount,
+  accountingCount,
+}: {
+  plusCount: number;
+  accountingCount: number;
+}) {
+  const totalCount = plusCount + accountingCount;
   return (
-    <div className="flex items-center justify-center py-12">
-      <Card tone="flat" className="max-w-sm w-full p-5 text-center shadow-elev-lg">
-        <div className="mx-auto mb-3 grid h-10 w-10 place-items-center rounded-full bg-accent/10 text-accent">
-          <Lock className="h-5 w-5" />
+    <div className="relative overflow-hidden rounded-lg border border-accent/25 bg-gradient-to-br from-accent/10 via-accent/5 to-transparent px-6 py-6 sm:px-8 sm:py-7">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-5">
+        <div className="grid h-12 w-12 place-items-center rounded-full bg-accent/15 text-accent shrink-0">
+          <Sparkles className="h-5 w-5" />
         </div>
-        <h3 className="text-sm font-semibold text-foreground">More reports are locked</h3>
-        <p className="mt-1.5 text-xs text-muted-foreground">
-          Upgrade to Plus for the full Tax &amp; CA Report Catalog, or Pro/Advisor for Accounting
-          Reports (Trial Balance, P&amp;L, Balance Sheet, Tally exports and more).
-        </p>
-        <Button asChild size="sm" className="mt-4 w-full">
-          <Link to="/pricing">View plans</Link>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-base font-semibold text-foreground">
+            {totalCount} more report{totalCount === 1 ? '' : 's'} waiting for you
+          </h3>
+          <p className="mt-1.5 text-[13px] text-muted-foreground leading-relaxed">
+            {plusCount > 0 && (
+              <>
+                <span className="font-medium text-accent-ink">{plusCount}</span> in the Tax &amp; CA
+                Report Catalog on <span className="font-medium text-accent-ink">Plus</span>
+              </>
+            )}
+            {plusCount > 0 && accountingCount > 0 && <> — plus </>}
+            {accountingCount > 0 && (
+              <>
+                <span className="font-medium text-accent-ink">{accountingCount}</span> Accounting
+                Reports (Trial Balance, P&amp;L, Balance Sheet, Tally exports) on{' '}
+                <span className="font-medium text-accent-ink">Pro/Advisor</span>
+              </>
+            )}
+            .
+          </p>
+        </div>
+        <Button asChild className="shrink-0">
+          <Link to="/pricing">
+            See plans <ArrowRight className="h-4 w-4" />
+          </Link>
         </Button>
-      </Card>
+      </div>
     </div>
   );
 }
@@ -590,7 +618,7 @@ export function TaxMisDownloads({
 
       {renderReportGroup(freeReports)}
       {!meetsPlus && (plusReports.length > 0 || accountingReports.length > 0) ? (
-        <CombinedReportsLockCard />
+        <CombinedReportsLockCard plusCount={plusReports.length} accountingCount={accountingReports.length} />
       ) : (
         <>
           {plusReports.length > 0 && renderReportGroup(plusReports)}
