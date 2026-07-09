@@ -536,9 +536,9 @@ export function GoldAssetDetailPage() {
               <span className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
             </div>
 
-            {/* Marquee value */}
+            {/* Valuation band — one horizontal row: price, per-unit rate, P&L */}
             <div>
-              <div className="flex items-center gap-2 mb-1.5">
+              <div className="flex items-center gap-2 mb-2">
                 <p className="text-[10px] tracking-[0.28em] uppercase text-muted-foreground/80 font-medium">Current Valuation</p>
                 {(live?.GOLD || live?.SILVER) && (
                   <span className="flex items-center gap-1 text-[10px] tracking-widest uppercase text-emerald-600 dark:text-emerald-400 font-semibold">
@@ -547,41 +547,45 @@ export function GoldAssetDetailPage() {
                   </span>
                 )}
               </div>
-              <p className={`text-[2.4rem] sm:text-[3.6rem] sm:text-[4.6rem] font-bold leading-none tabular-nums tracking-tight break-words ${
-                accent === 'gold' ? 'text-amber-700 dark:text-amber-300' : 'text-slate-700 dark:text-slate-200'
-              }`}>
-                {currentVal ? formatINR(currentVal.toString()) : '—'}
-              </p>
-              {livePricePerUnit && (
-                <p className="mt-2 text-sm text-muted-foreground tabular-nums">
-                  <span className="font-semibold text-base text-foreground">{formatINR(livePricePerUnit.toString())}</span>
-                  <span className="mx-1 text-muted-foreground/60">/</span>
-                  <span>{unitLabel}</span>
-                  {purityTag && <span className="ml-2 text-muted-foreground/70">· {purityTag}</span>}
-                  {premiumPct != null && (
-                    <span className={`ml-3 text-[11px] tracking-wider uppercase ${premiumPct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                      {premiumPct >= 0 ? '+' : ''}{premiumPct.toFixed(2)}% vs avg cost
-                    </span>
-                  )}
-                </p>
-              )}
-            </div>
 
-            {/* Unrealised — editorial marginalia, not a dashboard badge */}
-            {pnl && (
-              <div className={`mt-5 flex items-baseline gap-2.5 border-l-2 pl-3
-                ${isGain ? 'border-emerald-500/60' : 'border-rose-500/60'}`}>
-                <span className="text-[10px] tracking-[0.22em] uppercase text-muted-foreground/80 font-medium self-center">Unrealised</span>
-                <span className={`text-xl font-semibold tabular-nums ${isGain ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'}`}>
-                  {isGain ? '+' : ''}{formatINR(pnl.toString())}
-                </span>
-                {pnlPct != null && (
-                  <span className={`text-xs font-medium tabular-nums ${isGain ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                    {pnlPct >= 0 ? '+' : ''}{pnlPct.toFixed(2)}%
-                  </span>
+              <div className="flex flex-wrap items-stretch gap-x-6 gap-y-4">
+                <p className={`font-display text-[2.2rem] sm:text-[3rem] sm:text-[3.6rem] font-semibold leading-none tabular-nums tracking-tight break-words ${
+                  accent === 'gold' ? 'text-amber-700 dark:text-amber-300' : 'text-slate-700 dark:text-slate-200'
+                }`}>
+                  {currentVal ? formatINR(currentVal.toString()) : '—'}
+                </p>
+
+                {livePricePerUnit && (
+                  <div className="flex flex-col justify-center gap-0.5 border-l border-border/70 pl-5">
+                    <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground/70 whitespace-nowrap">
+                      Per {unitLabel}{purityTag ? ` · ${purityTag}` : ''}
+                    </span>
+                    <span className="text-base sm:text-lg font-semibold tabular-nums whitespace-nowrap">
+                      {formatINR(livePricePerUnit.toString())}
+                      {premiumPct != null && (
+                        <span className={`ml-2 text-[11px] font-medium tabular-nums ${premiumPct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                          {premiumPct >= 0 ? '+' : ''}{premiumPct.toFixed(2)}%
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                )}
+
+                {pnl && (
+                  <div className={`flex flex-col justify-center gap-0.5 border-l-2 pl-5 ${isGain ? 'border-emerald-500/60' : 'border-rose-500/60'}`}>
+                    <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground/70 whitespace-nowrap">Unrealised</span>
+                    <span className={`text-base sm:text-lg font-semibold tabular-nums whitespace-nowrap ${isGain ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'}`}>
+                      {isGain ? '+' : ''}{formatINR(pnl.toString())}
+                      {pnlPct != null && (
+                        <span className={`ml-2 text-[11px] font-medium tabular-nums ${isGain ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                          {pnlPct >= 0 ? '+' : ''}{pnlPct.toFixed(2)}%
+                        </span>
+                      )}
+                    </span>
+                  </div>
                 )}
               </div>
-            )}
+            </div>
 
             {/* Cost vs Live bar */}
             {currentVal && (
