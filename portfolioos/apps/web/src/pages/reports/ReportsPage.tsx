@@ -299,11 +299,11 @@ export function ReportsPage() {
       <ReportSearch onSelect={goToReport} />
 
       <Card className="mb-4">
-        <CardContent className="p-4 sm:pt-4 flex flex-wrap items-end gap-3">
+        <CardContent className="p-4 sm:pt-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-3">
           <div className="min-w-[180px] w-full sm:w-auto sm:min-w-[220px]">
             <Label>Portfolio</Label>
             <Select
-              className="mt-1"
+              className="mt-1 w-full"
               value={portfolioId}
               onChange={(e) => setPortfolioId(e.target.value)}
             >
@@ -316,9 +316,9 @@ export function ReportsPage() {
             </Select>
           </div>
           {needsFy && (
-            <div>
+            <div className="w-full sm:w-auto">
               <Label>Financial Year</Label>
-              <Select className="mt-1" value={fy} onChange={(e) => setFy(e.target.value)}>
+              <Select className="mt-1 w-full" value={fy} onChange={(e) => setFy(e.target.value)}>
                 {fyOptions().map((y) => (
                   <option key={y} value={y}>
                     {y}
@@ -328,11 +328,11 @@ export function ReportsPage() {
             </div>
           )}
           {downloadableEndpoint && (
-            <div className="flex gap-2 ml-auto">
-              <Button variant="outline" onClick={() => download('xlsx')}>
+            <div className="flex gap-2 w-full sm:w-auto sm:ml-auto">
+              <Button variant="outline" className="flex-1 sm:flex-none" onClick={() => download('xlsx')}>
                 <FileDown className="h-4 w-4" /> Excel
               </Button>
-              <Button variant="outline" onClick={() => download('pdf')}>
+              <Button variant="outline" className="flex-1 sm:flex-none" onClick={() => download('pdf')}>
                 <FileDown className="h-4 w-4" /> PDF
               </Button>
             </div>
@@ -340,13 +340,13 @@ export function ReportsPage() {
         </CardContent>
       </Card>
 
-      <div className="flex flex-wrap gap-1 mb-4 border-b">
+      <div className="flex gap-1 mb-4 border-b overflow-x-auto scrollbar-none -mx-3 px-3 sm:mx-0 sm:px-0">
         {TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
             className={cn(
-              'px-3 py-2 text-sm border-b-2 transition-colors',
+              'px-3 py-2 text-sm border-b-2 transition-colors shrink-0 whitespace-nowrap',
               tab === t.key
                 ? 'border-accent text-accent font-medium'
                 : 'border-transparent text-muted-foreground hover:text-foreground',

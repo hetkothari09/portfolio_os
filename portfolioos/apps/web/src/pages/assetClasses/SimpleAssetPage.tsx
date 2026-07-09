@@ -342,7 +342,7 @@ export function SimpleAssetPage({
             Transactions
           </h3>
           <div className="rounded-md border overflow-x-auto">
-            <table className="w-full text-sm rtable">
+            <table className="w-full text-sm rtable rtable-cards">
               <thead>
                 <tr className="border-b bg-muted/40">
                   <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Date</th>
@@ -407,7 +407,7 @@ export function SimpleAssetPage({
                       </td>
                       <td data-fullrow className="px-4 py-3">
                         {isConfirmDelete ? (
-                          <div className="flex items-center gap-1 justify-end">
+                          <div className="flex items-center gap-1 justify-end w-full">
                             <span className="text-xs text-muted-foreground whitespace-nowrap">Sure?</span>
                             <Button
                               type="button"
@@ -430,12 +430,12 @@ export function SimpleAssetPage({
                             </Button>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-1 justify-end">
+                          <div className="flex items-center gap-1 justify-end w-full">
                             <Button
                               type="button"
                               variant="ghost"
                               size="sm"
-                              className="h-7 w-7 p-0"
+                              className="h-8 w-8 p-0"
                               onClick={() => openEdit(txn)}
                               title="Edit"
                             >
@@ -445,7 +445,7 @@ export function SimpleAssetPage({
                               type="button"
                               variant="ghost"
                               size="sm"
-                              className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                              className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
                               onClick={() => setConfirmDeleteId(txn.id)}
                               title="Delete"
                             >
@@ -500,7 +500,7 @@ function HoldingsSection({
         </div>
       )}
       <div className="rounded-md border overflow-x-auto">
-        <table className="w-full text-sm rtable">
+        <table className="w-full text-sm rtable rtable-cards">
           <thead>
             <tr className="border-b bg-muted/40">
               <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Name</th>

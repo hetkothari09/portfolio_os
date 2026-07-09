@@ -248,8 +248,15 @@ export function GoldFormDialog({ open, onOpenChange, initial, defaultPortfolioId
 
   const mutation = useMutation({
     mutationFn: async (values: FormOutput) => {
+      // Strip any purity/carat prefix the user may have typed directly into
+      // the name field so it isn't duplicated by the prepend below (e.g.
+      // typing "22k Gold ring" while "22K" is also the selected carat used
+      // to previously produce "22K 22k Gold ring").
+      const strippedName = isPhysical
+        ? parsePurityFromName(values.assetName, values.assetClass).name || values.assetName
+        : values.assetName;
       const finalName = isPhysical && values.purity
-        ? `${purity} ${values.assetName}`.trim()
+        ? `${purity} ${strippedName}`.trim()
         : values.assetName;
 
       const req = {

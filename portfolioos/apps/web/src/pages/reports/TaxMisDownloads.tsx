@@ -586,30 +586,32 @@ export function TaxMisDownloads({
   return (
     <div className="space-y-5">
       <Card>
-        <CardContent className="pt-4 flex flex-wrap items-end gap-3">
-          <div>
-            <Label>Financial year</Label>
-            <Select className="mt-1 w-32" value={fy} onChange={(e) => setFy(e.target.value)}>
-              {fyOptions().map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </Select>
+        <CardContent className="pt-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-3">
+          <div className="grid grid-cols-2 sm:contents gap-3">
+            <div>
+              <Label>Financial year</Label>
+              <Select className="mt-1 w-full sm:w-32" value={fy} onChange={(e) => setFy(e.target.value)}>
+                {fyOptions().map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label>As-of date</Label>
+              <Input type="date" value={asOf} onChange={(e) => setAsOf(e.target.value)} className="mt-1 w-full sm:w-40" />
+            </div>
+            <div>
+              <Label>From</Label>
+              <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="mt-1 w-full sm:w-40" />
+            </div>
+            <div>
+              <Label>To</Label>
+              <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="mt-1 w-full sm:w-40" />
+            </div>
           </div>
-          <div>
-            <Label>As-of date</Label>
-            <Input type="date" value={asOf} onChange={(e) => setAsOf(e.target.value)} className="mt-1 w-40" />
-          </div>
-          <div>
-            <Label>From</Label>
-            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="mt-1 w-40" />
-          </div>
-          <div>
-            <Label>To</Label>
-            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="mt-1 w-40" />
-          </div>
-          <p className="text-[11px] text-muted-foreground ml-auto max-w-md">
+          <p className="text-[11px] text-muted-foreground sm:ml-auto sm:max-w-md">
             Each report uses whichever subset of these inputs applies to it (shown in the card). Leave any field
             blank to use the report's default range.
           </p>

@@ -546,4 +546,46 @@
   table.rtable th.hidden {
     display: none !important;
   }
+
+  /* ─────────────────────────────────────────────────────────
+     .rtable-cards: opt-in richer card treatment for asset-class
+     list/transaction tables (SimpleAssetPage). Name/Asset becomes
+     a full-width title row (photo + text no longer squeezed into
+     a label:value line), Amount is emphasised, and the trailing
+     actions cell reads as a proper bottom action bar instead of
+     two loose icons.
+     ───────────────────────────────────────────────────────── */
+  table.rtable-cards tr {
+    display: flex;
+    flex-direction: column;
+    padding: 0.85rem 0.9rem;
+    border-radius: 0.75rem;
+  }
+
+  table.rtable-cards td[data-label='Name']::before,
+  table.rtable-cards td[data-label='Asset']::before {
+    content: '';
+  }
+  table.rtable-cards td[data-label='Name'],
+  table.rtable-cards td[data-label='Asset'] {
+    order: -1;
+    justify-content: flex-start;
+    text-align: left;
+    padding-bottom: 0.6rem;
+    margin-bottom: 0.35rem;
+    border-bottom: 1px solid hsl(var(--border) / 0.6);
+  }
+
+  table.rtable-cards td[data-label='Amount'],
+  table.rtable-cards td[data-label='Invested'] {
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  table.rtable-cards td[data-fullrow] {
+    order: 999;
+    margin-top: 0.35rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid hsl(var(--border) / 0.6);
+  }
 }
