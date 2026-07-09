@@ -1,24 +1,25 @@
 /**
- * AI Assistant — Prisma-backed conversation store.
+ * AI Assistant — Prisma-backed conversation store, scoped per chat
+ * session (see chatSessions.ts for session CRUD).
  *
- * Keeps the last 50 rows per user. On insert, older rows beyond 50 are
- * deleted so the table never runs unbounded. The 50-row cap is a
- * balance between preserving useful context (Claude sees the last 10)
- * and keeping the row-per-user footprint tiny.
+ * Keeps the last 100 rows per session. On insert, older rows beyond
+ * that are deleted so no single session's row count runs unbounded —
+ * scoped per-session (not per-user) so one long-running chat can't
+ * starve a user's other sessions of their own history.
  */
 
 import { prisma } from '../lib/prisma.js';
 import type { HistoryMessage } from './claudeClient.js';
 
 const HISTORY_LIMIT_TO_CLAUDE = 10;
-const HARD_CAP_PER_USER = 50;
+const HARD_CAP_PER_SESSION = 100;
 
 export async function getConversationHistory(
-  userId: string,
+  sessionId: string,
   limit = HISTORY_LIMIT_TO_CLAUDE,
 ): Promise<HistoryMessage[]> {
   const rows = await prisma.aiConversation.findMany({
-    where: { userId },
+    where: { sessionId },
     orderBy: { createdAt: 'desc' },
     take: limit,
   });
@@ -32,6 +33,7 @@ export async function getConversationHistory(
 
 export interface SaveMessageInput {
   userId: string;
+  sessionId: string;
   role: 'user' | 'assistant';
   content: string;
   queryIntent?: string | null;
@@ -44,6 +46,7 @@ export async function saveMessage(input: SaveMessageInput): Promise<void> {
   await prisma.aiConversation.create({
     data: {
       userId: input.userId,
+      sessionId: input.sessionId,
       role: input.role === 'assistant' ? 'ASSISTANT' : 'USER',
       content: input.content,
       queryIntent: input.queryIntent ?? null,
@@ -54,14 +57,14 @@ export async function saveMessage(input: SaveMessageInput): Promise<void> {
       familyId: input.familyId ?? null,
     },
   });
-  // Trim rows beyond HARD_CAP_PER_USER. Single tx keeps the count
+  // Trim rows beyond HARD_CAP_PER_SESSION. Single tx keeps the count
   // bounded even under a burst.
-  const excess = await prisma.aiConversation.count({ where: { userId: input.userId } });
-  if (excess > HARD_CAP_PER_USER) {
+  const excess = await prisma.aiConversation.count({ where: { sessionId: input.sessionId } });
+  if (excess > HARD_CAP_PER_SESSION) {
     const oldest = await prisma.aiConversation.findMany({
-      where: { userId: input.userId },
+      where: { sessionId: input.sessionId },
       orderBy: { createdAt: 'asc' },
-      take: excess - HARD_CAP_PER_USER,
+      take: excess - HARD_CAP_PER_SESSION,
       select: { id: true },
     });
     if (oldest.length > 0) {
@@ -72,10 +75,6 @@ export async function saveMessage(input: SaveMessageInput): Promise<void> {
   }
 }
 
-export async function clearConversation(userId: string): Promise<void> {
-  await prisma.aiConversation.deleteMany({ where: { userId } });
-}
-
 export interface ConversationRow {
   id: string;
   role: 'user' | 'assistant';
@@ -84,12 +83,12 @@ export interface ConversationRow {
   createdAt: string;
 }
 
-export async function listRecentMessages(
-  userId: string,
-  limit = 20,
+export async function listSessionMessages(
+  sessionId: string,
+  limit = 100,
 ): Promise<ConversationRow[]> {
   const rows = await prisma.aiConversation.findMany({
-    where: { userId },
+    where: { sessionId },
     orderBy: { createdAt: 'desc' },
     take: limit,
   });

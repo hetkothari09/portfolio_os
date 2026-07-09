@@ -1,11 +1,13 @@
 /**
  * AI Assistant HTTP surface — mounted at /api/assistant.
  *
- * POST /chat      — SSE streaming Claude response.
- * GET  /history   — last 20 messages.
- * DELETE /history — clear conversation.
- * GET  /suggested — 4 contextually-relevant question suggestions.
- * GET  /quota     — remaining daily quota (drives the input UI).
+ * GET    /sessions               — list this user's chat sessions.
+ * POST   /sessions                — create a new (empty) chat session.
+ * DELETE /sessions/:sessionId     — delete a chat session + its messages.
+ * GET    /sessions/:sessionId/history — messages in one session.
+ * POST   /chat                    — SSE streaming Claude response, within a session.
+ * GET    /suggested               — 4 contextually-relevant question suggestions.
+ * GET    /quota                   — remaining daily quota (drives the input UI).
  */
 
 import { Router } from 'express';
@@ -13,7 +15,7 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { authenticate } from '../middleware/authenticate.js';
 import { asyncHandler } from '../middleware/validate.js';
-import { noContent, ok } from '../lib/response.js';
+import { created, noContent, ok } from '../lib/response.js';
 import { UnauthorizedError } from '../lib/errors.js';
 import { env } from '../config/env.js';
 import { classifyQuery } from '../ai/queryClassifier.js';
@@ -23,12 +25,14 @@ import {
   parseResponseForCard,
   type HistoryMessage,
 } from '../ai/claudeClient.js';
+import { getConversationHistory, listSessionMessages, saveMessage } from '../ai/conversationStore.js';
 import {
-  clearConversation,
-  getConversationHistory,
-  listRecentMessages,
-  saveMessage,
-} from '../ai/conversationStore.js';
+  assertSessionOwnership,
+  createSession,
+  deleteSession,
+  listSessions,
+  touchSession,
+} from '../ai/chatSessions.js';
 import { checkQuota, incrementUsage } from '../ai/rateLimit.js';
 import { computeSuggestedQuestions } from '../ai/suggestedQuestions.js';
 import { parseFamilyId } from '../lib/familyHeader.js';
@@ -47,14 +51,15 @@ aiAssistantRouter.use((req, res, next) => {
 });
 
 aiAssistantRouter.use(authenticate);
-// No router-level plan gate: /quota, /suggested and /history must stay
-// reachable for FREE users so the panel can render the full interactive
-// experience (teaser prompts, a real "send" that appears to generate a
-// response) before revealing it's locked. Only /chat — the endpoint that
-// actually costs money — is gated, via checkQuota's tier_locked branch
-// below (dailyLimitFor('FREE') = 0 in rateLimit.ts). The frontend never
-// calls /chat for a locked user in the first place (see useAIAssistant's
-// sendMessage), but this is the defense-in-depth backstop.
+// No router-level plan gate: /quota, /suggested, /sessions and session
+// history must stay reachable for FREE users so the panel can render
+// the full interactive experience (teaser prompts, session list, a real
+// "send" that appears to generate a response) before revealing it's
+// locked. Only /chat — the endpoint that actually costs money — is
+// gated, via checkQuota's tier_locked branch below (dailyLimitFor
+// ('FREE') = 0 in rateLimit.ts). The frontend never calls /chat for a
+// locked user in the first place (see useAIAssistant's sendMessage),
+// but this is the defense-in-depth backstop.
 
 function callerId(req: Request): string {
   if (!req.user) throw new UnauthorizedError();
@@ -63,6 +68,7 @@ function callerId(req: Request): string {
 
 const chatSchema = z.object({
   message: z.string().min(1).max(2000),
+  sessionId: z.string().min(1),
 });
 
 aiAssistantRouter.get(
@@ -73,17 +79,35 @@ aiAssistantRouter.get(
 );
 
 aiAssistantRouter.get(
-  '/history',
+  '/sessions',
   asyncHandler(async (req: Request, res: Response) => {
-    ok(res, await listRecentMessages(callerId(req)));
+    ok(res, await listSessions(callerId(req)));
+  }),
+);
+
+aiAssistantRouter.post(
+  '/sessions',
+  asyncHandler(async (req: Request, res: Response) => {
+    const session = await createSession(callerId(req), parseFamilyId(req) ?? null);
+    created(res, session);
   }),
 );
 
 aiAssistantRouter.delete(
-  '/history',
+  '/sessions/:sessionId',
   asyncHandler(async (req: Request, res: Response) => {
-    await clearConversation(callerId(req));
+    await deleteSession(callerId(req), req.params.sessionId as string);
     noContent(res);
+  }),
+);
+
+aiAssistantRouter.get(
+  '/sessions/:sessionId/history',
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = callerId(req);
+    const sessionId = req.params.sessionId as string;
+    await assertSessionOwnership(userId, sessionId);
+    ok(res, await listSessionMessages(sessionId));
   }),
 );
 
@@ -104,7 +128,8 @@ aiAssistantRouter.post('/chat', async (req: Request, res: Response) => {
       res.status(400).json({ success: false, error: parsed.error.message });
       return;
     }
-    const { message } = parsed.data;
+    const { message, sessionId } = parsed.data;
+    await assertSessionOwnership(userId, sessionId);
 
     const quota = await checkQuota(userId);
     if (!quota.allowed) {
@@ -127,15 +152,19 @@ aiAssistantRouter.post('/chat', async (req: Request, res: Response) => {
     // record even if Claude errors mid-stream.
     const classified = classifyQuery(message);
     const context = await buildContext(userId, familyId, classified);
-    const history: HistoryMessage[] = await getConversationHistory(userId, 10);
+    const history: HistoryMessage[] = await getConversationHistory(sessionId, 10);
 
     await saveMessage({
       userId,
+      sessionId,
       role: 'user',
       content: message,
       queryIntent: classified.intent,
       familyId,
     });
+    // Sets the session's title from this message the first time it has
+    // one (still "New chat" otherwise) and bumps sort order.
+    await touchSession(sessionId, message);
 
     // SSE headers.
     res.setHeader('Content-Type', 'text/event-stream');
@@ -159,6 +188,7 @@ aiAssistantRouter.post('/chat', async (req: Request, res: Response) => {
           const { cleanText, card } = parseResponseForCard(result.fullText);
           await saveMessage({
             userId,
+            sessionId,
             role: 'assistant',
             content: cleanText,
             queryIntent: classified.intent,
@@ -166,6 +196,7 @@ aiAssistantRouter.post('/chat', async (req: Request, res: Response) => {
             cardData: card as unknown as Record<string, unknown> | null,
             familyId,
           });
+          await touchSession(sessionId);
           await incrementUsage(userId);
           if (card) {
             send({ type: 'card', data: card });

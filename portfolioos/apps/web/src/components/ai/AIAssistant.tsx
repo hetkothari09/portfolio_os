@@ -6,7 +6,9 @@ import {
   Send,
   Trash2,
   Loader2,
-  MoreHorizontal,
+  History,
+  SquarePen,
+  ArrowLeft,
   Zap,
 } from 'lucide-react';
 import { useAIAssistant } from '@/hooks/useAIAssistant';
@@ -16,15 +18,17 @@ import { useAuthStore } from '@/stores/auth.store';
 
 /**
  * PortfolioOS Assistant panel — designed as a financial planner agent,
- * not a chatbot. Floating, non-modal window docked bottom-right on
- * desktop (rest of the app stays visible and interactive behind it,
- * like Intercom/Drift); full-sheet on mobile where there's no room to
- * float.
+ * not a chatbot, but with the multi-session mechanics every other AI
+ * chat product has: many independent chat threads per user, switchable,
+ * deletable, a "new chat" that starts fresh without losing the others.
  *
  * Layout:
  *   Header    — gradient background, sparkle-in-orb avatar, status dot,
  *               "Portfolio Assistant" title + live quota / streaming
- *               subtext, kebab menu, close button.
+ *               subtext, session-list toggle, new-chat button, close.
+ *   Sessions  — (toggled via the history icon) list of this user's chat
+ *               threads, newest first, click to switch, trash icon to
+ *               delete. Replaces the message area, not the whole panel.
  *   Empty     — centered agent illustration + welcome text + 2x2 grid
  *               of suggested question tiles (not tiny pills).
  *   Messages  — MessageBubble stream; assistant carries avatar column,
@@ -32,21 +36,21 @@ import { useAuthStore } from '@/stores/auth.store';
  *   Composer  — pill input with integrated send button + tiny quota
  *               readout + "not investment advice" disclaimer.
  *
- * FREE tier sees the identical panel — same header, same empty state,
- * same suggested prompts, same composer. Sending a message still shows
- * the real "thinking" dots (useAIAssistant.sendMessage never calls the
- * billed /chat endpoint for a locked user), but the revealed answer is
- * a blurred placeholder with an upgrade CTA instead of real content
- * (see MessageBubble's LockedAnswer). The old static "you need to
- * upgrade" panel that replaced the whole conversation area is gone —
- * showing what generation *feels* like, then locking the payoff,
- * converts better than an upfront wall.
+ * FREE tier sees the identical panel — same floating button, same
+ * empty state, same suggested prompts, same composer, same session
+ * list. Sending a message still shows the real "thinking" dots
+ * (useAIAssistant.sendMessage never calls the billed /chat endpoint for
+ * a locked user), but the revealed answer is a blurred placeholder with
+ * an upgrade CTA instead of real content (see MessageBubble's
+ * LockedAnswer).
  *
- * That preview is a ONE-TIME thing per user, not a loophole to keep
- * asking free (fake) questions forever: once a locked answer has been
- * shown, the composer and every suggested-prompt tile disable and stay
- * disabled — `previewUsed`, persisted to localStorage so it survives a
- * reload — until the user is no longer on a locked tier.
+ * That preview is a ONE-TIME thing per user — across every chat, not
+ * per-chat — not a loophole to keep asking free (fake) questions by
+ * starting new threads: once a locked answer has been shown anywhere,
+ * the composer, every suggested-prompt tile, AND the "new chat" button
+ * disable and stay disabled. `previewUsed` is persisted to localStorage
+ * (keyed by user, not by session) so it survives both a reload and a
+ * session switch.
  */
 
 interface Props {
@@ -66,9 +70,11 @@ function previewUsedKey(userId: string): string {
 
 export function AIAssistant({ open, onClose, pendingPrompt }: Props) {
   const [input, setInput] = useState('');
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [view, setView] = useState<'chat' | 'sessions'>('chat');
   const user = useAuthStore((s) => s.user);
   const {
+    sessions,
+    activeSessionId,
     messages,
     isStreaming,
     error,
@@ -77,7 +83,9 @@ export function AIAssistant({ open, onClose, pendingPrompt }: Props) {
     loadingHistory,
     historyLoaded,
     sendMessage,
-    clearConversation,
+    switchSession,
+    newChat,
+    removeSession,
   } = useAIAssistant(open);
 
   // Locked messages never round-trip the server (see useAIAssistant's
@@ -148,6 +156,13 @@ export function AIAssistant({ open, onClose, pendingPrompt }: Props) {
     setInput('');
   };
 
+  const handleNewChat = () => {
+    if (previewLocked) return;
+    void newChat();
+    setView('chat');
+    setInput('');
+  };
+
   return (
     <>
       <aside
@@ -157,67 +172,80 @@ export function AIAssistant({ open, onClose, pendingPrompt }: Props) {
       >
         <AgentHeader
           onClose={onClose}
-          onOpenMenu={() => setMenuOpen((o) => !o)}
-          menuOpen={menuOpen}
-          onClear={() => {
-            if (confirm('Start a fresh conversation?')) void clearConversation();
-            setMenuOpen(false);
-          }}
-          messageCount={messages.length}
+          view={view}
+          onToggleSessions={() => setView((v) => (v === 'sessions' ? 'chat' : 'sessions'))}
+          onNewChat={handleNewChat}
+          newChatDisabled={previewLocked}
           quota={quota}
           isStreaming={isStreaming}
           locked={locked}
         />
 
-        <div ref={scrollRef} className="flex-1 overflow-y-auto flex flex-col scroll-smooth">
-          {loadingHistory ? (
-            <div className="m-auto text-center text-sm text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" />
-              Loading conversation…
-            </div>
-          ) : messages.length === 0 ? (
-            <EmptyState
-              firstName={firstName}
-              suggestedQuestions={suggestedQuestions}
-              disabled={isStreaming || capped || previewLocked}
-              onSelect={(q) => {
-                void sendMessage(q);
-              }}
-            />
-          ) : (
-            <div className="px-4 py-5">
-              {messages.map((m) => (
-                <MessageBubble key={m.id} message={m} />
-              ))}
-              {!isStreaming && suggestedQuestions.length > 0 && !previewLocked && (
-                <div className="mt-4">
-                  <div className="text-[10px] uppercase tracking-kerned text-muted-foreground mb-2">
-                    Try next
-                  </div>
-                  <SuggestedQuestions
-                    questions={suggestedQuestions}
-                    onSelect={(q) => {
-                      void sendMessage(q);
-                    }}
-                    disabled={isStreaming}
-                  />
+        {view === 'sessions' ? (
+          <SessionListView
+            sessions={sessions}
+            activeSessionId={activeSessionId}
+            onSelect={(id) => {
+              void switchSession(id);
+              setView('chat');
+            }}
+            onDelete={(id) => void removeSession(id)}
+            onNewChat={handleNewChat}
+            newChatDisabled={previewLocked}
+          />
+        ) : (
+          <>
+            <div ref={scrollRef} className="flex-1 overflow-y-auto flex flex-col scroll-smooth">
+              {loadingHistory ? (
+                <div className="m-auto text-center text-sm text-muted-foreground">
+                  <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" />
+                  Loading conversation…
+                </div>
+              ) : messages.length === 0 ? (
+                <EmptyState
+                  firstName={firstName}
+                  suggestedQuestions={suggestedQuestions}
+                  disabled={isStreaming || capped || previewLocked}
+                  onSelect={(q) => {
+                    void sendMessage(q);
+                  }}
+                />
+              ) : (
+                <div className="px-4 py-5">
+                  {messages.map((m) => (
+                    <MessageBubble key={m.id} message={m} />
+                  ))}
+                  {!isStreaming && suggestedQuestions.length > 0 && !previewLocked && (
+                    <div className="mt-4">
+                      <div className="text-[10px] uppercase tracking-kerned text-muted-foreground mb-2">
+                        Try next
+                      </div>
+                      <SuggestedQuestions
+                        questions={suggestedQuestions}
+                        onSelect={(q) => {
+                          void sendMessage(q);
+                        }}
+                        disabled={isStreaming}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          )}
-        </div>
 
-        <Composer
-          input={input}
-          setInput={setInput}
-          onSubmit={handleSubmit}
-          isStreaming={isStreaming}
-          capped={Boolean(capped)}
-          locked={locked}
-          previewLocked={previewLocked}
-          quota={quota}
-          inputRef={inputRef}
-        />
+            <Composer
+              input={input}
+              setInput={setInput}
+              onSubmit={handleSubmit}
+              isStreaming={isStreaming}
+              capped={Boolean(capped)}
+              locked={locked}
+              previewLocked={previewLocked}
+              quota={quota}
+              inputRef={inputRef}
+            />
+          </>
+        )}
         {error && (
           <div className="px-4 py-2 text-[11px] text-negative border-t border-border/50 bg-negative/5">
             {error}
@@ -230,29 +258,25 @@ export function AIAssistant({ open, onClose, pendingPrompt }: Props) {
 
 function AgentHeader({
   onClose,
-  onOpenMenu,
-  menuOpen,
-  onClear,
-  messageCount,
+  view,
+  onToggleSessions,
+  onNewChat,
+  newChatDisabled,
   quota,
   isStreaming,
   locked,
 }: {
   onClose: () => void;
-  onOpenMenu: () => void;
-  menuOpen: boolean;
-  onClear: () => void;
-  messageCount: number;
+  view: 'chat' | 'sessions';
+  onToggleSessions: () => void;
+  onNewChat: () => void;
+  newChatDisabled: boolean;
   quota: { used: number; limit: number } | null;
   isStreaming: boolean;
   locked: boolean;
 }) {
   const remaining = quota && !locked ? Math.max(0, quota.limit - quota.used) : null;
   return (
-    // Do NOT set overflow-hidden here — the kebab dropdown popover
-    // renders as `absolute right-0 top-full` inside this container and
-    // any parent clip would swallow it. The gradient below is already
-    // bounded by inset-0 so it can't bleed.
     <div className="relative border-b border-border">
       <div
         className="absolute inset-0 pointer-events-none rounded-none"
@@ -262,21 +286,36 @@ function AgentHeader({
         }}
       />
       <div className="relative flex items-center gap-3 px-4 py-4">
-        <div className="relative">
-          <div className="h-11 w-11 rounded-full bg-gradient-to-br from-accent via-accent/85 to-accent/60 flex items-center justify-center shadow-md ring-2 ring-background">
-            <Sparkles className="h-5 w-5 text-accent-foreground" strokeWidth={2} />
+        {view === 'sessions' ? (
+          <button
+            type="button"
+            onClick={onToggleSessions}
+            className="p-1.5 -ml-1.5 rounded hover:bg-muted/70 text-muted-foreground hover:text-foreground shrink-0"
+            title="Back to chat"
+          >
+            <ArrowLeft className="h-4.5 w-4.5" strokeWidth={1.9} />
+          </button>
+        ) : (
+          <div className="relative shrink-0">
+            <div className="h-11 w-11 rounded-full bg-gradient-to-br from-accent via-accent/85 to-accent/60 flex items-center justify-center shadow-md ring-2 ring-background">
+              <Sparkles className="h-5 w-5 text-accent-foreground" strokeWidth={2} />
+            </div>
+            <span
+              className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ring-2 ring-background ${
+                isStreaming ? 'bg-amber-500 animate-pulse' : 'bg-positive'
+              }`}
+              aria-hidden
+            />
           </div>
-          <span
-            className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ring-2 ring-background ${
-              isStreaming ? 'bg-amber-500 animate-pulse' : 'bg-positive'
-            }`}
-            aria-hidden
-          />
-        </div>
+        )}
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-semibold leading-tight">Portfolio Assistant</div>
+          <div className="text-sm font-semibold leading-tight">
+            {view === 'sessions' ? 'Your chats' : 'Portfolio Assistant'}
+          </div>
           <div className="text-[11px] text-muted-foreground truncate">
-            {isStreaming
+            {view === 'sessions'
+              ? 'Switch between conversations'
+              : isStreaming
               ? 'Thinking through your numbers…'
               : locked
               ? 'Free plan — upgrade to unlock full answers'
@@ -286,29 +325,26 @@ function AgentHeader({
           </div>
         </div>
 
-        {messageCount > 0 && (
-          <div className="relative">
+        {view === 'chat' && (
+          <>
             <button
               type="button"
-              onClick={onOpenMenu}
+              onClick={onToggleSessions}
               className="p-1.5 rounded hover:bg-muted/70 text-muted-foreground hover:text-foreground"
-              title="More"
+              title="Chat history"
             >
-              <MoreHorizontal className="h-4 w-4" strokeWidth={1.9} />
+              <History className="h-4 w-4" strokeWidth={1.9} />
             </button>
-            {menuOpen && (
-              <div className="absolute right-0 top-full mt-1 w-44 rounded-md border border-border bg-popover shadow-xl z-[60] py-1">
-                <button
-                  type="button"
-                  onClick={onClear}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 text-left text-[13px] hover:bg-muted/60 text-negative"
-                >
-                  <Trash2 className="h-3.5 w-3.5" strokeWidth={1.7} />
-                  Clear conversation
-                </button>
-              </div>
-            )}
-          </div>
+            <button
+              type="button"
+              onClick={onNewChat}
+              disabled={newChatDisabled}
+              className="p-1.5 rounded hover:bg-muted/70 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+              title={newChatDisabled ? 'Upgrade to start a new chat' : 'New chat'}
+            >
+              <SquarePen className="h-4 w-4" strokeWidth={1.9} />
+            </button>
+          </>
         )}
         <button
           type="button"
@@ -319,6 +355,80 @@ function AgentHeader({
           <X className="h-4 w-4" strokeWidth={1.7} />
         </button>
       </div>
+    </div>
+  );
+}
+
+function SessionListView({
+  sessions,
+  activeSessionId,
+  onSelect,
+  onDelete,
+  onNewChat,
+  newChatDisabled,
+}: {
+  sessions: Array<{ id: string; title: string; lastMessageAt: string }>;
+  activeSessionId: string | null;
+  onSelect: (id: string) => void;
+  onDelete: (id: string) => void;
+  onNewChat: () => void;
+  newChatDisabled: boolean;
+}) {
+  return (
+    <div className="flex-1 overflow-y-auto flex flex-col">
+      <div className="p-3 border-b border-border/60">
+        <button
+          type="button"
+          onClick={onNewChat}
+          disabled={newChatDisabled}
+          className="w-full flex items-center justify-center gap-2 rounded-lg border border-dashed border-accent/40 bg-accent/5 hover:bg-accent/10 text-accent-ink text-[13px] font-medium py-2.5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-accent/5"
+        >
+          <SquarePen className="h-3.5 w-3.5" strokeWidth={2} />
+          New chat
+        </button>
+      </div>
+      {sessions.length === 0 ? (
+        <div className="m-auto text-center text-sm text-muted-foreground px-6">
+          No chats yet.
+        </div>
+      ) : (
+        <ul className="p-2 space-y-0.5">
+          {sessions.map((s) => (
+            <li key={s.id}>
+              <button
+                type="button"
+                onClick={() => onSelect(s.id)}
+                className={`w-full group flex items-center gap-2 rounded-lg px-3 py-2.5 text-left text-[13px] transition-colors ${
+                  s.id === activeSessionId
+                    ? 'bg-accent/10 text-accent-ink font-medium'
+                    : 'hover:bg-muted/60 text-foreground'
+                }`}
+              >
+                <span className="flex-1 min-w-0 truncate">{s.title}</span>
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(s.id);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      onDelete(s.id);
+                    }
+                  }}
+                  className="shrink-0 p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-negative/10 hover:text-negative transition-opacity"
+                  title="Delete chat"
+                >
+                  <Trash2 className="h-3.5 w-3.5" strokeWidth={1.8} />
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -458,4 +568,3 @@ function Composer({
     </div>
   );
 }
-

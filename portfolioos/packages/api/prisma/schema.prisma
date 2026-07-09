@@ -140,9 +140,11 @@ model User {
   familyInvitationsSent FamilyInvitation[] @relation("FamilyInvitationInviter")
   pendingFamilyInvitesCreated PendingFamilyInvite[] @relation("PendingFamilyInviteCreator")
 
-  // AI Assistant — conversational Q&A over the user's portfolio. History
-  // capped at 50 rows per user; daily usage counter drives rate limits.
+  // AI Assistant — conversational Q&A over the user's portfolio, grouped
+  // into ChatGPT-style sessions. History capped at 50 rows per user;
+  // daily usage counter drives rate limits.
   aiConversations AiConversation[]
+  aiChatSessions  AiChatSession[]
   aiUsage         AiUsage[]
 
   // Sec 55(2)(ac) grandfathering — user-entered/overridden FMV per ISIN as
@@ -3075,10 +3077,36 @@ enum AiConversationRole {
   ASSISTANT
 }
 
+// One row per ChatGPT-style conversation thread. `title` defaults to
+// "New chat" and is set from a truncated first-user-message once the
+// session has one (see ai/chatSessions.ts) — never LLM-generated, to
+// avoid a second Claude call just for a title.
+model AiChatSession {
+  id            String           @id @default(cuid())
+  userId        String
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title         String           @default("New chat")
+  familyId      String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  // Denormalized off the latest message's createdAt so the session
+  // list can sort/paginate without joining + aggregating messages.
+  lastMessageAt DateTime         @default(now())
+  messages      AiConversation[]
+
+  @@index([userId, lastMessageAt])
+}
+
 model AiConversation {
   id             String             @id @default(cuid())
   userId         String
   user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Nullable only for rows created before multi-session support
+  // shipped (§20260709 migration backfills every pre-existing row
+  // into one session per user, so this is NOT NULL in practice for
+  // any row going forward).
+  sessionId      String?
+  session        AiChatSession?     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   role           AiConversationRole
   content        String             @db.Text
   // Classified intent of the USER message. Kept on both USER and
@@ -3096,6 +3124,7 @@ model AiConversation {
   createdAt      DateTime           @default(now())
 
   @@index([userId, createdAt])
+  @@index([sessionId, createdAt])
 }
 
 model AiUsage {
